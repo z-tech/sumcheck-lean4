@@ -1,5 +1,6 @@
 import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.Eval.Defs
+import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 import Mathlib.Data.ZMod.Basic
 
 open Polynomial
