@@ -82,7 +82,7 @@ lemma num_roots_over_domain_le_natDegree
 /-- Univariate Schwartz–Zippel over a field:
 the fraction of points in `S` at which `P` vanishes is at most `deg(P)/|S|`. -/
 theorem schwartz_zippel_univariate
-  (P : Polynomial R) (S : Finset R) (hp : P ≠ 0) (hS : S.Nonempty) :
+  (P : Polynomial R) (S : Finset R) (hp : P ≠ 0) (_hS : S.Nonempty) :
   ((num_roots_over_domain P S : ℚ≥0) / (S.card : ℚ≥0))
     ≤ (P.natDegree : ℚ≥0) / (S.card : ℚ≥0) := by
   classical
@@ -94,7 +94,7 @@ theorem schwartz_zippel_univariate
                  ≤ (P.natDegree : ℚ≥0) := by
     exact_mod_cast hcount
   have hden_nonneg : 0 ≤ (S.card : ℚ≥0) := by
-    simpa using (bot_le : (⊥ : ℚ≥0) ≤ (S.card : ℚ≥0))
+    simp
   -- Multiply both sides by `(S.card)⁻¹` (nonnegative), i.e. divide by `|S|`.
   simpa [div_eq_mul_inv] using
-    (mul_le_mul_of_nonneg_right hcount' (by simpa using inv_nonneg.mpr hden_nonneg))
+    (mul_le_mul_of_nonneg_right hcount' (by simp))
