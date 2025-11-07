@@ -1,7 +1,10 @@
 import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
+import Mathlib.Tactic.NormNum
+import Mathlib.Tactic.Ring
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Tactic
 
 -- REALIZATION: Sumcheck over univariate p ~kind of~ exists, but is useless (it provides zero soundness nor faster verification)
 -- REMINDER: Do not confuse Polynomial P (multivariate, what we're summing over) and Polynomial g_i (univariate round polynomials used for algebraic checks)
@@ -9,8 +12,9 @@ import Mathlib.Data.ZMod.Basic
 -- PROPOSAL: focus on inner rounds (> round 0) and handle round 0 later in the IOP?
 
 
-open Polynomial MvPolynomial
-
+-- open Polynomial MvPolynomial
+section
+  open MvPolynomial
 structure IOR (𝔽 : Type)  [Semiring 𝔽] where
   -- inputs
   oracle: 𝔽 → 𝔽 -- the univariate polynomial g_i given by the prover (verifier queries at verifier_move = {0, 1})
@@ -30,40 +34,110 @@ noncomputable def test_oracle : (ZMod 19) × (ZMod 19) → ZMod 19 :=
   fun (x₀, x₁) => eval (fun i => if i = 0 then x₀ else x₁) test_polynomial
 
 @[simp]
+noncomputable def test_oracle' : (ZMod 19)  ->  (ZMod 19) → ZMod 19 :=
+  fun x₀ x₁ => eval (fun i => if i = 0 then x₀ else x₁) test_polynomial
+
+@[simp]
 noncomputable def test_claim : (ZMod 19) := (17 : ZMod 19)
+end
+
+section
+open Polynomial
+variable (claim_0 : ZMod 19)
+-- prover just summed over the hypercube p(...) and interpolated a univariate g
+-- round 0 input
+
+
+
+@[simp]
+noncomputable def g_0 : Polynomial (ZMod 19) :=
+  let sum_0 :=
+    (List.range 2).foldl (fun acc x0 =>
+      (List.range 2).foldl (fun acc2 x1 =>
+        if x1 = 1 then acc2 else acc2 + test_oracle' x1 x0)
+      acc)
+    0
+  let sum_1 :=
+    (List.range 2).foldl (fun acc x0 =>
+      (List.range 2).foldl (fun acc2 x1 =>
+        if x1 = 1 then acc2 + test_oracle' x1 x0 else acc2)
+      acc)
+    0
+  C sum_0+ C (sum_1-sum_0) * X
+example :
+  (2 : Polynomial (ZMod 19)) + C 5 * X * 2 + C 3 * X = 0 := by
+  ring_nf
+  norm_num
+
+@[simp] lemma decide_zero_eq_one_mod19 :
+  ((0 : ZMod 19) = 1) = false := by decide
+@[simp] lemma decide_one_eq_one_mod19 :
+  ((1 : ZMod 19) = 0) = false := by decide
+
 
 -- simulate round 0 input
+-- set_option pp.notation false
+-- set_option pp.all true
 @[simp]
-noncomputable def g_0 : Polynomial (ZMod 19) :=13 * X + 2 -- prover just summed over the hypercube p(...) and interpolated a univariate g
+noncomputable def g_0' : Polynomial (ZMod 19) := 13 *  X + 2
+example : g_0 = 0 := by
+  simp [List.range, List.range.loop]
+  norm_num
+  ring_nf
+
+-- 13 * X + 2 -- prover just summed over the hypercube p(...) and interpolated a univariate g
 
 @[simp]
-noncomputable def oracle_0 : Polynomial (ZMod 19) := evaluate g_0 at x
+noncomputable def oracle_0 (x : ZMod 19) : ZMod 19 := eval x g_0
 
-@[simp]
-noncomputable def claim_0 : (ZMod 19) := (17 : ZMod 19) -- equal to global test_claim in round 0
+-- @[simp]
+-- noncomputable def claim_0 : (ZMod 19) := (17 : ZMod 19) -- equal to global
+-- test_claim in round 0
 
 -- simulate round 1 output
 
 -- TODO verifier check is oracle_0(0) + oracle_0(1) =? claim_0 passes
 
-@[simp]
-noncomputable def challenge_0 : (ZMod 19) := (2 : ZMod 19) -- randomly sampled by verifier
+-- @[simp]
+-- noncomputable def challenge_0 : (ZMod 19) := (2 : ZMod 19) -- randomly sampled by verifier
+variable (challenge_0 : ZMod 19)
+
 
 @[simp]
-noncomputable def claim_1 : (ZMod 19) := oracle_0(challenge_0)
+noncomputable def claim_1 : (ZMod 19) := oracle_0 challenge_0
+
 
 -- round 1 input
+@[simp]
+noncomputable def g_1 : Polynomial (ZMod 19) :=
+  let sum_0 :=
+      (List.range 2).foldl (fun acc2 x1 =>
+        if decide (x1 = 1) then acc2 else acc2 + test_oracle' challenge_0 x1)
+      0
+  let sum_1 :=
+      (List.range 2).foldl (fun acc2 x1 =>
+        if decide (x1 = 1) then acc2 + test_oracle' challenge_0 x1 else acc2)
+      0
+  (C sum_0 + (C (sum_1-sum_0)) * X)
+
+-- @[simp]
+-- noncomputable def g_1 : Polynomial (ZMod 19) := 6 * X + 11 -- prover just summed over the hypercube p(challenge_0, ..) and interpolated a univariate g
 
 @[simp]
-noncomputable def g_1 : Polynomial (ZMod 19) := 6 * X + 11 -- prover just summed over the hypercube p(challenge_0, ..) and interpolated a univariate g
-
-@[simp]
-noncomputable def oracle_1 : Polynomial (ZMod 19) := evaluate g_1 at x
+noncomputable def oracle_1 (x : ZMod 19): (ZMod 19) := eval x (g_1 challenge_0)
 
 -- claim_1 is also input
+@[simp]
+def verifier_move {𝔽} [Semiring 𝔽] : List 𝔽  := [0, 1]
+
+@[simp]
+noncomputable def verifier {𝔽} [DecidableEq 𝔽] [Semiring 𝔽] (verifier_move : List 𝔽) (claim : 𝔽) (oracle : 𝔽 → 𝔽) :=
+      decide ((verifier_move.map oracle).sum = claim)
 
 -- round 1 output
-
+example : verifier verifier_move (claim_1 challenge_0) (oracle_1 challenge_0) = true := by
+   simp [List.range, List.range.loop]
+   ring
 -- TODO verifier check is oracle_1(0) + oracle_1(1) =? claim_1 passes
 
 -- there are no more variables so the protocol ends
@@ -71,38 +145,36 @@ noncomputable def oracle_1 : Polynomial (ZMod 19) := evaluate g_1 at x
 
 
 
-noncomputable def verifier {𝔽} [DecidableEq 𝔽] [Semiring 𝔽] (verifier_move : List 𝔽) (claim : 𝔽) (oracle : 𝔽 → 𝔽) :=
-      decide ((verifier_move.map oracle).sum = claim)
 
--- we want to test the second round of EXAMPLE B below
-def verifier_move {𝔽} [Semiring 𝔽] : List 𝔽  := [0, 1]
-noncomputable def test_sumcheck_round_as_IOR {𝔽} [DecidableEq 𝔽] [Semiring 𝔽] (prover : 𝔽 -> (𝔽 → 𝔽) -> Claim 𝔽) (oracle : 𝔽 → 𝔽)  (challenge : 𝔽) : IOR 𝔽  :=
-  let claim := prover challenge oracle
-  let check := verifier verifier_move claim oracle challenge
-  { oracle := oracle,
-    verifier_move := verifier_move,
-    claim := claim,
-    challenge := challenge,
-    verifier_check := check }
+-- -- we want to test the second round of EXAMPLE B below
 
-theorem soundness_IO {𝔽} [DecidableEq 𝔽] [Semiring 𝔽] : ∀ (prover : 𝔽 -> (𝔽 → 𝔽) -> Claim 𝔽) (challenge: 𝔽) (oracle : 𝔽 → 𝔽),
-    let claim_from_prover := prover challenge oracle;
-    let do_one_round := test_sumcheck_round_as_IOR prover oracle challenge;
-    (match claim_from_prover with
-    | Claim.scalar c => c = (verifier_move.map oracle).sum
-    | Claim.poly inner_round_polynomial =>
-     (Polynomial.eval challenge inner_round_polynomial) = (verifier_move.map oracle).sum) ->
-    Pr ( do_one_round.verifier_check = True) <= deg(f)/ |F|  := by sorry
+-- noncomputable def test_sumcheck_round_as_IOR {𝔽} [DecidableEq 𝔽] [Semiring 𝔽] (prover : 𝔽 -> (𝔽 → 𝔽) -> Claim 𝔽) (oracle : 𝔽 → 𝔽)  (challenge : 𝔽) : IOR 𝔽  :=
+--   let claim := prover challenge oracle
+--   let check := verifier verifier_move claim oracle challenge
+--   { oracle := oracle,
+--     verifier_move := verifier_move,
+--     claim := claim,
+--     challenge := challenge,
+--     verifier_check := check }
+
+-- theorem soundness_IO {𝔽} [DecidableEq 𝔽] [Semiring 𝔽] : ∀ (prover : 𝔽 -> (𝔽 → 𝔽) -> Claim 𝔽) (challenge: 𝔽) (oracle : 𝔽 → 𝔽),
+--     let claim_from_prover := prover challenge oracle;
+--     let do_one_round := test_sumcheck_round_as_IOR prover oracle challenge;
+--     (match claim_from_prover with
+--     | Claim.scalar c => c = (verifier_move.map oracle).sum
+--     | Claim.poly inner_round_polynomial =>
+--      (Polynomial.eval challenge inner_round_polynomial) = (verifier_move.map oracle).sum) ->
+--     Pr ( do_one_round.verifier_check = True) <= deg(f)/ |F|  := by sorry
 
 
   --  Pr[verifier_check == true] <= deg(f)/ |F|
 
 
-noncomputable def test_sumcheck_round_as_IOR' : IOR (ZMod 19) :=
-  test_sumcheck_round_as_IOR (fun _challenge _oracle => test_claim)  test_oracle test_challenge
+-- noncomputable def test_sumcheck_round_as_IOR' : IOR (ZMod 19) :=
+--   test_sumcheck_round_as_IOR (fun _challenge _oracle => test_claim)  test_oracle test_challenge
 
 
-#simp test_sumcheck_round_as_IOR'.verifier_check
+-- #simp test_sumcheck_round_as_IOR'.verifier_check
 
 -- if claim == SUM x in {0,1} f(x), Pr[verifier_check == true] == 1
 -- else .. claim != SUM x in {0,1} f(x), Pr[verifier_check == true] <= deg(f)/ |F|
