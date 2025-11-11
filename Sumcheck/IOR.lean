@@ -53,9 +53,9 @@ lemma coeff_val : coeff = (13 : ZMod 19) := by
 noncomputable def expected_g_0 : Polynomial (ZMod 19) :=  Polynomial.C 13 *  Polynomial.X +  Polynomial.C sum_0
 noncomputable def computed_g_0 : Polynomial (ZMod 19) := Polynomial.C coeff * Polynomial.X + Polynomial.C sum_0
 
-example : computed_g_0 = expected_g_0 := by
+lemma equal_value : expected_g_0 = computed_g_0 := by
   unfold computed_g_0 expected_g_0
-  simp [coeff]
+  ring_nf
 
   -- simp [test_p, List.range, List.foldl, List.flatMap, List.map, List.range.loop, coeff]
   -- ring_nf
