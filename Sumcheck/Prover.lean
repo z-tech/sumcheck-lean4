@@ -1,23 +1,36 @@
 import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.Eval.Defs
-import Mathlib.Algebra.MvPolynomial.SchwartzZippel
-import Mathlib.Tactic.NormNum
-import Mathlib.Tactic.Ring
+import Mathlib.Algebra.MvPolynomial.SchwartzZippel -- why is this needed?
 import Mathlib.Data.ZMod.Basic
-import Mathlib.Tactic
 
+
+-- @[simp]
+-- noncomputable def generate_prover_message (p : MvPolynomial (Fin 2) (ZMod 19)) : Fin 2 → ZMod 19 :=
+--   let sum_0 :=
+--       (List.range 2).foldl (fun acc x1 =>
+--         acc + MvPolynomial.eval ![0, x1] p)
+--       0
+--   let sum_1 :=
+--       (List.range 2).foldl (fun acc x1 =>
+--         acc + MvPolynomial.eval ![1, x1] p)
+--       0
+
+--   ![sum_0, sum_1]
+
+variable {F : Type*} [CommSemiring F]
 
 @[simp]
-noncomputable def generate_prover_message (p : MvPolynomial (Fin 2) (ZMod 19)) : Fin 2 → ZMod 19 :=
-  let sum_0 :=
-      (List.range 2).foldl (fun acc x1 =>
-        acc + MvPolynomial.eval ![0, x1] p)
+noncomputable def generate_prover_message (p : MvPolynomial (Fin 2) F) : Fin 2 → F :=
+  let sum_0 : F :=
+    (List.range 2).foldl
+      (fun acc (x1 : ℕ) =>
+        acc + MvPolynomial.eval ![(0 : F), (x1 : F)] p)
       0
-  let sum_1 :=
-      (List.range 2).foldl (fun acc x1 =>
-        acc + MvPolynomial.eval ![1, x1] p)
+  let sum_1 : F :=
+    (List.range 2).foldl
+      (fun acc (x1 : ℕ) =>
+        acc + MvPolynomial.eval ![(1 : F), (x1 : F)] p)
       0
-
   ![sum_0, sum_1]
 
 namespace ProverTests
