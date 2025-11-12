@@ -2,7 +2,13 @@ import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel -- why is this needed?
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.Nat.Bitwise
 
+def natToBoolVec (n : ℕ) (k : ℕ) : Fin n → Bool :=
+  fun i => Nat.testBit k i
+
+def natToPoint  {𝔽} [CommSemiring 𝔽] (n : ℕ) (num_bits : ℕ) : Fin n → 𝔽 :=
+  fun i => if natToBoolVec n num_bits i then (1 : 𝔽) else (0 : 𝔽)
 
 -- @[simp]
 -- noncomputable def generate_prover_message (p : MvPolynomial (Fin 2) (ZMod 19)) : Fin 2 → ZMod 19 :=
@@ -17,21 +23,27 @@ import Mathlib.Data.ZMod.Basic
 
 --   ![sum_0, sum_1]
 
-variable {F : Type*} [CommSemiring F]
+noncomputable def hypercubeF {𝔽} [CommSemiring 𝔽] [DecidableEq 𝔽] (n: ℕ) : Finset (Fin n → 𝔽) :=
+  (Finset.range (Nat.pow 2 n)).image
+    (fun k => natToPoint (𝔽 := 𝔽) n k)
 
 @[simp]
-noncomputable def generate_prover_message (p : MvPolynomial (Fin 2) F) : Fin 2 → F :=
-  let sum_0 : F :=
+noncomputable def generate_prover_message {𝔽} [CommSemiring 𝔽] (p : MvPolynomial (Fin 2) 𝔽) : Fin 2 → 𝔽 :=
+  let sum_0 : 𝔽 :=
     (List.range 2).foldl
       (fun acc (x1 : ℕ) =>
-        acc + MvPolynomial.eval ![(0 : F), (x1 : F)] p)
+        acc + MvPolynomial.eval ![(0 : 𝔽), (x1 : 𝔽)] p)
       0
-  let sum_1 : F :=
+  let sum_1 : 𝔽 :=
     (List.range 2).foldl
       (fun acc (x1 : ℕ) =>
-        acc + MvPolynomial.eval ![(1 : F), (x1 : F)] p)
+        acc + MvPolynomial.eval ![(1 : 𝔽), (x1 : 𝔽)] p)
       0
   ![sum_0, sum_1]
+
+
+
+
 
 namespace ProverTests
 
