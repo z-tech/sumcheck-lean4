@@ -6,57 +6,6 @@ import Mathlib.Tactic.Ring
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Tactic
 
-@[simp]
-noncomputable def test_p : MvPolynomial (Fin 2) (ZMod 19) := 3 * MvPolynomial.X 0 * MvPolynomial.X 1 + 5 * MvPolynomial.X 0 + 1
-
-@[simp]
-noncomputable def point_00 : (ZMod 19) := MvPolynomial.eval ![0, 0] test_p
-lemma point_00_val : point_00 = (1 : ZMod 19) := by
-  simp [point_00, test_p]
-
-@[simp]
-noncomputable def point_01 : (ZMod 19) := MvPolynomial.eval ![1, 0] test_p
-lemma point_01_val : point_01 = (6 : ZMod 19) := by
-  simp [point_00, test_p]
-  ring_nf
-
-@[simp]
-noncomputable def point_10 : (ZMod 19) := MvPolynomial.eval ![0, 1] test_p
-lemma point_10_val : point_10 = (1 : ZMod 19) := by
-  simp [point_10, test_p]
-
-@[simp]
-noncomputable def point_11 : (ZMod 19) := MvPolynomial.eval ![1, 1] test_p
-lemma point_11_val : point_11 = (9 : ZMod 19) := by
-  simp [point_11, test_p]
-  ring_nf
-
-@[simp]
-noncomputable def sum_0 : (ZMod 19) := point_00 + point_10
-lemma sum_0_val : sum_0 = (2 : ZMod 19) := by
-  simp [point_11, test_p]
-  ring_nf
-
-@[simp]
-noncomputable def sum_1 : (ZMod 19) := point_01 + point_11
-lemma sum_1_val : sum_1 = (15 : ZMod 19) := by
-  simp [point_11, test_p]
-  ring_nf
-
-
-noncomputable def coeff : (ZMod 19) := sum_1 - sum_0
-lemma coeff_val : coeff = (13 : ZMod 19) := by
-  simp [coeff, test_p]
-  ring_nf
-
-
-noncomputable def expected_g_0 : Polynomial (ZMod 19) :=  Polynomial.C 13 *  Polynomial.X +  Polynomial.C sum_0
-noncomputable def computed_g_0 : Polynomial (ZMod 19) := Polynomial.C coeff * Polynomial.X + Polynomial.C sum_0
-
-lemma equal_value : expected_g_0 = computed_g_0 := by
-  unfold computed_g_0 expected_g_0
-  ring_nf
-
   -- simp [test_p, List.range, List.foldl, List.flatMap, List.map, List.range.loop, coeff]
   -- ring_nf
   -- rfl
@@ -91,14 +40,14 @@ lemma equal_value : expected_g_0 = computed_g_0 := by
 -- verifier checks G_0(0) + G_0(1) =? G_0(2)
 -- transcript { prover_messages: [(2, 15), (11, 17)], verifier_messages: [2], is_accepted: true }
 
-structure Round (𝔽 : Type)  [Semiring 𝔽] where
-  -- inputs
-  g_i: Polynomial 𝔽
-  claim : 𝔽
-  -- outputs
-  is_accepted : Bool
-  new_challenge: 𝔽 -- randomly sampled 𝔽
-  new_claim: F -- Polynomial.eval new_challenge g_i
+-- structure Round (𝔽 : Type)  [Semiring 𝔽] where
+--   -- inputs
+--   g_i: Polynomial 𝔽
+--   claim : 𝔽
+--   -- outputs
+--   is_accepted : Bool
+--   new_challenge: 𝔽 -- randomly sampled 𝔽
+--   new_claim: F -- Polynomial.eval new_challenge g_i
 
 -- -- setup
 -- @[simp] lemma decide_zero_eq_one_mod19 :
@@ -117,8 +66,6 @@ structure Round (𝔽 : Type)  [Semiring 𝔽] where
 --         acc + MvPolynomial.eval ![1, x1] p)
 --       0
 --   Polynomial.C sum_0 + Polynomial.C (sum_1 - sum_0) * Polynomial.X
-
--- noncomputable def computed_g_0 : Polynomial (ZMod 19) := g_i test_p
 
 
 -- @[simp]
@@ -231,3 +178,88 @@ structure Round (𝔽 : Type)  [Semiring 𝔽] where
 
 -- if claim == SUM x in {0,1} f(x), Pr[verifier_check == true] == 1
 -- else .. claim != SUM x in {0,1} f(x), Pr[verifier_check == true] <= deg(f)/ |F|
+
+-- @[simp]
+-- noncomputable def test_p : MvPolynomial (Fin 2) (ZMod 19) := 3 * MvPolynomial.X 0 * MvPolynomial.X 1 + 5 * MvPolynomial.X 0 + 1
+
+-- @[simp]
+-- noncomputable def point_00 : (ZMod 19) := MvPolynomial.eval ![0, 0] test_p
+-- lemma point_00_val : point_00 = (1 : ZMod 19) := by
+--   simp [point_00, test_p]
+
+-- @[simp]
+-- noncomputable def point_01 : (ZMod 19) := MvPolynomial.eval ![1, 0] test_p
+-- lemma point_01_val : point_01 = (6 : ZMod 19) := by
+--   simp [point_00, test_p]
+--   ring_nf
+
+-- @[simp]
+-- noncomputable def point_10 : (ZMod 19) := MvPolynomial.eval ![0, 1] test_p
+-- lemma point_10_val : point_10 = (1 : ZMod 19) := by
+--   simp [point_10, test_p]
+
+-- @[simp]
+-- noncomputable def point_11 : (ZMod 19) := MvPolynomial.eval ![1, 1] test_p
+-- lemma point_11_val : point_11 = (9 : ZMod 19) := by
+--   simp [point_11, test_p]
+--   ring_nf
+
+-- @[simp]
+-- noncomputable def sum_0 : (ZMod 19) := point_00 + point_10
+-- lemma sum_0_val : sum_0 = (2 : ZMod 19) := by
+--   simp [point_11, test_p]
+--   ring_nf
+
+-- @[simp]
+-- noncomputable def sum_1 : (ZMod 19) := point_01 + point_11
+-- lemma sum_1_val : sum_1 = (15 : ZMod 19) := by
+--   simp [point_11, test_p]
+--   ring_nf
+
+
+-- @[simp]
+-- noncomputable def coeff : (ZMod 19) := sum_1 - sum_0
+-- lemma coeff_val : coeff = (13 : ZMod 19) := by
+--   simp [coeff, test_p]
+--   ring_nf
+
+-- @[simp]
+-- noncomputable def test_p : MvPolynomial (Fin 2) (ZMod 19) := 3 * MvPolynomial.X 0 * MvPolynomial.X 1 + 5 * MvPolynomial.X 0 + 1
+
+-- @[simp]
+-- noncomputable def g_i (p : MvPolynomial (Fin 2) (ZMod 19)) : Fin 2 → ZMod 19 :=
+--   let sum_0 :=
+--       (List.range 2).foldl (fun acc x1 =>
+--         acc + MvPolynomial.eval ![0, x1] p)
+--       0
+--   let sum_1 :=
+--       (List.range 2).foldl (fun acc x1 =>
+--         acc + MvPolynomial.eval ![1, x1] p)
+--       0
+
+--   ![sum_0, sum_1]
+
+-- lemma sum_0_val : g_i test_p 0 = (2 : ZMod 19) := by
+--   unfold g_i test_p
+--   simp [List.foldl, List.flatMap, List.range, List.range.loop]
+--   ring_nf
+
+-- lemma sum_1_val : g_i test_p 1 = (15 : ZMod 19) := by
+--   unfold g_i test_p
+--   simp [List.foldl, List.flatMap, List.range, List.range.loop]
+--   ring_nf
+
+
+
+
+
+
+-- noncomputable def expected_g_0 : Polynomial (ZMod 19) :=  Polynomial.C 13 *  Polynomial.X +  Polynomial.C 2
+-- noncomputable def computed_g_0 : Polynomial (ZMod 19) := g_i test_p
+
+-- lemma equal_value : expected_g_0 = computed_g_0 := by
+--   unfold computed_g_0 expected_g_0
+--   simp [List.flatMap, List.range, List.range.loop]
+--   ring_nf
+--   congr
+--   -- aesop
