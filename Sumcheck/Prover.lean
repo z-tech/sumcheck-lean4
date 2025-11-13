@@ -29,18 +29,19 @@ namespace __ProverTests__
 
   namespace __generate_sums_variablewise_tests__
 
-    -- TODO (z-tech): if I can solve "it_should_generate_hypercube_1_correctly" in a generic way, then these should be solvable
     noncomputable def expected_sum_0 : (ZMod 19) := (2 : ZMod 19)
-    -- lemma it_should_generate_sum_0_correctly : generate_sums_variablewise test_p 0 = expected_sum_0 := by
-    --   unfold generate_sums_variablewise test_p expected_sum_0
-    --   simp [List.foldl, List.flatMap, List.range, List.range.loop]
-    --   ring_nf
+    lemma it_should_generate_sum_0_correctly : generate_sums_variablewise test_p 0 = expected_sum_0 := by
+      unfold generate_sums_variablewise test_p expected_sum_0
+      simp [List.foldl, List.flatMap, List.range, List.range.loop]
+      ring_nf
+      decide
 
     noncomputable def expected_sum_1 : (ZMod 19) := (15 : ZMod 19)
-    -- lemma it_should_generate_sum_1_correctly : generate_sums_variablewise test_p 1 = expected_sum_1 := by
-    --   unfold generate_sums_variablewise test_p expected_sum_1
-    --   simp [List.foldl, List.flatMap, List.range, List.range.loop, Finset.range, Finset.image, nat_to_point]
-    --   ring_nf
+    lemma it_should_generate_sum_1_correctly : generate_sums_variablewise test_p 1 = expected_sum_1 := by
+      unfold generate_sums_variablewise test_p expected_sum_1
+      simp [List.foldl, List.flatMap, List.range, List.range.loop, Finset.range, Finset.image]
+      ring_nf
+      decide
 
   end __generate_sums_variablewise_tests__
 
@@ -50,7 +51,6 @@ namespace __ProverTests__
     def sum_1 : (ZMod 19) := (15 : ZMod 19)
     noncomputable def expected_prover_message : Polynomial (ZMod 19) :=  Polynomial.C 13 *  Polynomial.X +  Polynomial.C 2
     lemma it_should_generate_prover_message_from_sums_correctly : generate_prover_message_from_sums sum_0 sum_1 = expected_prover_message := by
-      unfold generate_prover_message_from_sums expected_prover_message
       congr
 
   end __generate_prover_message_from_sums__
@@ -60,35 +60,35 @@ namespace __ProverTests__
     @[simp]
     noncomputable def point_00 : (ZMod 19) := MvPolynomial.eval ![0, 0] test_p
     lemma point_00_val : point_00 = (1 : ZMod 19) := by
-      simp [point_00, test_p]
+      simp
 
     @[simp]
     noncomputable def point_01 : (ZMod 19) := MvPolynomial.eval ![1, 0] test_p
     lemma point_01_val : point_01 = (6 : ZMod 19) := by
-      simp [point_00, test_p]
+      simp
       ring_nf
 
     @[simp]
     noncomputable def point_10 : (ZMod 19) := MvPolynomial.eval ![0, 1] test_p
     lemma point_10_val : point_10 = (1 : ZMod 19) := by
-      simp [point_10, test_p]
+      simp
 
     @[simp]
     noncomputable def point_11 : (ZMod 19) := MvPolynomial.eval ![1, 1] test_p
     lemma point_11_val : point_11 = (9 : ZMod 19) := by
-      simp [point_11, test_p]
+      simp
       ring_nf
 
     @[simp]
     noncomputable def sum_0 : (ZMod 19) := point_00 + point_10
     lemma sum_0_val : sum_0 = (2 : ZMod 19) := by
-      simp [point_11, test_p]
+      simp
       ring_nf
 
     @[simp]
     noncomputable def sum_1 : (ZMod 19) := point_01 + point_11
     lemma sum_1_val : sum_1 = (15 : ZMod 19) := by
-      simp [point_11, test_p]
+      simp
       ring_nf
 
   end __BasicSanity__
