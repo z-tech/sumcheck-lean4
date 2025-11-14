@@ -13,13 +13,13 @@ noncomputable def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq
   (challenges : Fin k → 𝔽) (hcard : k ≤ n) (p : MvPolynomial (Fin n) 𝔽) : Fin 2 → 𝔽 :=
   match n with
   | 0 => ![0, 0]
-  | Nat.succ m => -- NOTE: Nat.succ m = n
+  | Nat.succ m => -- NOTE: (Nat.succ m) = n
     let hypercube : Finset (Fin (Nat.succ m) → 𝔽) := generate_hypercube (Nat.succ m)
     let sum_0 : 𝔽 := hypercube.sum fun hypercube_point =>
-      let point : Fin (Nat.succ m) → 𝔽 := generate_point challenges hypercube_point hcard
+      let point : Fin (Nat.succ m) → 𝔽 := generate_point_from_challenges challenges hypercube_point hcard
       if hypercube_point 0 == 0 then MvPolynomial.eval point p else 0
     let sum_1 : 𝔽 := hypercube.sum fun hypercube_point =>
-      let point : Fin (Nat.succ m) → 𝔽 := generate_point challenges hypercube_point hcard
+      let point : Fin (Nat.succ m) → 𝔽 := generate_point_from_challenges challenges hypercube_point hcard
       if hypercube_point 0 == 1 then MvPolynomial.eval point p else 0
     ![sum_0, sum_1]
 

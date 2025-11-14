@@ -4,10 +4,38 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Prover
 import Sumcheck.Verifier
+import Sumcheck.Round
 
 namespace __ProtocolTests__
 
   namespace __TwoVariableSumcheck__
+    -- setup
+    @[simp]
+    noncomputable def claim_0 : (ZMod 19) := (17 : ZMod 19)
+    noncomputable def p_0 : MvPolynomial (Fin 2) (ZMod 19) := 3 * MvPolynomial.X 0 * MvPolynomial.X 1 + 5 * MvPolynomial.X 0 + 1
+
+    -- round 0
+    noncomputable def prover_output_0 := prover_move p_0 1
+    noncomputable def simulated_verifier_challenge_0 : (ZMod 19) := 2
+    noncomputable def verifier_output_0 := verifier_move claim_0 prover_output_0.1 simulated_verifier_challenge_0
+    lemma verifier_check_0_is_correct : verifier_output_0.1 = true := by
+      unfold verifier_output_0 prover_output_0
+      simp [p_0, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
+      decide
+
+    -- round 1
+    noncomputable def prover_output_1 := prover_move prover_output_0.2 simulated_verifier_challenge_0
+    noncomputable def unused_simulated_verifier_challenge_1 : (ZMod 19) := 2
+    noncomputable def verifier_output_1 := verifier_move verifier_output_0.2 prover_output_1.1 unused_simulated_verifier_challenge_1
+    -- TODO (z-tech): fix this
+    -- lemma verifier_check_1_is_correct : verifier_output_1.1 = true := by
+    --   unfold verifier_output_1 prover_output_1 verifier_output_0 prover_output_0 verifier_move prover_move unused_simulated_verifier_challenge_1
+    --   simp [p_0, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
+    --   decide
+
+  end __TwoVariableSumcheck__
+
+  namespace __TwoVariableSumcheckManual__
 
     -- p = 3 * x_0 * x_1 + 5 * x_0 + 1, true sum = 17 mod 19
     -- round 0 prover sums over all points
@@ -57,5 +85,5 @@ namespace __ProtocolTests__
       decide
     -- DONE!
 
-  end __TwoVariableSumcheck__
+  end __TwoVariableSumcheckManual__
 end __ProtocolTests__
