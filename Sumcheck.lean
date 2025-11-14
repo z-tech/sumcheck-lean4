@@ -4,3 +4,4 @@ import Sumcheck.Hypercube
 import Sumcheck.Protocol
 import Sumcheck.Prover
 import Sumcheck.Verifier
+import Sumcheck.Round
