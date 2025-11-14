@@ -9,13 +9,14 @@ import Mathlib.Data.Nat.Bitwise
 import Sumcheck.Hypercube
 
 @[simp]
-noncomputable def generate_sums_variablewise {𝔽} [CommSemiring 𝔽] [DecidableEq 𝔽] (p : MvPolynomial (Fin n) 𝔽) : Fin 2 → 𝔽 :=
+noncomputable def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq 𝔽] (challenge: 𝔽) (p : MvPolynomial (Fin n) 𝔽) : Fin 2 → 𝔽 :=
   match n with
-  | Nat.zero => ![0, 0]
-  | Nat.succ m =>
-    let hypercube : Finset (Fin m.succ → 𝔽) := generate_hypercube m.succ
-    let sum_0 : 𝔽 := hypercube.sum (fun x => if x 0 = 0 then MvPolynomial.eval x p else 0)
-    let sum_1 : 𝔽 := hypercube.sum (fun x => if x 0 = 1 then MvPolynomial.eval x p else 0)
+  | 0 => ![0, 0]
+  | 1 => ![MvPolynomial.eval ![1 - challenge] p, MvPolynomial.eval ![challenge] p]
+  | Nat.succ (Nat.succ m) =>
+    let hypercube : Finset (Fin (Nat.succ m) → 𝔽) := generate_hypercube (Nat.succ m)
+    let sum_0 : 𝔽 := hypercube.sum fun x => MvPolynomial.eval (Fin.cons (1 - challenge) x) p
+    let sum_1 : 𝔽 := hypercube.sum fun x => MvPolynomial.eval (Fin.cons challenge x) p
     ![sum_0, sum_1]
 
 @[simp]
@@ -30,17 +31,16 @@ namespace __ProverTests__
   namespace __generate_sums_variablewise_tests__
 
     noncomputable def expected_sum_0 : (ZMod 19) := (2 : ZMod 19)
-    lemma it_should_generate_sum_0_correctly : generate_sums_variablewise test_p 0 = expected_sum_0 := by
-      unfold generate_sums_variablewise test_p expected_sum_0
-      simp [List.foldl, List.flatMap, List.range, List.range.loop]
-      ring_nf
+    noncomputable def received_sum_0 : (ZMod 19) := generate_sums_variablewise 1 test_p 0
+    lemma it_should_generate_sum_0_correctly : received_sum_0 = expected_sum_0 := by
+      unfold received_sum_0 generate_sums_variablewise test_p expected_sum_0
+      simp
       decide
 
     noncomputable def expected_sum_1 : (ZMod 19) := (15 : ZMod 19)
-    lemma it_should_generate_sum_1_correctly : generate_sums_variablewise test_p 1 = expected_sum_1 := by
+    lemma it_should_generate_sum_1_correctly : generate_sums_variablewise 1 test_p 1 = expected_sum_1 := by
       unfold generate_sums_variablewise test_p expected_sum_1
-      simp [List.foldl, List.flatMap, List.range, List.range.loop, Finset.range, Finset.image]
-      ring_nf
+      simp
       decide
 
   end __generate_sums_variablewise_tests__
