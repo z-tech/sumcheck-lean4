@@ -11,3 +11,6 @@ lean_exe "sumcheck" where
   root := `Main
 
 require "leanprover-community" / "mathlib"
+
+-- require CompPoly from git
+--   "https://github.com/NethermindEth/CompPoly"

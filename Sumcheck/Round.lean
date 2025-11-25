@@ -48,23 +48,23 @@ noncomputable def prover_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq
 noncomputable def polyToMvFin1 {𝔽} [CommSemiring 𝔽]: Polynomial 𝔽 → MvPolynomial (Fin 1) 𝔽 :=
   Polynomial.eval₂ MvPolynomial.C (MvPolynomial.X 0)
 
-lemma one_round_general {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
- ∀ (prover_message_from_last_round prover_message_this_round : Polynomial 𝔽),
-  prover_message_this_round != 0 ->
-  (Finset.filter (fun (challenge : 𝔽) => verifier_move' prover_message_from_last_round prover_message_this_round challenge = true) Finset.univ).card
-  ≤ prover_message_this_round.natDegree / ((Finset.univ : Finset 𝔽).card):= by
-      unfold verifier_move'
-      simp
-      intros prover_message_from_last_round prover_message_this_round polyDiffZero
-      let interm_poly : Polynomial 𝔽 := prover_message_from_last_round - Polynomial.C (Polynomial.eval 0 prover_message_this_round + Polynomial.eval 1 prover_message_this_round)
-      let interm_mvpoly : MvPolynomial (Fin 1) 𝔽 := polyToMvFin1 interm_poly
-      have sz := (MvPolynomial.schwartz_zippel_totalDegree (R := 𝔽) (p :=  interm_mvpoly))
-      have isNotZero : interm_mvpoly != 0 := by
-        unfold interm_mvpoly interm_poly
-        simp [*]
-        sorry
-      simp [*] at isNotZero
-      specialize (sz isNotZero Finset.univ)
+-- lemma one_round_general {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+--  ∀ (prover_message_from_last_round prover_message_this_round : Polynomial 𝔽),
+--   prover_message_this_round != 0 ->
+--   (Finset.filter (fun (challenge : 𝔽) => verifier_move' prover_message_from_last_round prover_message_this_round challenge = true) Finset.univ).card
+--   ≤ prover_message_this_round.natDegree / ((Finset.univ : Finset 𝔽).card):= by
+--       unfold verifier_move'
+--       simp
+--       intros prover_message_from_last_round prover_message_this_round polyDiffZero
+--       let interm_poly : Polynomial 𝔽 := prover_message_from_last_round - Polynomial.C (Polynomial.eval 0 prover_message_this_round + Polynomial.eval 1 prover_message_this_round)
+--       let interm_mvpoly : MvPolynomial (Fin 1) 𝔽 := polyToMvFin1 interm_poly
+--       have sz := (MvPolynomial.schwartz_zippel_totalDegree (R := 𝔽) (p :=  interm_mvpoly))
+--       have isNotZero : interm_mvpoly != 0 := by
+--         unfold interm_mvpoly interm_poly
+--         simp [*]
+--         sorry
+--       simp [*] at isNotZero
+--       specialize (sz isNotZero Finset.univ)
 
-      ring_nf
-      decide
+--       ring_nf
+--       decide

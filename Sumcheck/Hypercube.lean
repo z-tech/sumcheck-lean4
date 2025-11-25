@@ -2,6 +2,7 @@ import Mathlib.Algebra.Polynomial.Basic
 import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Data.Nat.Bitwise
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Data.Fin.VecNotation
 
 @[simp]
 def generate_hypercube {𝔽} [CommSemiring 𝔽] [DecidableEq 𝔽] (n : ℕ) : Finset (Fin n → 𝔽) :=

@@ -5,6 +5,7 @@ import Mathlib.Algebra.MvPolynomial.Variables
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Bitwise
+-- import CMvPolynomial
 
 import Sumcheck.Hypercube
 

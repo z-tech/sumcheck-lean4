@@ -30,6 +30,13 @@ namespace __VerifierTests__
       simp
       ring_nf
 
+    def expected_check_round : Bool := false
+    lemma it_should_check_false_round_correctly_general : ∀ (x : ZMod 19), x != 17 ->  check_round (x : ZMod 19) test_prover_message = expected_check_round_false := by
+      unfold check_round test_prover_message expected_check_round_false
+      simp
+      ring_nf
+      decide
+
   end __check_round_tests__
 
   namespace __generate_claim_tests__
