@@ -5,3 +5,4 @@ import Sumcheck.Protocol
 import Sumcheck.Prover
 import Sumcheck.Verifier
 import Sumcheck.Round
+import Sumcheck.Utils

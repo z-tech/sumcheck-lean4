@@ -1,11 +1,10 @@
-import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.Polynomial.Eval.Defs
 import Mathlib.Algebra.MvPolynomial.Basic
 import Mathlib.Algebra.MvPolynomial.Variables
 import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Bitwise
--- import CMvPolynomial
+
+-- import CompPoly.CMvPolynomial
 
 import Sumcheck.Hypercube
 
@@ -25,8 +24,8 @@ noncomputable def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq
     ![sum_0, sum_1]
 
 @[simp]
-noncomputable def generate_prover_message_from_sums {𝔽} [CommRing 𝔽] (sum_0 : 𝔽) (sum_1 : 𝔽) : Polynomial 𝔽 :=
-  Polynomial.C (sum_1 - sum_0) *  Polynomial.X +  Polynomial.C sum_0
+noncomputable def generate_prover_message_from_sums {𝔽} [CommRing 𝔽] (sum_0 sum_1 : 𝔽) : MvPolynomial (Fin 1) 𝔽 :=
+  MvPolynomial.C (sum_1 - sum_0) * MvPolynomial.X 0 + MvPolynomial.C sum_0
 
 namespace __ProverTests__
 
@@ -54,7 +53,7 @@ namespace __ProverTests__
 
     def sum_0 : (ZMod 19) := (2 : ZMod 19)
     def sum_1 : (ZMod 19) := (15 : ZMod 19)
-    noncomputable def expected_prover_message : Polynomial (ZMod 19) :=  Polynomial.C 13 *  Polynomial.X +  Polynomial.C 2
+    noncomputable def expected_prover_message : MvPolynomial (Fin 1) (ZMod 19) :=  MvPolynomial.C 13 *  MvPolynomial.X 0 +  MvPolynomial.C 2
     lemma it_should_generate_prover_message_from_sums_correctly : generate_prover_message_from_sums sum_0 sum_1 = expected_prover_message := by
       congr
 

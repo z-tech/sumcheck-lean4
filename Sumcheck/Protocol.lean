@@ -5,6 +5,7 @@ import Mathlib.Data.ZMod.Basic
 import Sumcheck.Prover
 import Sumcheck.Verifier
 import Sumcheck.Round
+import Sumcheck.Utils
 
 namespace __ProtocolTests__
 
@@ -18,19 +19,20 @@ namespace __ProtocolTests__
     noncomputable def prover_output_0 := prover_move p_0 1
     noncomputable def simulated_verifier_challenge_0 : (ZMod 19) := 2
     noncomputable def verifier_output_0 := verifier_move claim_0 prover_output_0.1 simulated_verifier_challenge_0
-    lemma verifier_check_0_is_correct : verifier_output_0.1 = true := by
-      unfold verifier_output_0 prover_output_0
-      simp [p_0, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
-      decide
+  lemma verifier_check_0_is_correct : verifier_output_0.1 = true := by
+    unfold verifier_output_0 prover_output_0
+    simp [p_0, eval_at]
+    ring_nf
+    decide
 
     -- round 1
     noncomputable def prover_output_1 := prover_move prover_output_0.2 simulated_verifier_challenge_0
     noncomputable def unused_simulated_verifier_challenge_1 : (ZMod 19) := 2
     noncomputable def verifier_output_1 := verifier_move verifier_output_0.2 prover_output_1.1 unused_simulated_verifier_challenge_1
-    -- TODO (z-tech): fix this
+    -- TODO: fix this
     -- lemma verifier_check_1_is_correct : verifier_output_1.1 = true := by
-    --   unfold verifier_output_1 prover_output_1 verifier_output_0 prover_output_0 verifier_move prover_move unused_simulated_verifier_challenge_1
-    --   simp [p_0, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
+    --   unfold verifier_output_1 prover_output_1 verifier_output_0 prover_output_0
+    --   simp [p_0, eval_at]
     --   decide
 
   end __TwoVariableSumcheck__
@@ -60,17 +62,17 @@ namespace __ProtocolTests__
 
     -- round 0
     noncomputable def default_challenge : Fin 0 → (ZMod 19) := ![]
-    noncomputable def prover_message_0 : Polynomial (ZMod 19) := generate_prover_message_from_sums (generate_sums_variablewise default_challenge (by decide) p_0 0) (generate_sums_variablewise default_challenge (by decide) p_0 1)
+    noncomputable def prover_message_0 : MvPolynomial (Fin 1) (ZMod 19) := generate_prover_message_from_sums (generate_sums_variablewise default_challenge (by decide) p_0 0) (generate_sums_variablewise default_challenge (by decide) p_0 1)
     noncomputable def verifier_check_0 : Bool := check_round claim_0 prover_message_0
     lemma verifier_check_0_is_correct : verifier_check_0 = true := by
       unfold verifier_check_0 prover_message_0
-      simp [p_0, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
+      simp [p_0, eval_at, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
       decide
     noncomputable def verifier_challenge_0 : Fin 1 → (ZMod 19) := ![2]
 
     -- round 1
     noncomputable def claim_1 : (ZMod 19) := generate_claim (verifier_challenge_0 0) prover_message_0
-    noncomputable def prover_message_1 : Polynomial (ZMod 19) := generate_prover_message_from_sums (generate_sums_variablewise verifier_challenge_0 (by decide) p_0 0) (generate_sums_variablewise verifier_challenge_0 (by decide) p_0 1)
+    noncomputable def prover_message_1 : MvPolynomial (Fin 1) (ZMod 19) := generate_prover_message_from_sums (generate_sums_variablewise verifier_challenge_0 (by decide) p_0 0) (generate_sums_variablewise verifier_challenge_0 (by decide) p_0 1)
     noncomputable def expected_prover_message_1 : Polynomial (ZMod 19) :=  Polynomial.C 13 *  Polynomial.X +  Polynomial.C 2
     -- TODO (z-tech): not working
     -- lemma prover_message_1_is_correct : prover_message_1 = expected_prover_message_1 := by
@@ -81,7 +83,7 @@ namespace __ProtocolTests__
     noncomputable def verifier_check_1 : Bool := check_round claim_1 prover_message_1
     lemma verifier_check_1_is_correct : verifier_check_0 = true := by
       unfold verifier_check_0 prover_message_0
-      simp [p_0, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
+      simp [p_0, eval_at, Fintype.piFinset, Finset.univ, Fintype.elems, List.finRange, List.ofFn, Fin.foldr, Fin.foldr.loop, Finset.pi, Multiset.map]
       decide
     -- DONE!
 
