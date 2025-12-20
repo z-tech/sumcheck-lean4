@@ -4,9 +4,22 @@ import Mathlib.Algebra.MvPolynomial.Equiv
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Nat.Bitwise
 
--- import CompPoly.CMvPolynomial
-
 import Sumcheck.Hypercube
+
+@[simp]
+noncomputable def absorb_variable_zero
+  {𝔽} [CommSemiring 𝔽] {n : ℕ}
+  (challenge : 𝔽)
+  (p : MvPolynomial (Fin (n+1)) 𝔽) :
+  MvPolynomial (Fin n) 𝔽 :=
+  MvPolynomial.eval₂
+    (MvPolynomial.C : 𝔽 →+* MvPolynomial (Fin n) 𝔽)
+    (fun i : Fin (n+1) =>
+      Fin.cases
+        (MvPolynomial.C challenge)
+        (fun j => MvPolynomial.X j)
+        i)
+    p
 
 @[simp]
 noncomputable def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]

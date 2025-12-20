@@ -8,30 +8,15 @@ import Sumcheck.Prover
 import Sumcheck.Verifier
 import Sumcheck.Utils
 
-noncomputable def absorb_variable_zero
-  {𝔽} [CommSemiring 𝔽] {n : ℕ}
-  (challenge : 𝔽)
-  (p : MvPolynomial (Fin (n+1)) 𝔽) :
-  MvPolynomial (Fin n) 𝔽 :=
-  MvPolynomial.eval₂
-    (MvPolynomial.C : 𝔽 →+* MvPolynomial (Fin n) 𝔽)
-    (fun i : Fin (n+1) =>
-      Fin.cases
-        (MvPolynomial.C challenge)
-        (fun j => MvPolynomial.X j)
-        i)
-    p
-
 @[simp]
-noncomputable def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] (claim : 𝔽) (prover_message: MvPolynomial (Fin 1) 𝔽) (simulated_challenge : 𝔽) : (Bool × 𝔽) :=
-  let is_accepted := check_round claim prover_message
-  (is_accepted, eval_at simulated_challenge prover_message)
-
-@[simp]
-noncomputable def verifier_move' {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (prover_message_from_last_round prover_message_this_round : MvPolynomial (Fin 1) 𝔽) (challenge : 𝔽) : Bool :=
-  eval_at challenge prover_message_from_last_round =
-                     MvPolynomial.eval 0 prover_message_this_round + MvPolynomial.eval 1 prover_message_this_round
+noncomputable def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (expected_value : 𝔽)
+  (round_polynomial : MvPolynomial (Fin 1) 𝔽)
+  (challenge : 𝔽) : Option 𝔽 :=
+  if verifier_check expected_value round_polynomial then
+    some (verifier_generate_expected_value_next_round round_polynomial challenge)
+  else
+    none
 
 @[simp]
 noncomputable def prover_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] (p: MvPolynomial (Fin n) 𝔽) (verifier_challenge: 𝔽) : (MvPolynomial (Fin 1) 𝔽 × MvPolynomial (Fin (n - 1))  𝔽) :=
@@ -43,23 +28,20 @@ noncomputable def prover_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq
     let message := generate_prover_message_from_sums (generate_sums_variablewise challenges hcard p 0) (generate_sums_variablewise challenges hcard p 1)
     (message, absorb_variable_zero verifier_challenge p)
 
-@[simp]
-noncomputable def polyToMvFin1 {𝔽} [CommSemiring 𝔽]: Polynomial 𝔽 → MvPolynomial (Fin 1) 𝔽 :=
-  Polynomial.eval₂ MvPolynomial.C (MvPolynomial.X 0)
+
 
 -- lemma one_round_general {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
---  ∀ (prover_message_from_last_round prover_message_this_round : Polynomial 𝔽),
+--  ∀ (prover_message_from_last_round prover_message_this_round : MvPolynomial (Fin 1) 𝔽),
 --   prover_message_this_round != 0 ->
---   (Finset.filter (fun (challenge : 𝔽) => verifier_move' prover_message_from_last_round prover_message_this_round challenge = true) Finset.univ).card
---   ≤ prover_message_this_round.natDegree / ((Finset.univ : Finset 𝔽).card):= by
---       unfold verifier_move'
+--   (Finset.filter (fun (challenge : 𝔽) => verifier_move prover_message_from_last_round prover_message_this_round challenge = true) Finset.univ).card
+--   ≤ prover_message_this_round.totalDegree / ((Finset.univ : Finset 𝔽).card):= by
+--       unfold verifier_move
 --       simp
 --       intros prover_message_from_last_round prover_message_this_round polyDiffZero
---       let interm_poly : Polynomial 𝔽 := prover_message_from_last_round - Polynomial.C (Polynomial.eval 0 prover_message_this_round + Polynomial.eval 1 prover_message_this_round)
---       let interm_mvpoly : MvPolynomial (Fin 1) 𝔽 := polyToMvFin1 interm_poly
---       have sz := (MvPolynomial.schwartz_zippel_totalDegree (R := 𝔽) (p :=  interm_mvpoly))
---       have isNotZero : interm_mvpoly != 0 := by
---         unfold interm_mvpoly interm_poly
+--       let interm_poly : MvPolynomial (Fin 1) 𝔽 :=
+--         prover_message_from_last_round - MvPolynomial.C (eval_at 0 prover_message_this_round + eval_at 1 prover_message_this_round)
+--       have sz := (MvPolynomial.schwartz_zippel_totalDegree (R := 𝔽) (p :=  interm_poly))
+--       have isNotZero : interm_poly != 0 := by
 --         simp [*]
 --         sorry
 --       simp [*] at isNotZero
