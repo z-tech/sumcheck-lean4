@@ -17,10 +17,11 @@ namespace __ProtocolTests__
 
     -- round 0
     noncomputable def prover_output_0 := prover_move p_0 1 -- message = 13x + 2
+    noncomputable def round_poly_0 := prover_output_0.1
     noncomputable def simulated_challenge_0 : (ZMod 19) := 2
-    noncomputable def verifier_output_0 := verifier_move claim_0 prover_output_0.1 simulated_challenge_0
+    noncomputable def verifier_output_0 := verifier_move claim_0 round_poly_0 simulated_challenge_0
     lemma verifier_check_0_is_correct : verifier_output_0 = (9 : ZMod 19) := by
-      unfold verifier_output_0 prover_output_0 verifier_move verifier_check prover_move
+      unfold verifier_output_0 round_poly_0 prover_output_0 verifier_move verifier_check prover_move
         simulated_challenge_0 p_0
       simp
       native_decide
@@ -31,16 +32,14 @@ namespace __ProtocolTests__
     noncomputable def p_1 := prover_output_0.2
 
     noncomputable def prover_output_1 := prover_move p_1 simulated_challenge_0 -- message = 6x + 11
+    noncomputable def round_poly_1 := prover_output_1.1
     def simulated_challenge_1 : (ZMod 19) := 3
-    noncomputable def verifier_output_1 := verifier_move claim_1 prover_output_1.1 simulated_challenge_1
-    -- lemma verifier_check_1_is_correct : verifier_output_1 = (10 : ZMod 19) := by
-    --   simp [ verifier_output_1, prover_output_1, verifier_move, verifier_check, prover_move
-    --       , simulated_challenge_1, simulated_challenge_0
-    --       , claim_1, p_1
-    --       , verifier_output_0, prover_output_0
-    --       , p_0, claim_0
-    --       ]
-    --   decide
+    noncomputable def verifier_output_1 := verifier_move claim_1 round_poly_1 simulated_challenge_1
+    -- lemma verifier_check_1_is_correct : verifier_output_1 = (9 : ZMod 19) := by
+    --   unfold verifier_output_1 round_poly_1 prover_output_1 verifier_move verifier_check prover_move
+    --     simulated_challenge_0 simulated_challenge_1 p_1
+    --   simp
+    --   native_decide
   end __TwoVariableSumcheck__
 
   namespace __TwoVariableSumcheckManual__
