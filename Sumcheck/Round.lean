@@ -1,12 +1,19 @@
-import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.MvPolynomial.Basic
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
-
 import Mathlib.Data.ZMod.Basic
+
+import Mathlib.Data.Fintype.Card
+import Mathlib
+
+import CompPoly
+import CompPoly.CMvPolynomial
+import CompPoly.CMvMonomial
+import CompPoly.Lawful
 
 import Sumcheck.Prover
 import Sumcheck.Verifier
 import Sumcheck.Utils
+
+open scoped BigOperators
 
 @[simp]
 def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
@@ -33,7 +40,8 @@ by
              CPoly.Lawful.C (n := 0) (R := 𝔽) 0)
   | succ m =>
       -- n = m+1
-      let dummy : Fin 1 → 𝔽 := ![(1 : 𝔽)] -- for other alg. this may be different but for vsbw always 1
+      -- for other alg. dummy might be challenges but for vsbw it's just 1
+      let dummy : Fin 1 → 𝔽 := ![(1 : 𝔽)]
       have hcard : 1 ≤ Nat.succ m := Nat.succ_le_succ (Nat.zero_le m)
 
       let sum0 := generate_sums_variablewise dummy hcard p 0
@@ -42,6 +50,39 @@ by
       let message := generate_prover_message_from_sums sum0 sum1
       exact (message, absorb_variable_zero (n := m) verifier_challenge p)
 
+
+-- probability that a uniformly random challenge makes q evaluate to zero
+lemma prob_root
+  {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (q : CPoly.CMvPolynomial 1 𝔽)
+  (hq : q ≠ 0) :
+  (↑{f ∈ Fintype.piFinset (fun _ : Fin 1 => (Finset.univ : Finset 𝔽))
+        | q.eval f = 0}.card : ℚ)
+    / (Fintype.card 𝔽 : ℚ)
+  ≤ (q.totalDegree : ℚ) / (Fintype.card 𝔽 : ℚ) := by
+  -- transport nonzero across the equivalence
+  have hq' : CPoly.fromCMvPolynomial q ≠ (0 : MvPolynomial (Fin 1) 𝔽) := by
+    intro h
+    apply hq
+    -- use your equivalence lemma: q = 0 ↔ from q = from 0
+    have : CPoly.fromCMvPolynomial q = CPoly.fromCMvPolynomial (0 : CPoly.CMvPolynomial 1 𝔽) := by
+      simpa [CPoly.map_zero] using h
+    exact (CPoly.eq_iff_fromCMvPolynomial (u := q) (v := 0)).2 this
+
+  -- Schwartz–Zippel on the MvPolynomial image
+  have sz :=
+    MvPolynomial.schwartz_zippel_totalDegree
+      (R := 𝔽)
+      (p := CPoly.fromCMvPolynomial q)
+      hq'
+      (S := (Finset.univ : Finset 𝔽))
+
+  -- rewrite eval/degree back to CMvPolynomial using your `*_equiv` lemmas
+  -- and simplify the n = 1 denominator
+  simpa [CPoly.eval_equiv (p := q), CPoly.totalDegree_equiv (p := q), pow_one] using sz
+
+
+-- probability the sampled challenge causes the verifier to accept when message != honest
 
 
 -- lemma one_round_general {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :

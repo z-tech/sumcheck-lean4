@@ -1,5 +1,3 @@
-import Mathlib.Algebra.Polynomial.Basic
-import Mathlib.Algebra.MvPolynomial.Basic
 import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Prover
