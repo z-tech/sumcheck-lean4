@@ -9,9 +9,9 @@ import Sumcheck.Verifier
 import Sumcheck.Utils
 
 @[simp]
-noncomputable def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (expected_value : 𝔽)
-  (round_polynomial : MvPolynomial (Fin 1) 𝔽)
+  (round_polynomial : CPoly.CMvPolynomial 1 𝔽)
   (challenge : 𝔽) : Option 𝔽 :=
   if verifier_check expected_value round_polynomial then
     some (verifier_generate_expected_value_next_round round_polynomial challenge)
@@ -19,14 +19,28 @@ noncomputable def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [Decidable
     none
 
 @[simp]
-noncomputable def prover_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] (p: MvPolynomial (Fin n) 𝔽) (verifier_challenge: 𝔽) : (MvPolynomial (Fin 1) 𝔽 × MvPolynomial (Fin (n - 1))  𝔽) :=
-  match n with
-  | 0 => (MvPolynomial.C 0, MvPolynomial.C 0)
-  | Nat.succ m =>
-    let challenges : Fin 1 -> 𝔽 := ![verifier_challenge]
-    have hcard : 1 ≤ Nat.succ m := Nat.succ_le_succ (Nat.zero_le m)
-    let message := generate_prover_message_from_sums (generate_sums_variablewise challenges hcard p 0) (generate_sums_variablewise challenges hcard p 1)
-    (message, absorb_variable_zero verifier_challenge p)
+def prover_move
+  {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (n : ℕ)
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (verifier_challenge : 𝔽) :
+  (CPoly.CMvPolynomial 1 𝔽 × CPoly.CMvPolynomial (n - 1) 𝔽) :=
+by
+  cases n with
+  | zero =>
+      -- n = 0
+      exact (CPoly.Lawful.C (n := 1) (R := 𝔽) 0,
+             CPoly.Lawful.C (n := 0) (R := 𝔽) 0)
+  | succ m =>
+      -- n = m+1
+      let challenges : Fin 1 → 𝔽 := ![verifier_challenge]
+      have hcard : 1 ≤ Nat.succ m := Nat.succ_le_succ (Nat.zero_le m)
+
+      let sum0 := generate_sums_variablewise challenges hcard p 0
+      let sum1 := generate_sums_variablewise challenges hcard p 1
+
+      let message := generate_prover_message_from_sums sum0 sum1
+      exact (message, absorb_variable_zero (n := m) verifier_challenge p)
 
 
 

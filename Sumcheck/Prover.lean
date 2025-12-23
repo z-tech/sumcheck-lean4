@@ -37,7 +37,7 @@ by
   exact CPoly.Lawful.fromUnlawful u'
 
 @[simp]
-noncomputable def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (challenges : Fin k → 𝔽) (hcard : k ≤ n) (p : CPoly.CMvPolynomial n 𝔽) : Fin 2 → 𝔽 :=
   match n with
   | 0 => ![0, 0]
