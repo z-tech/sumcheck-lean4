@@ -33,11 +33,11 @@ by
              CPoly.Lawful.C (n := 0) (R := 𝔽) 0)
   | succ m =>
       -- n = m+1
-      let challenges : Fin 1 → 𝔽 := ![verifier_challenge]
+      let dummy : Fin 1 → 𝔽 := ![(1 : 𝔽)] -- for other alg. this may be different but for vsbw always 1
       have hcard : 1 ≤ Nat.succ m := Nat.succ_le_succ (Nat.zero_le m)
 
-      let sum0 := generate_sums_variablewise challenges hcard p 0
-      let sum1 := generate_sums_variablewise challenges hcard p 1
+      let sum0 := generate_sums_variablewise dummy hcard p 0
+      let sum1 := generate_sums_variablewise dummy hcard p 1
 
       let message := generate_prover_message_from_sums sum0 sum1
       exact (message, absorb_variable_zero (n := m) verifier_challenge p)
