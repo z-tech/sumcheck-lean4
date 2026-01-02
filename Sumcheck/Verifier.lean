@@ -21,14 +21,11 @@ def verifier_generate_expected_value_next_round {𝔽} [CommRing 𝔽] [Decidabl
 
 namespace __VerifierTests__
 
-  @[simp]
-  def mX : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
-  @[simp]
-  def X0 : CPoly.CMvPolynomial 1 (ZMod 19) :=
+  @[simp] def mX : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
+  @[simp] def X0 : CPoly.CMvPolynomial 1 (ZMod 19) :=
     CPoly.Lawful.fromUnlawful
       ((0 : CPoly.Unlawful 1 (ZMod 19)).insert mX (1 : ZMod 19))
-  @[simp]
-  def test_prover_message : CPoly.CMvPolynomial 1 (ZMod 19) :=
+  @[simp] def test_prover_message : CPoly.CMvPolynomial 1 (ZMod 19) :=
     (CPoly.Lawful.C (n := 1) (R := ZMod 19) (13 : ZMod 19)) * X0
     + (CPoly.Lawful.C (n := 1) (R := ZMod 19) (2 : ZMod 19))
 

@@ -2,6 +2,7 @@ import CompPoly.CMvPolynomial
 import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Prover
+import Sumcheck.Polynomials
 
 class Prover (𝔽 : Type _) [CommRing 𝔽] where
   num_rounds : ℕ
@@ -12,7 +13,7 @@ class Prover (𝔽 : Type _) [CommRing 𝔽] where
   challenges : Fin current_round → 𝔽
   next_message : (hround_num : current_round < num_rounds) → (challenge : 𝔽) → CPoly.CMvPolynomial 1 𝔽 × Prover 𝔽
 
-def ClassicProver (𝔽 : Type _) [CommRing 𝔽] [DecidableEq 𝔽]
+def ClassicProver (𝔽 : Type _) [Field 𝔽] [DecidableEq 𝔽]
   (num_rounds : ℕ)
   (current_round : ℕ)
   (hround_num : current_round < num_rounds)
@@ -36,11 +37,9 @@ by
     claim_polynomial_max_ind_degree := this_claim_polynomial_max_ind_degree
     challenges := this_challenges
     next_message := fun _challenge =>
-      -- TODO: this should be loop like for i in 0..max_ind_degree
-      have hle : current_round ≤ num_rounds := Nat.le_of_lt this_hround_num
-      let sum0 := sum_over_boolean_extension this_challenges 0 this_claim_polynomial hle
-      let sum1 := sum_over_boolean_extension this_challenges 1 this_claim_polynomial hle
-      -- TODO: then use all of those points in 0..max_ind_degree to make unique univariate poly
-      let message := generate_prover_message_from_sums sum0 sum1
-      message
+      -- for i in 0..max_ind_degree
+    let sums : Fin claim_polynomial_max_ind_degree → 𝔽 := fun i =>
+      sum_over_boolean_extension this_challenges ((i : ℕ) : 𝔽) this_claim_polynomial hround_num
+    let message := lagrange_interpolation_n_points sums
+    message
   }

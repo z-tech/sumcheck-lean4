@@ -2,6 +2,17 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Polynomials
 
+@[simp] def generate_prover_message
+  {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (challenges : Fin k → 𝔽)
+  (hcard : k + 1 ≤ (n : ℕ)) : CPoly.CMvPolynomial 1 𝔽 :=
+by
+  classical
+  let sum0 := sum_over_boolean_extension challenges 0 p hcard
+  let sum1 := sum_over_boolean_extension challenges 1 p hcard
+  exact lagrange_interpolation_n_points ![sum0, sum1]
+
 namespace __ProverTests__
 
   def test_p_mon_11 : CPoly.CMvMonomial 2 := ⟨#[1, 1], by decide⟩
