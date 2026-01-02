@@ -1,5 +1,4 @@
 import CompPoly.CMvPolynomial
-import Mathlib.Data.Vector.Basic
 import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Prover

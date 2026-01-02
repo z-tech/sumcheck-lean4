@@ -1,57 +1,6 @@
 import Mathlib.Data.ZMod.Basic
-import Mathlib.Data.Nat.Bitwise
 
-import CompPoly.CMvPolynomial
-import CompPoly.CMvMonomial
-import CompPoly.Lawful
-
-import Sumcheck.Hypercube
 import Sumcheck.Polynomials
-
-open CPoly
-
-def dropVar0Monomial {n : ℕ} (m : CPoly.CMvMonomial (n+1)) : CPoly.CMvMonomial n :=
-  ⟨
-    Array.ofFn (fun k : Fin n => m.toArray[k.1 + 1]!),
-    by
-      simp
-  ⟩
-
-def absorb_variable_zero
-  {𝔽 : Type} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] {n : ℕ}
-  (a : 𝔽)
-  (p : CPoly.CMvPolynomial (n+1) 𝔽) : CPoly.CMvPolynomial n 𝔽 :=
-by
-  -- fold over the underlying Unlawful term map of `p`
-  let u' : CPoly.Unlawful n 𝔽 :=
-    (p.1).foldl (init := (0 : CPoly.Unlawful n 𝔽))
-      (fun acc m c =>
-        let e0 : Nat := m.toArray[0]!
-        let m' : CPoly.CMvMonomial n := dropVar0Monomial (n := n) m
-        let c' : 𝔽 := c * a ^ e0
-        -- add c' into acc at key m' (sum if present)
-        acc.alter m' (fun
-          | none      => some c'
-          | some old  => some (old + c')))
-
-  -- canonicalize (drops any zero coefficients) in a computable way
-  exact CPoly.Lawful.fromUnlawful u'
-
--- monomial for X₀ in 1 variable: exponent vector [1]
-def mX0 : CPoly.CMvMonomial 1 :=
-  ⟨#[1], by decide⟩
-
--- polynomial X₀ : CMvPolynomial 1 𝔽
-def X0 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] : CPoly.CMvPolynomial 1 𝔽 :=
-  CPoly.Lawful.fromUnlawful
-    ((0 : CPoly.Unlawful 1 𝔽).insert mX0 (1 : 𝔽))
-
-/-- (sum₁ - sum₀) * X₀ + sum₀ as a CMvPolynomial. -/
-def generate_prover_message_from_sums
-  {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  (sum_0 sum_1 : 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
-  (CPoly.Lawful.C (n := 1) (R := 𝔽) (sum_1 - sum_0)) * (X0 (𝔽 := 𝔽))
-  + (CPoly.Lawful.C (n := 1) (R := 𝔽) sum_0)
 
 namespace __ProverTests__
 
@@ -82,6 +31,7 @@ namespace __ProverTests__
 
   namespace __generate_prover_message_from_sums__
 
+    instance : Fact (Nat.Prime 19) := ⟨by decide⟩
     def sum_0 : (ZMod 19) := (2 : ZMod 19)
     def sum_1 : (ZMod 19) := (15 : ZMod 19)
     def expected_prover_message_mon_1   : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
@@ -91,7 +41,7 @@ namespace __ProverTests__
         ((0 : CPoly.Unlawful 1 (ZMod 19)).insert expected_prover_message_mon_1 (13 : ZMod 19))
           |>.insert expected_prover_message_mon_0 (2 : ZMod 19)
 
-    lemma it_should_generate_prover_message_from_sums_correctly : generate_prover_message_from_sums sum_0 sum_1 = expected_prover_message := by
+    lemma it_should_generate_prover_message_from_sums_correctly : lagrange_interpolation_n_points ![sum_0, sum_1] = expected_prover_message := by
       native_decide
 
   end __generate_prover_message_from_sums__
