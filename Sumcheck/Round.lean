@@ -11,7 +11,7 @@ import CompPoly.Lawful
 
 import Sumcheck.Prover
 import Sumcheck.Verifier
-import Sumcheck.Utils
+import Sumcheck.Polynomials
 
 open scoped BigOperators
 
@@ -29,6 +29,7 @@ def verifier_move {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 def prover_move
   {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (n : ℕ)
+  (h : n > 0)
   (p : CPoly.CMvPolynomial n 𝔽)
   (verifier_challenge : 𝔽) :
   (CPoly.CMvPolynomial 1 𝔽 × CPoly.CMvPolynomial (n - 1) 𝔽) :=
@@ -40,12 +41,11 @@ by
              CPoly.Lawful.C (n := 0) (R := 𝔽) 0)
   | succ m =>
       -- n = m+1
-      -- for other alg. dummy might be challenges but for vsbw it's just 1
-      let dummy : Fin 1 → 𝔽 := ![(1 : 𝔽)]
-      have hcard : 1 ≤ Nat.succ m := Nat.succ_le_succ (Nat.zero_le m)
+      have hcard : (0 : ℕ) + 1 ≤ m + 1 := by
+        simp
 
-      let sum0 := generate_sums_variablewise dummy hcard p 0
-      let sum1 := generate_sums_variablewise dummy hcard p 1
+      let sum0 := sum_over_boolean_extension ![] 0 p hcard
+      let sum1 := sum_over_boolean_extension ![] 1 p hcard
 
       let message := generate_prover_message_from_sums sum0 sum1
       exact (message, absorb_variable_zero (n := m) verifier_challenge p)

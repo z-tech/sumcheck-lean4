@@ -3,7 +3,6 @@ import Mathlib.Data.ZMod.Basic
 import Sumcheck.Prover
 import Sumcheck.Verifier
 import Sumcheck.Round
-import Sumcheck.Utils
 
 namespace __ProtocolTests__
   namespace __TwoVariableSumcheck__
@@ -39,7 +38,7 @@ namespace __ProtocolTests__
 
     -- round 0
     def simulated_challenge_0 : (ZMod 19) := 2
-    def prover_output_0 := prover_move 2 p_0 simulated_challenge_0 -- message = 13x + 2
+    def prover_output_0 := prover_move 2 (by decide) p_0 simulated_challenge_0 -- message = 13x + 2
     def round_poly_0 := prover_output_0.1
     def verifier_output_0 := verifier_move claim_0 round_poly_0 simulated_challenge_0
     lemma verifier_check_0_is_correct : verifier_output_0 = (9 : ZMod 19) := by
@@ -53,7 +52,7 @@ namespace __ProtocolTests__
     def claim_1 := verifier_output_0.getD 0
     def p_1 := prover_output_0.2
 
-    def prover_output_1 := prover_move 1 p_1 simulated_challenge_0 -- message = 6x + 11
+    def prover_output_1 := prover_move 1 (by decide) p_1 simulated_challenge_0 -- message = 6x + 11
     def round_poly_1 := prover_output_1.1
     def simulated_challenge_1 : (ZMod 19) := 3
     def verifier_output_1 := verifier_move claim_1 round_poly_1 simulated_challenge_1

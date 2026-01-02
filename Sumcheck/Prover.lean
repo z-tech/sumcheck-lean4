@@ -6,6 +6,7 @@ import CompPoly.CMvMonomial
 import CompPoly.Lawful
 
 import Sumcheck.Hypercube
+import Sumcheck.Polynomials
 
 open CPoly
 
@@ -35,21 +36,6 @@ by
 
   -- canonicalize (drops any zero coefficients) in a computable way
   exact CPoly.Lawful.fromUnlawful u'
-
-@[simp]
-def generate_sums_variablewise {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
-  (challenges : Fin k → 𝔽) (hcard : k ≤ n) (p : CPoly.CMvPolynomial n 𝔽) : Fin 2 → 𝔽 :=
-  match n with
-  | 0 => ![0, 0]
-  | Nat.succ m => -- NOTE: (Nat.succ m) = n
-    let hypercube : Finset (Fin (Nat.succ m) → 𝔽) := generate_hypercube (Nat.succ m)
-    let sum_0 : 𝔽 := hypercube.sum fun hypercube_point =>
-      let point : Fin (Nat.succ m) → 𝔽 := generate_point_from_challenges challenges hypercube_point hcard
-      if hypercube_point 0 == 0 then CPoly.CMvPolynomial.eval point p else 0
-    let sum_1 : 𝔽 := hypercube.sum fun hypercube_point =>
-      let point : Fin (Nat.succ m) → 𝔽 := generate_point_from_challenges challenges hypercube_point hcard
-      if hypercube_point 0 == 1 then CPoly.CMvPolynomial.eval point p else 0
-    ![sum_0, sum_1]
 
 -- monomial for X₀ in 1 variable: exponent vector [1]
 def mX0 : CPoly.CMvMonomial 1 :=
@@ -81,15 +67,14 @@ namespace __ProverTests__
   namespace __generate_sums_variablewise_tests__
 
     def expected_sum_0 : (ZMod 19) := (2 : ZMod 19)
-    noncomputable def received_sum_0 : (ZMod 19) := generate_sums_variablewise ![] (by decide) test_p 0
-    lemma it_should_generate_sum_0_correctly : received_sum_0 = expected_sum_0 := by
-      unfold received_sum_0 generate_sums_variablewise test_p expected_sum_0
+    lemma it_should_generate_sum_0_correctly : sum_over_boolean_extension ![] 0 test_p (by decide) = expected_sum_0 := by
+      unfold sum_over_boolean_extension test_p expected_sum_0
       simp
       native_decide
 
     noncomputable def expected_sum_1 : (ZMod 19) := (15 : ZMod 19)
-    lemma it_should_generate_sum_1_correctly : generate_sums_variablewise ![] (by decide) test_p 1 = expected_sum_1 := by
-      unfold generate_sums_variablewise test_p expected_sum_1
+    lemma it_should_generate_sum_1_correctly : sum_over_boolean_extension ![] 1 test_p (by decide) = expected_sum_1 := by
+      unfold sum_over_boolean_extension test_p expected_sum_1
       simp
       native_decide
 
