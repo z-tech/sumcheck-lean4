@@ -3,8 +3,7 @@ import CompPoly.CMvMonomial
 import CompPoly.Lawful
 import Mathlib.Data.ZMod.Basic
 
-@[simp]
-def verifier_check {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+@[simp] def verifier_check {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (expected_value_from_prev_round : 𝔽)
   (current_univariate_poly : CPoly.CMvPolynomial 1 𝔽) : Bool :=
   decide (
@@ -13,8 +12,8 @@ def verifier_check {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
     expected_value_from_prev_round
   )
 
-@[simp]
-def verifier_generate_expected_value_next_round {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+
+@[simp] def verifier_generate_expected_value_next_round {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (current_univariate_poly : CPoly.CMvPolynomial 1 𝔽)
   (current_challenge : 𝔽) : 𝔽 :=
   CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => current_challenge) current_univariate_poly

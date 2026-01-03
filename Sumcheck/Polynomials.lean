@@ -15,6 +15,9 @@ by
   -- convert from raw (unlawful) to checked (lawful) format
   exact CPoly.Lawful.fromUnlawful (zero_poly.insert mon_x1 coeff)
 
+@[simp] def max_ind_degree {𝔽} [Field 𝔽] (f : CPoly.CMvPolynomial n 𝔽) : ℕ :=
+  (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i f)
+
 @[simp] def boolean_extension {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   {num_fixed_vars : ℕ}
   (fixed : Fin num_fixed_vars → 𝔽)

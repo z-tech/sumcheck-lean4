@@ -2,16 +2,18 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Polynomials
 
-@[simp] def generate_prover_message
+@[simp] def prover_message
   {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽)
   (challenges : Fin k → 𝔽)
   (hcard : k + 1 ≤ (n : ℕ)) : CPoly.CMvPolynomial 1 𝔽 :=
 by
   classical
-  let sum0 := sum_over_boolean_extension challenges 0 p hcard
-  let sum1 := sum_over_boolean_extension challenges 1 p hcard
-  exact lagrange_interpolation_n_points ![sum0, sum1]
+  let current_var_index : Fin n := ⟨k, hcard⟩
+  let ind_degree_current_var := CPoly.CMvPolynomial.degreeOf current_var_index p
+  let sums : Fin (ind_degree_current_var + 1) → 𝔽 := fun i =>
+    sum_over_boolean_extension challenges i p hcard
+  exact lagrange_interpolation_n_points sums
 
 namespace __ProverTests__
 
@@ -56,44 +58,5 @@ namespace __ProverTests__
       native_decide
 
   end __generate_prover_message_from_sums__
-
-  namespace __BasicSanity__
-
-    @[simp]
-    def point_00 : (ZMod 19) := CPoly.CMvPolynomial.eval ![0, 0] test_p
-    lemma point_00_val : point_00 = (1 : ZMod 19) := by
-      native_decide
-
-    @[simp]
-    noncomputable def point_01 : (ZMod 19) := CPoly.CMvPolynomial.eval ![1, 0] test_p
-    lemma point_01_val : point_01 = (6 : ZMod 19) := by
-      simp
-      native_decide
-
-    @[simp]
-    noncomputable def point_10 : (ZMod 19) := CPoly.CMvPolynomial.eval ![0, 1] test_p
-    lemma point_10_val : point_10 = (1 : ZMod 19) := by
-      simp
-      native_decide
-
-    @[simp]
-    noncomputable def point_11 : (ZMod 19) := CPoly.CMvPolynomial.eval ![1, 1] test_p
-    lemma point_11_val : point_11 = (9 : ZMod 19) := by
-      simp
-      native_decide
-
-    @[simp]
-    noncomputable def sum_0 : (ZMod 19) := point_00 + point_10
-    lemma sum_0_val : sum_0 = (2 : ZMod 19) := by
-      simp
-      native_decide
-
-    @[simp]
-    noncomputable def sum_1 : (ZMod 19) := point_01 + point_11
-    lemma sum_1_val : sum_1 = (15 : ZMod 19) := by
-      simp
-      native_decide
-
-  end __BasicSanity__
 
 end __ProverTests__

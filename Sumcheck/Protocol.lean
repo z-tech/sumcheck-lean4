@@ -38,7 +38,7 @@ namespace __ProtocolTests__
 
     -- round 0
     def simulated_challenge_0 : (ZMod 19) := 2
-    def round_poly_0 := generate_prover_message p_0 ![] (by decide) -- message = 13x + 2
+    def round_poly_0 := prover_message p_0 ![] (by decide) -- message = 13x + 2
     lemma verifier_check_0_is_correct : verifier_check claim_0 round_poly_0  = true := by
       simp
       native_decide
@@ -47,7 +47,7 @@ namespace __ProtocolTests__
     @[simp]
     def claim_1 := verifier_generate_expected_value_next_round round_poly_0 simulated_challenge_0
 
-    def round_poly_1 := generate_prover_message p_0 ![simulated_challenge_0] (by decide) -- message = 6x + 11
+    def round_poly_1 := prover_message p_0 ![simulated_challenge_0] (by decide) -- message = 6x + 11
     lemma verifier_check_1_is_correct : verifier_check claim_1 round_poly_1 = true := by
       simp
       native_decide
