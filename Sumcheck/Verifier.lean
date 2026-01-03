@@ -13,7 +13,7 @@ import Mathlib.Data.ZMod.Basic
   )
 
 
-@[simp] def verifier_generate_expected_value_next_round {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+@[simp] def verifier_expected_claim {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (current_univariate_poly : CPoly.CMvPolynomial 1 𝔽)
   (current_challenge : 𝔽) : 𝔽 :=
   CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => current_challenge) current_univariate_poly
@@ -46,8 +46,8 @@ namespace __VerifierTests__
   namespace __generate_claim_tests__
 
     def expected_claim : (ZMod 19) := (9 : ZMod 19)
-    lemma it_should_generate_claim_correctly : verifier_generate_expected_value_next_round test_prover_message (2 : ZMod 19) = expected_claim := by
-      unfold verifier_generate_expected_value_next_round test_prover_message expected_claim
+    lemma it_should_generate_claim_correctly : verifier_expected_claim test_prover_message (2 : ZMod 19) = expected_claim := by
+      unfold verifier_expected_claim test_prover_message expected_claim
       simp
       native_decide
 

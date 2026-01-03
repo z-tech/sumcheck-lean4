@@ -61,3 +61,86 @@ lemma one_round_soundness
         CPoly.eval_equiv (p := h),
         sub_eq_zero,
         pow_one] using sz
+
+@[simp] lemma verifier_expected_claim_eq_eval
+  {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial 1 𝔽) (r : 𝔽) :
+  verifier_expected_claim (𝔽 := 𝔽) p r
+    = CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r) p := by
+  simp [verifier_expected_claim, CPoly.CMvPolynomial.eval]
+
+@[simp] lemma one_round_expected_claim_soundness
+  {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (g h : CPoly.CMvPolynomial 1 𝔽)
+  (hgh : g ≠ h) :
+  (↑{r ∈ (Finset.univ : Finset 𝔽)
+      | verifier_expected_claim (𝔽 := 𝔽) g r
+          = verifier_expected_claim (𝔽 := 𝔽) h r}.card : ℚ)
+    / (Fintype.card 𝔽 : ℚ)
+  ≤ ((MvPolynomial.totalDegree
+        (CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h) : ℕ) : ℚ)
+      / (Fintype.card 𝔽 : ℚ) := by
+  classical
+
+  -- constant assignment embedding
+  let const : 𝔽 → (Fin 1 → 𝔽) := fun r _ => r
+
+  have hinj : Function.Injective const := by
+    intro r s hrs
+    have := congrArg (fun f => f 0) hrs
+    simpa [const] using this
+
+  -- bad r's (your LHS finset)
+  let rBad : Finset 𝔽 :=
+    {r ∈ (Finset.univ : Finset 𝔽) |
+      verifier_expected_claim (𝔽 := 𝔽) g r
+        = verifier_expected_claim (𝔽 := 𝔽) h r}
+
+  -- bad assignments f : Fin 1 → 𝔽 (the finset appearing in one_round_soundness after simp)
+  let fBad : Finset (Fin 1 → 𝔽) :=
+    {f ∈ (Finset.univ : Finset (Fin 1 → 𝔽)) |
+      CPoly.CMvPolynomial.eval f g = CPoly.CMvPolynomial.eval f h}
+
+  -- Image of bad r's under const is contained in bad f's
+  have hsubset : rBad.image const ⊆ fBad := by
+    intro f hf
+    rcases Finset.mem_image.mp hf with ⟨r, hr, rfl⟩
+    have hr' :
+        verifier_expected_claim (𝔽 := 𝔽) g r
+          = verifier_expected_claim (𝔽 := 𝔽) h r :=
+      (Finset.mem_filter.mp hr).2
+    have : CPoly.CMvPolynomial.eval (const r) g = CPoly.CMvPolynomial.eval (const r) h := by
+      -- rewrite verifier_expected_claim into eval-at-constant-assignment
+      simpa [verifier_expected_claim_eq_eval (𝔽 := 𝔽) (p := g) (r := r),
+            verifier_expected_claim_eq_eval (𝔽 := 𝔽) (p := h) (r := r),
+            const] using hr'
+    -- finish membership in fBad
+    simp [fBad, this]
+
+  have hcard : rBad.card ≤ fBad.card := by
+    have hcard_image : (rBad.image const).card = rBad.card := by
+      simpa using (Finset.card_image_of_injective rBad hinj)
+    have : (rBad.image const).card ≤ fBad.card :=
+      Finset.card_le_card hsubset
+    simpa [hcard_image] using this
+
+  -- turn card ≤ card into probability ≤ probability by dividing by |𝔽|
+  have hprob_le :
+      (↑rBad.card : ℚ) / (Fintype.card 𝔽 : ℚ)
+        ≤ (↑fBad.card : ℚ) / (Fintype.card 𝔽 : ℚ) := by
+    have hcardQ : (↑rBad.card : ℚ) ≤ (↑fBad.card : ℚ) := by
+      exact_mod_cast hcard
+    have hden : (0 : ℚ) ≤ (Fintype.card 𝔽 : ℚ) := by
+      exact_mod_cast (Nat.zero_le (Fintype.card 𝔽))
+    exact div_le_div_of_nonneg_right hcardQ hden
+
+  -- apply the all-assignments soundness bound
+  have hall :
+      (↑fBad.card : ℚ) / (Fintype.card 𝔽 : ℚ)
+        ≤ ((MvPolynomial.totalDegree
+              (CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h) : ℕ) : ℚ)
+            / (Fintype.card 𝔽 : ℚ) := by
+    simpa [fBad] using one_round_soundness (𝔽 := 𝔽) (g := g) (h := h) hgh
+
+  -- unfold rBad back to your original statement
+  simpa [rBad] using le_trans hprob_le hall
