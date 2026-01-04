@@ -31,12 +31,6 @@ import Sumcheck.Polynomials
   {𝔽} (n : ℕ) [Fintype 𝔽] [DecidableEq 𝔽] : ℕ :=
   (all_possible_assignments_n n 𝔽).card
 
-@[simp] lemma num_possible_assignments_one_var_eq_card_field_size
-  (𝔽 : Type _) [Fintype 𝔽] [DecidableEq 𝔽] :
-  num_possible_assignments (𝔽 := 𝔽) 1 = Fintype.card 𝔽 := by
-  classical
-  simp [num_possible_assignments]
-
 @[simp] def assignment_causes_agreement
   {n} {𝔽} [CommRing 𝔽]
   (g h : CPoly.CMvPolynomial n 𝔽)
@@ -59,51 +53,56 @@ import Sumcheck.Polynomials
   {assignment ∈ all_possible_assignments_n n 𝔽
     | assignment_causes_agreement (g := g) (h := h) assignment}.card
 
-@[simp] def prob_accept_when_round_poly_not_honest
+@[simp] def prob_agreement
   {n} {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (g h : CPoly.CMvPolynomial n 𝔽) : ℚ :=
+  (g h : CPoly.CMvPolynomial n 𝔽)
+  (_h_not_equal : g ≠ h) : ℚ :=
   num_assignments_that_cause_agreement g h / num_possible_assignments (𝔽 := 𝔽) n
 
--- if g != h, the number of inputs x that make g(x) = h(x) is at most deg(g - h) / |𝔽|
--- eq. probability that random challenge makes diff poly q evaluate to zero
---     pr[ (g - h)(x) = 0 ] ≤ deg(g - h) / |𝔽|
-lemma one_round_soundness
+@[simp] noncomputable def difference_poly
+  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽]
+  (g h : CPoly.CMvPolynomial n 𝔽) : MvPolynomial (Fin n) 𝔽 :=
+  CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h
+
+-- this is same as max_ind_degree when n=1
+@[simp] noncomputable def total_degree_difference_poly
+  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽]
+  (g h : CPoly.CMvPolynomial n 𝔽) : ℕ :=
+  MvPolynomial.totalDegree (difference_poly g h)
+
+@[simp] noncomputable def degree_over_field_size
+  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽] [Fintype 𝔽]
+  (g h : CPoly.CMvPolynomial n 𝔽) : ℚ :=
+  total_degree_difference_poly g h / field_size (𝔽 := 𝔽)
+
+
+-- pr[ g(x) = h(x) ] ≤ deg(g - h) / |𝔽| based on Schwartz Zippel
+-- BTW: this is kinda like "prob accept when prover not honest"
+lemma prob_agreement_le_degree_over_field_size
   {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial 1 𝔽)
-  (hgh : g ≠ h) : prob_accept_when_round_poly_not_honest g h
-  ≤ ((MvPolynomial.totalDegree (CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h) : ℕ) : ℚ)
-      / field_size (𝔽 := 𝔽) := by
+  (h_not_equal : g ≠ h) :
+  prob_agreement g h h_not_equal ≤ degree_over_field_size g h :=
+by
   classical
-
-  -- Nonzero on the MvPolynomial side
-  have hp :
-      (CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h)
-        ≠ (0 : MvPolynomial (Fin 1) 𝔽) := by
+  have h_diff_non_zero : difference_poly g h ≠ (0 : MvPolynomial (Fin 1) 𝔽) := by
     intro hp0
     have hfrom : CPoly.fromCMvPolynomial g = CPoly.fromCMvPolynomial h := by
-      have : CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h = 0 := by
+      have : difference_poly g h = 0 := by
         simpa using hp0
       exact sub_eq_zero.mp this
     have : g = h :=
       (CPoly.eq_iff_fromCMvPolynomial (u := g) (v := h)).2 hfrom
-    exact hgh this
+    exact h_not_equal this
 
   -- Schwartz–Zippel on the difference polynomial
-  have sz :=
-    MvPolynomial.schwartz_zippel_totalDegree
+  have sz := MvPolynomial.schwartz_zippel_totalDegree
       (R := 𝔽)
-      (p := CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h)
-      hp
+      (p := difference_poly g h)
+      h_diff_non_zero
       (S := (Finset.univ : Finset 𝔽))
 
-  -- Turn `eval(from g) - eval(from h) = 0` into `eval g = eval h`,
-  -- rewrite `all_possible_assignments_n 1 𝔽` to `Finset.univ`,
-  -- and unfold `num_assignments_that_cause_agreement`.
-  simpa [num_assignments_that_cause_agreement,
-        all_possible_assignments_n_eq_univ (n := 1) (𝔽 := 𝔽),
-        assignment_causes_agreement,
-        field_size,
-        CPoly.eval_equiv (p := g),
+  simpa [CPoly.eval_equiv (p := g),
         CPoly.eval_equiv (p := h),
         sub_eq_zero,
         pow_one] using sz
@@ -186,7 +185,7 @@ lemma one_round_soundness
         ≤ ((MvPolynomial.totalDegree
               (CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h) : ℕ) : ℚ)
             / (Fintype.card 𝔽 : ℚ) := by
-    simpa [fBad] using one_round_soundness (𝔽 := 𝔽) (g := g) (h := h) hgh
+    simpa [fBad] using prob_agreement_le_degree_over_field_size (𝔽 := 𝔽) (g := g) (h := h) hgh
 
   -- unfold rBad back to your original statement
   simpa [rBad] using le_trans hprob_le hall
