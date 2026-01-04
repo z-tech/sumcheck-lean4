@@ -37,18 +37,25 @@ namespace __ProtocolTests__
           |>.insert p_0_mon_00  (1 : ZMod 19)
 
     -- round 0
-    def simulated_challenge_0 : (ZMod 19) := 2
     def round_poly_0 := prover_message p_0 ![] (by decide) -- message = 13x + 2
     lemma verifier_check_0_is_correct : verifier_check claim_0 round_poly_0  = true := by
       simp
       native_decide
+    def simulated_challenge_0 : (ZMod 19) := 2
 
     -- round 1
-    @[simp]
     def claim_1 := next_claim simulated_challenge_0 round_poly_0
-
     def round_poly_1 := prover_message p_0 ![simulated_challenge_0] (by decide) -- message = 6x + 11
     lemma verifier_check_1_is_correct : verifier_check claim_1 round_poly_1 = true := by
+      simp
+      native_decide
+    def simulated_challenge_1 : (ZMod 19) := 3
+
+    -- final check
+    def final_claim := next_claim simulated_challenge_1 round_poly_1
+    def received := CPoly.CMvPolynomial.eval ![simulated_challenge_0, simulated_challenge_1] p_0
+    lemma final_check_is_correct : final_claim = received := by
+      unfold final_claim
       simp
       native_decide
 

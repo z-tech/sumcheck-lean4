@@ -76,8 +76,7 @@ import Sumcheck.Polynomials
   total_degree_difference_poly g h / field_size (𝔽 := 𝔽)
 
 
--- pr[ g(x) = h(x) ] ≤ deg(g - h) / |𝔽| based on Schwartz Zippel
--- BTW: this is kinda like "prob accept when prover not honest"
+-- pr[ g(x) = h(x) ] ≤ deg(g - h) / |𝔽| from Schwartz-Zippel
 lemma prob_agreement_le_degree_over_field_size
   {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial 1 𝔽)
@@ -114,17 +113,18 @@ by
     = CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r) p := by
   simp [next_claim, CPoly.CMvPolynomial.eval]
 
-@[simp] lemma one_round_expected_claim_soundness
+@[simp] def prob_next_claim_agreement
+  {𝔽 : Type _} [Fintype 𝔽] [DecidableEq 𝔽] [CommRing 𝔽]
+  (g h : CPoly.CMvPolynomial 1 𝔽) : ℚ :=
+  {r ∈ (Finset.univ : Finset 𝔽) | next_claim r g = next_claim r h}.card
+    / field_size (𝔽 := 𝔽)
+
+-- pr[ next_claim g r = next_claim h r ] ≤ deg(g - h) / |𝔽| from prob_agreement_le_degree_over_field_size
+@[simp] lemma next_claim_binding
   {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial 1 𝔽)
-  (hgh : g ≠ h) :
-  (↑{r ∈ (Finset.univ : Finset 𝔽)
-      | next_claim (𝔽 := 𝔽) r g
-          = next_claim (𝔽 := 𝔽) r h}.card : ℚ)
-    / (Fintype.card 𝔽 : ℚ)
-  ≤ ((MvPolynomial.totalDegree
-        (CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h) : ℕ) : ℚ)
-      / (Fintype.card 𝔽 : ℚ) := by
+  (hgh : g ≠ h) : prob_next_claim_agreement g h
+  ≤ MvPolynomial.totalDegree (difference_poly g h) / field_size (𝔽 := 𝔽) := by
   classical
 
   -- constant assignment embedding
