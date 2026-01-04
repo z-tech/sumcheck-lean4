@@ -5,19 +5,29 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Hypercube
 
-@[simp] def x0 {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] :
+-- this is a constant for a polynomial w/ one variable (arity must be specified)
+@[simp] def c1 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] c :=
+  CPoly.Lawful.C (n := 1) (R := 𝔽) c
+
+-- this is the polynomial 1x^1
+@[simp] def x0 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] :
   CPoly.CMvPolynomial 1 𝔽 :=
 by
+  -- empty poly
   let zero_poly : CPoly.Unlawful 1 𝔽 := 0
-  let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩ -- x^1
+  -- mon x^1 ... monomials can't have coeffs btw that's why we need this def
+  let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
   let coeff : 𝔽 := 1
-  -- insert the monomial with coeff 1 into the zero polynomial
+  -- insert the monomial using coeff 1 into the zero polynomial
+  let raw := zero_poly.insert mon_x1 coeff
   -- convert from raw (unlawful) to checked (lawful) format
-  exact CPoly.Lawful.fromUnlawful (zero_poly.insert mon_x1 coeff)
+  exact CPoly.Lawful.fromUnlawful raw
 
+-- loop through all variables and return the highest degree d
 @[simp] def max_ind_degree {𝔽} [Field 𝔽] (f : CPoly.CMvPolynomial n 𝔽) : ℕ :=
   (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i f)
 
+-- takes fixed vars set and returns set containing all extensions over cube size open_vars
 @[simp] def boolean_extension {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   {num_fixed_vars : ℕ}
   (fixed : Fin num_fixed_vars → 𝔽)
@@ -28,6 +38,7 @@ by
     hypercube_n (𝔽 := 𝔽) num_open_vars
   exact hypercube.image (fun x => Fin.addCases fixed x)
 
+-- takes challenges and current assignment and computes sum over cube size num_vars
 @[simp] def sum_over_boolean_extension {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (challenges : Fin num_challenges → 𝔽)
   (current : 𝔽)
@@ -43,34 +54,24 @@ by
   let sum := evaluation_points.sum fun point => CPoly.CMvPolynomial.eval point p
   sum
 
--- compute a univariate polynomial going through the given points
+-- computes a univariate polynomial passing through the given points
+-- TODO: points should probs instead be list of pairs so we can do like {(0, v), (1, v), (ω, v), (ω^2, v), (ω^3, v), etc ...}
 @[simp] def lagrange_interpolation_n_points
   {𝔽} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  -- TODO: points should probs be list of pairs so we can do like {(0, v), (1, v), (ω, v), (ω^2, v), (ω^3, v), etc ...}
-  (points : Fin num_points → 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
+  (y_vals : Fin num_points → 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
 by
   classical
-  let X : CPoly.CMvPolynomial 1 𝔽 := x0 (𝔽 := 𝔽)
-
-  -- constant embedding
-  let C1 : 𝔽 → CPoly.CMvPolynomial 1 𝔽 :=
-    fun a => CPoly.Lawful.C (n := 1) (R := 𝔽) a
-
-  let idxs : List (Fin num_points) := List.finRange num_points
-
-  -- Lagrange term for a fixed i
-  let term : Fin num_points → CPoly.CMvPolynomial 1 𝔽 :=
-    fun i =>
-      C1 (points i) *
-        (idxs.foldl
+  let x_vals : List (Fin num_points) := List.finRange num_points
+  let terms : Fin num_points → CPoly.CMvPolynomial 1 𝔽 :=
+    fun term_idx =>
+      c1 (y_vals term_idx) *
+        (x_vals.foldl
           (fun acc j =>
-            if h : j = i then
+            if h : j = term_idx then
               acc
             else
               acc *
-                (X - C1 ((j : ℕ) : 𝔽)) *
-                C1 ((((i : ℕ) : 𝔽) - ((j : ℕ) : 𝔽))⁻¹))
+                (x0 - c1 (j : 𝔽)) *
+                c1 (((term_idx : 𝔽) - j)⁻¹))
           1)
-
-  -- sum the terms
-  exact idxs.foldl (fun acc i => acc + term i) 0
+  exact x_vals.foldl (fun acc term_idx => acc + terms term_idx) 0

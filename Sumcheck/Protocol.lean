@@ -45,7 +45,7 @@ namespace __ProtocolTests__
 
     -- round 1
     @[simp]
-    def claim_1 := verifier_expected_claim round_poly_0 simulated_challenge_0
+    def claim_1 := next_claim simulated_challenge_0 round_poly_0
 
     def round_poly_1 := prover_message p_0 ![simulated_challenge_0] (by decide) -- message = 6x + 11
     lemma verifier_check_1_is_correct : verifier_check claim_1 round_poly_1 = true := by

@@ -3,54 +3,46 @@ import CompPoly.CMvMonomial
 import CompPoly.Lawful
 import Mathlib.Data.ZMod.Basic
 
+import Sumcheck.Polynomials
+
 @[simp] def verifier_check {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
-  (expected_value_from_prev_round : 𝔽)
-  (current_univariate_poly : CPoly.CMvPolynomial 1 𝔽) : Bool :=
+  (round_claim : 𝔽)
+  (round_p : CPoly.CMvPolynomial 1 𝔽) : Bool :=
+  -- the round identity sum over {0,1}
   decide (
-    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => 0) current_univariate_poly +
-    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => 1) current_univariate_poly =
-    expected_value_from_prev_round
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => 0) round_p +
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => 1) round_p =
+    round_claim
   )
 
 
-@[simp] def verifier_expected_claim {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
-  (current_univariate_poly : CPoly.CMvPolynomial 1 𝔽)
-  (current_challenge : 𝔽) : 𝔽 :=
-  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => current_challenge) current_univariate_poly
+@[simp] def next_claim {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+  (round_challenge : 𝔽)
+  (round_p : CPoly.CMvPolynomial 1 𝔽) : 𝔽 :=
+  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => round_challenge) round_p
 
 namespace __VerifierTests__
 
-  @[simp] def mX : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
-  @[simp] def X0 : CPoly.CMvPolynomial 1 (ZMod 19) :=
-    CPoly.Lawful.fromUnlawful
-      ((0 : CPoly.Unlawful 1 (ZMod 19)).insert mX (1 : ZMod 19))
-  @[simp] def test_prover_message : CPoly.CMvPolynomial 1 (ZMod 19) :=
-    (CPoly.Lawful.C (n := 1) (R := ZMod 19) (13 : ZMod 19)) * X0
+  @[simp] def test_round_p : CPoly.CMvPolynomial 1 (ZMod 19) :=
+    (CPoly.Lawful.C (n := 1) (R := ZMod 19) (13 : ZMod 19)) * x0
     + (CPoly.Lawful.C (n := 1) (R := ZMod 19) (2 : ZMod 19))
 
-  namespace __check_round_tests__
+  namespace __verifier_check_tests__
 
-    lemma it_should_check_false_round_correctly : verifier_check (11 : ZMod 19) test_prover_message = false := by
-      unfold verifier_check test_prover_message
-      simp
-      native_decide
+    def received_false := verifier_check (11 : ZMod 19) test_round_p
+    lemma it_should_check_false_round_correctly : received_false = false := by native_decide
 
+    def received_true := verifier_check (17 : ZMod 19) test_round_p
+    lemma it_should_check_true_round_correctly :received_true = true := by native_decide
 
-    lemma it_should_check_true_round_correctly : verifier_check (17 : ZMod 19) test_prover_message = true := by
-      unfold verifier_check test_prover_message
-      simp
-      native_decide
+  end __verifier_check_tests__
 
-  end __check_round_tests__
-
-  namespace __generate_claim_tests__
+  namespace __next_claim_tests__
 
     def expected_claim : (ZMod 19) := (9 : ZMod 19)
-    lemma it_should_generate_claim_correctly : verifier_expected_claim test_prover_message (2 : ZMod 19) = expected_claim := by
-      unfold verifier_expected_claim test_prover_message expected_claim
-      simp
-      native_decide
+    def received_claim : (ZMod 19) := next_claim (2 : ZMod 19) test_round_p
+    lemma it_should_generate_claim_correctly : received_claim = expected_claim := by native_decide
 
-  end __generate_claim_tests__
+  end __next_claim_tests__
 
 end __VerifierTests__
