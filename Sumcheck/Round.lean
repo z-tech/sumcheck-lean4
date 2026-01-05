@@ -107,9 +107,10 @@ by
 
 @[simp] lemma next_claim_eq_eval
   {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
-  (p : CPoly.CMvPolynomial 1 𝔽) (r : 𝔽) :
-  next_claim (𝔽 := 𝔽) r p
-    = CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r) p := by
+  (challenge : 𝔽)
+  (p : CPoly.CMvPolynomial 1 𝔽) :
+  next_claim (𝔽 := 𝔽) challenge p
+    = CPoly.CMvPolynomial.eval (fun _ : Fin 1 => challenge) p := by
   simp [next_claim, CPoly.CMvPolynomial.eval]
 
 @[simp] def prob_next_claim_agreement
@@ -155,9 +156,7 @@ by
       (Finset.mem_filter.mp hr).2
     have : CPoly.CMvPolynomial.eval (const r) g = CPoly.CMvPolynomial.eval (const r) h := by
       -- rewrite verifier_expected_claim into eval-at-constant-assignment
-      simpa [next_claim_eq_eval (𝔽 := 𝔽) (p := g) (r := r),
-            next_claim_eq_eval (𝔽 := 𝔽) (p := h) (r := r),
-            const] using hr'
+      simpa [next_claim_eq_eval r g, next_claim_eq_eval r h, const] using hr'
     -- finish membership in fBad
     simp [fBad, this]
 

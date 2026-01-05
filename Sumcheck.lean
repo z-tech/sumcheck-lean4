@@ -6,3 +6,4 @@ import Sumcheck.Prover
 import Sumcheck.Verifier
 import Sumcheck.Round
 import Sumcheck.Polynomials
+import Sumcheck.Transcript
