@@ -16,4 +16,4 @@ def BadTranscriptEvent
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽)
   (t : Transcript 𝔽 n) : Prop :=
-  ∃ i : Fin n, t.round_polys i ≠ honest_round_poly (p := p) (ch := t.challenges) i
+  ∃ i : Fin n, t.round_polys i ≠ honest_round_poly p t.challenges i
