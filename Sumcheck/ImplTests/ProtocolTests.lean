@@ -28,26 +28,23 @@ instance : Fact (Nat.Prime 19) := ⟨by decide⟩
 -- transcript { prover_messages: [(2, 15), (11, 17)], verifier_messages: [2] }
 
 -- setup
-def claim_0 : (ZMod 19) := (17 : ZMod 19)
-def p_0_mon_11 : CPoly.CMvMonomial 2 := ⟨#[1, 1], by decide⟩
-def p_0_mon_10   : CPoly.CMvMonomial 2 := ⟨#[1, 0], by decide⟩
-def p_0_mon_00    : CPoly.CMvMonomial 2 := ⟨#[0, 0], by decide⟩
-def p_0 : CPoly.CMvPolynomial 2 (ZMod 19) :=
+def claim_poly : CPoly.CMvPolynomial 2 (ZMod 19) :=
   CPoly.Lawful.fromUnlawful <|
     ((0 : CPoly.Unlawful 2 (ZMod 19)).insert ⟨#[1, 1], by decide⟩ (3 : ZMod 19))
       |>.insert ⟨#[1, 0], by decide⟩ (5 : ZMod 19)
       |>.insert ⟨#[0, 0], by decide⟩  (1 : ZMod 19)
+def claim : (ZMod 19) := (17 : ZMod 19)
 
 -- round 0
-def round_poly_0 := prover_message p_0 ![] (by decide) -- message = 13x + 2
-lemma verifier_check_0_is_correct : verifier_check claim_0 round_poly_0  = true := by
+def round_poly_0 := honest_message claim_poly ![] (by decide) -- message = 13x + 2
+lemma verifier_check_0_is_correct : verifier_check claim round_poly_0  = true := by
   simp
   native_decide
 def simulated_challenge_0 : (ZMod 19) := 2
 
 -- round 1
 def claim_1 := next_claim simulated_challenge_0 round_poly_0
-def round_poly_1 := prover_message p_0 ![simulated_challenge_0] (by decide) -- message = 6x + 11
+def round_poly_1 := honest_message claim_poly ![simulated_challenge_0] (by decide) -- message = 6x + 11
 lemma verifier_check_1_is_correct : verifier_check claim_1 round_poly_1 = true := by
   simp
   native_decide
@@ -55,7 +52,7 @@ def simulated_challenge_1 : (ZMod 19) := 3
 
 -- final check
 def final_claim := next_claim simulated_challenge_1 round_poly_1
-def received := CPoly.CMvPolynomial.eval ![simulated_challenge_0, simulated_challenge_1] p_0
+def received := CPoly.CMvPolynomial.eval ![simulated_challenge_0, simulated_challenge_1] claim_poly
 lemma final_check_is_correct : final_claim = received := by
   unfold final_claim
   simp

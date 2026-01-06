@@ -13,23 +13,11 @@ import Sumcheck.Impl.Reference.Prover
 import Sumcheck.Impl.Reference.Verifier
 import Sumcheck.Impl.Polynomials
 
-@[simp] def field_size {𝔽} [Fintype 𝔽] : ℚ :=
-  (Fintype.card 𝔽 : ℚ)
+import Sumcheck.Theorems.Universe.Polynomials
+import Sumcheck.Theorems.Counting.Fields
+import Sumcheck.Theorems.Counting.Polynomials
 
-@[simp] def all_possible_assignments_n (n : ℕ) (𝔽 : Type _) [Fintype 𝔽] :
-  Finset (Fin n → 𝔽) := Fintype.piFinset (fun _ : Fin n => (Finset.univ : Finset 𝔽))
-
--- coerces Lean types in some way that's needed
-@[simp] lemma all_possible_assignments_n_eq_univ
-  (n : ℕ) (𝔽 : Type _) [Fintype 𝔽] [DecidableEq 𝔽] :
-  all_possible_assignments_n n 𝔽 = (Finset.univ : Finset (Fin n → 𝔽)) := by
-  classical
-  ext f
-  simp [all_possible_assignments_n]
-
-@[simp] def num_possible_assignments
-  {𝔽} (n : ℕ) [Fintype 𝔽] [DecidableEq 𝔽] : ℕ :=
-  (all_possible_assignments_n n 𝔽).card
+import Sumcheck.Theorems.Events.Agreement
 
 @[simp] def assignment_causes_agreement
   {n} {𝔽} [CommRing 𝔽]
@@ -50,7 +38,7 @@ import Sumcheck.Impl.Polynomials
 @[simp] def num_assignments_that_cause_agreement
   {n} {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (g h : CPoly.CMvPolynomial n 𝔽) : ℕ :=
-  {assignment ∈ all_possible_assignments_n n 𝔽
+  {assignment ∈ all_assignments_n n 𝔽
     | assignment_causes_agreement (g := g) (h := h) assignment}.card
 
 @[simp] def prob_agreement
