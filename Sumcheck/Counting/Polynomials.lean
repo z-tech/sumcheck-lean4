@@ -1,6 +1,6 @@
 import Mathlib.Data.ZMod.Basic
 
-import Sumcheck.Theorems.Universe.Polynomials
+import Sumcheck.Universe.Polynomials
 
 @[simp]
 def count_assignments

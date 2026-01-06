@@ -2,14 +2,16 @@ import CompPoly.CMvPolynomial
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 
 
-import Sumcheck.Theorems.Counting.Fields
-import Sumcheck.Theorems.Probability.Agreement
+import Sumcheck.Counting.Fields
+import Sumcheck.Probability.Agreement
 
+-- just handy
 @[simp] noncomputable def difference_poly
   {n : ℕ} {𝔽 : Type _} [CommRing 𝔽]
   (g h : CPoly.CMvPolynomial n 𝔽) : MvPolynomial (Fin n) 𝔽 :=
   CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h
 
+-- difference poly is not zero bc g != h
 lemma difference_poly_eq_zero_iff
   {n : ℕ} {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial n 𝔽) :
@@ -24,23 +26,13 @@ lemma difference_poly_eq_zero_iff
     subst hgh
     simp [difference_poly]
 
--- this is same as max_ind_degree when n=1
-@[simp] noncomputable def total_degree_difference_poly
-  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽]
-  (g h : CPoly.CMvPolynomial n 𝔽) : ℕ :=
-  MvPolynomial.totalDegree (difference_poly g h)
-
-@[simp] noncomputable def degree_over_field_size
-  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽] [Fintype 𝔽]
-  (g h : CPoly.CMvPolynomial n 𝔽) : ℚ :=
-  total_degree_difference_poly g h / field_size (𝔽 := 𝔽)
-
--- pr[ g(x) = h(x) ] ≤ deg(g - h) / |𝔽| from Schwartz-Zippel
+-- pr[ g(x) = h(x), g != h ] ≤ deg(g - h) / |𝔽| from Schwartz-Zippel
 lemma prob_agreement_le_degree_over_field_size
   {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial 1 𝔽)
   (h_not_equal : g ≠ h) :
-  prob_agreement g h h_not_equal ≤ degree_over_field_size g h :=
+  -- totalDegree is same as indDegree in one variable
+  prob_agreement_at_random_challenge g h h_not_equal ≤ MvPolynomial.totalDegree (difference_poly g h) / count_field_size (𝔽 := 𝔽) :=
 by
   classical
   have h_diff_non_zero : difference_poly g h ≠ (0 : MvPolynomial (Fin 1) 𝔽) := by
