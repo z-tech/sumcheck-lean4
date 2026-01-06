@@ -9,9 +9,9 @@ import CompPoly.CMvPolynomial
 import CompPoly.CMvMonomial
 import CompPoly.Lawful
 
-import Sumcheck.Prover
-import Sumcheck.Verifier
-import Sumcheck.Polynomials
+import Sumcheck.Impl.Reference.Prover
+import Sumcheck.Impl.Reference.Verifier
+import Sumcheck.Impl.Polynomials
 
 @[simp] def field_size {𝔽} [Fintype 𝔽] : ℚ :=
   (Fintype.card 𝔽 : ℚ)
@@ -120,7 +120,7 @@ by
     / field_size (𝔽 := 𝔽)
 
 -- pr[ next_claim g r = next_claim h r ] ≤ deg(g - h) / |𝔽| from prob_agreement_le_degree_over_field_size
-@[simp] lemma next_claim_binding
+@[simp] lemma one_round_next_claim_binding
   {𝔽 : Type _} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial 1 𝔽)
   (hgh : g ≠ h) : prob_next_claim_agreement g h

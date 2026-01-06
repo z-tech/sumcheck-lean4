@@ -3,7 +3,7 @@ import CompPoly.CMvMonomial
 import CompPoly.CMvPolynomial
 import Mathlib.Data.ZMod.Basic
 
-import Sumcheck.Hypercube
+import Sumcheck.Impl.Hypercube
 
 -- this is a constant for a polynomial w/ one variable (arity must be specified)
 @[simp] def c1 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] c :=
