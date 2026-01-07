@@ -12,6 +12,6 @@ import Sumcheck.Impl.Hypercube
 import Sumcheck.Impl.Polynomials
 import Sumcheck.Impl.Transcript
 
-import Sumcheck.Impl.Reference.Prover
-import Sumcheck.Impl.Reference.Transcript
+import Sumcheck.Impl.Reference.HonestProver
+import Sumcheck.Impl.Reference.HonestTranscript
 import Sumcheck.Impl.Reference.Verifier

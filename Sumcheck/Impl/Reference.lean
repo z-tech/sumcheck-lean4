@@ -1,3 +1,3 @@
-import Sumcheck.Impl.Reference.Transcript
+import Sumcheck.Impl.Reference.HonestTranscript
 import Sumcheck.Impl.Reference.Verifier
-import Sumcheck.Impl.Reference.Prover
+import Sumcheck.Impl.Reference.HonestProver

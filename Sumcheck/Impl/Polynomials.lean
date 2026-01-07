@@ -23,9 +23,9 @@ by
   -- convert from raw (unlawful) to checked (lawful) format
   exact CPoly.Lawful.fromUnlawful raw
 
--- loop through all variables and return the highest degree d
-@[simp] def max_ind_degree {𝔽} [Field 𝔽] (f : CPoly.CMvPolynomial n 𝔽) : ℕ :=
-  (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i f)
+-- -- loop through all variables and return the highest degree d
+-- @[simp] def max_ind_degree {𝔽} [Field 𝔽] (f : CPoly.CMvPolynomial n 𝔽) : ℕ :=
+--   (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i f)
 
 -- takes fixed vars set and returns set containing all extensions over cube size open_vars
 @[simp] def boolean_extension {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]

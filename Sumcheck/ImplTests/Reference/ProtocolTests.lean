@@ -1,6 +1,6 @@
 import Mathlib.Data.ZMod.Basic
 
-import Sumcheck.Impl.Reference.Prover
+import Sumcheck.Impl.Reference.HonestProver
 import Sumcheck.Impl.Reference.Verifier
 
 set_option maxHeartbeats 100000
@@ -35,7 +35,7 @@ def claim_poly : CPoly.CMvPolynomial 2 (ZMod 19) :=
 def claim : (ZMod 19) := (17 : ZMod 19)
 
 -- round 0
-def round_poly_0 := honest_message claim_poly ![] (by decide) -- message = 13x + 2
+def round_poly_0 := honest_prover_message claim_poly ![] (by decide) -- message = 13x + 2
 lemma verifier_check_0_is_correct : verifier_check claim round_poly_0  = true := by
   simp
   native_decide
@@ -43,7 +43,7 @@ def simulated_challenge_0 : (ZMod 19) := 2
 
 -- round 1
 def claim_1 := next_claim simulated_challenge_0 round_poly_0
-def round_poly_1 := honest_message claim_poly ![simulated_challenge_0] (by decide) -- message = 6x + 11
+def round_poly_1 := honest_prover_message claim_poly ![simulated_challenge_0] (by decide) -- message = 6x + 11
 lemma verifier_check_1_is_correct : verifier_check claim_1 round_poly_1 = true := by
   simp
   native_decide

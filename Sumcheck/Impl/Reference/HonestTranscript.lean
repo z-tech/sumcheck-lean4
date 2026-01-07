@@ -1,7 +1,7 @@
 import CompPoly.CMvPolynomial
 
 import Sumcheck.Impl.Transcript
-import Sumcheck.Impl.Reference.Prover
+import Sumcheck.Impl.Reference.HonestProver
 import Sumcheck.Impl.Reference.Verifier
 
 def challenge_subset {𝔽} {n} (ch : Fin n → 𝔽) (i : Fin n) : Fin i.val → 𝔽 :=
@@ -17,14 +17,14 @@ def derive_claims
       let i : Fin n := ⟨k, Nat.lt_of_succ_lt_succ hk⟩
       next_claim (challenges i) (round_polys i)
 
-def honest_transcript
+def generate_honest_transcript
   {𝔽} {n} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim_p  : CPoly.CMvPolynomial n 𝔽)
   (initial_claim : 𝔽)
   (challenges : Fin n → 𝔽) : Transcript 𝔽 n :=
 by
   let round_polys : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
-    fun i => honest_message claim_p (challenge_subset challenges i) (Nat.succ_le_of_lt i.isLt)
+    fun i => honest_prover_message claim_p (challenge_subset challenges i) (Nat.succ_le_of_lt i.isLt)
   let claims: Fin (n + 1) → 𝔽 := derive_claims initial_claim round_polys challenges
   exact {
     round_polys := round_polys
@@ -32,7 +32,7 @@ by
     claims      := claims
   }
 
-def is_accepting_transcript
+def is_verifier_accepts_transcript
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽)

@@ -2,7 +2,7 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Impl.Polynomials
 
-@[simp] def honest_message
+@[simp] def honest_prover_message
   {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽)
   (challenges : Fin k → 𝔽)
