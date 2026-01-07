@@ -2,7 +2,6 @@ import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Impl.Reference.Prover
 import Sumcheck.Impl.Reference.Verifier
-import Sumcheck.Round
 
 set_option maxHeartbeats 100000
 
