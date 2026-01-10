@@ -1,4 +1,5 @@
 import CompPoly.Lawful
+import CompPoly.Unlawful
 import CompPoly.CMvMonomial
 import CompPoly.CMvPolynomial
 import Mathlib.Data.ZMod.Basic
@@ -23,9 +24,15 @@ by
   -- convert from raw (unlawful) to checked (lawful) format
   exact CPoly.Lawful.fromUnlawful raw
 
--- -- loop through all variables and return the highest degree d
--- @[simp] def max_ind_degree {𝔽} [Field 𝔽] (f : CPoly.CMvPolynomial n 𝔽) : ℕ :=
---   (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i f)
+@[simp] def c1u {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) : CPoly.Unlawful 1 𝔽 :=
+  CPoly.Unlawful.C (n := 1) (R := 𝔽) c
+
+@[simp] def x0u {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] :
+  CPoly.Unlawful 1 𝔽 :=
+by
+  let zero_poly : CPoly.Unlawful 1 𝔽 := 0
+  let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
+  exact zero_poly.insert mon_x1 (1 : 𝔽)
 
 -- takes fixed vars set and returns set containing all extensions over cube size open_vars
 @[simp] def boolean_extension {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
@@ -38,21 +45,28 @@ by
     hypercube_n (𝔽 := 𝔽) num_open_vars
   exact hypercube.image (fun x => Fin.addCases fixed x)
 
--- takes challenges and current assignment and computes sum over cube size num_vars
-@[simp] def sum_over_boolean_extension {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+def sum_over_boolean_extension
+  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {num_challenges num_vars : ℕ}
   (challenges : Fin num_challenges → 𝔽)
   (current : 𝔽)
   (p : CPoly.CMvPolynomial num_vars 𝔽)
-  (hcard : num_challenges + 1 <= num_vars) : 𝔽 :=
+  (hcard : num_challenges + 1 ≤ num_vars) : 𝔽 :=
+by
+  classical
   let fixed : Fin (num_challenges + 1) → 𝔽 := Fin.snoc challenges current
+  let openVars : ℕ := num_vars - (num_challenges + 1)
+
+  have hn : (num_challenges + 1) + openVars = num_vars := by
+    simpa [openVars] using (Nat.add_sub_of_le hcard)
+
+  -- cast the finset produced by boolean_extension to functions on Fin num_vars
   let evaluation_points : Finset (Fin num_vars → 𝔽) := by
-    have hn :
-        num_challenges + 1 + (num_vars - (num_challenges + 1)) = num_vars :=
-      Nat.add_sub_of_le hcard
-    simpa [hn] using
-      (boolean_extension fixed (num_vars - (num_challenges + 1)))
-  let sum := evaluation_points.sum fun point => CPoly.CMvPolynomial.eval point p
-  sum
+    simpa [fixed, openVars, hn] using
+      (boolean_extension (𝔽 := 𝔽) (num_fixed_vars := num_challenges + 1) fixed openVars)
+
+  exact ∑ point ∈ evaluation_points, CPoly.CMvPolynomial.eval point p
+
 
 -- computes a univariate polynomial passing through the given points
 -- TODO: points should probs instead be list of pairs so we can do like {(0, v), (1, v), (ω, v), (ω^2, v), (ω^3, v), etc ...}
@@ -75,3 +89,78 @@ by
                 c1 (((term_idx : 𝔽) - j)⁻¹))
           1)
   exact x_vals.foldl (fun acc term_idx => acc + terms term_idx) 0
+
+def zeroP {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] : CPoly.CMvPolynomial 1 𝔽 :=
+  c1 (𝔽 := 𝔽) 0
+
+def oneP {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] : CPoly.CMvPolynomial 1 𝔽 :=
+  c1 (𝔽 := 𝔽) 1
+
+def finsetFoldl
+  {α β} [DecidableEq α] [LinearOrder α]
+  (s : Finset α) (init : β) (op : β → α → β) : β :=
+  (s.sort (· ≤ ·)).foldl op init
+
+def finsetSum'
+  {α β} [DecidableEq α] [LinearOrder α]
+  [Zero β] [Add β]
+  (s : Finset α) (f : α → β) : β :=
+  finsetFoldl (s := s) (init := 0) (op := fun acc a => acc + f a)
+
+def addCasesCastPoly
+  {𝔽 : Type _} [CommSemiring 𝔽]
+  {k m n : ℕ}
+  (hn : k + m = n)
+  (left : Fin k → CPoly.CMvPolynomial 1 𝔽)
+  (right : Fin m → CPoly.CMvPolynomial 1 𝔽) : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
+fun i =>
+  Fin.addCases (m := k) (n := m) (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
+    left right (Fin.cast hn.symm i)
+
+
+def cubeSum01
+  {𝔽 β : Type _}
+  (b0 b1 : 𝔽)
+  (add : β → β → β)
+  {m : ℕ}
+  (F : (Fin m → 𝔽) → β) : β :=
+by
+  classical
+  induction m with
+  | zero =>
+      exact F (fun i => nomatch i)
+  | succ m ih =>
+      let extend (b : 𝔽) (x : Fin m → 𝔽) : Fin (m+1) → 𝔽 :=
+        Fin.cons b x
+      exact add (ih (fun x => F (extend b0 x)))
+                (ih (fun x => F (extend b1 x)))
+
+namespace CPoly
+
+open Std
+
+def monExp {n : ℕ} (m : CMvMonomial n) (i : Fin n) : ℕ :=
+  (CMvMonomial.toFinsupp m) i
+
+def powP {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (p : CPoly.CMvPolynomial 1 𝔽) : ℕ → CPoly.CMvPolynomial 1 𝔽
+| 0     => c1 (𝔽 := 𝔽) 1
+| (e+1) => p * powP p e
+
+def evalMonomialPoly {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) (m : CPoly.CMvMonomial n) :
+  CPoly.CMvPolynomial 1 𝔽 :=
+(List.finRange n).foldl
+  (fun acc i => acc * powP (𝔽 := 𝔽) (vs i) (CPoly.monExp m i))
+  (oneP (𝔽 := 𝔽))
+
+def eval₂Poly
+  {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ}
+  (f : 𝔽 → CPoly.CMvPolynomial 1 𝔽)
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
+  ExtTreeMap.foldl
+    (fun acc m c => (f c * evalMonomialPoly (𝔽 := 𝔽) vs m) + acc)
+    (zeroP (𝔽 := 𝔽))
+    p.1

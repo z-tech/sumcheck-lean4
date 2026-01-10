@@ -3,7 +3,7 @@ import CompPoly.CMvPolynomial
 import Sumcheck.Events.Accepts
 import Sumcheck.Probability.Challenges
 
-noncomputable def soundness_prob
+noncomputable def prob_soundness
   {𝔽 n} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)

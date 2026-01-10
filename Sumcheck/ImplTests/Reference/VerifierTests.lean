@@ -14,10 +14,10 @@ namespace __VerifierTests__
 
   namespace __verifier_check_tests__
 
-    def received_false := verifier_check (11 : ZMod 19) test_round_p
+    def received_false := verifier_check 1 (11 : ZMod 19) test_round_p
     lemma it_should_check_false_round_correctly : received_false = false := by native_decide
 
-    def received_true := verifier_check (17 : ZMod 19) test_round_p
+    def received_true := verifier_check 1 (17 : ZMod 19) test_round_p
     lemma it_should_check_true_round_correctly :received_true = true := by native_decide
 
   end __verifier_check_tests__

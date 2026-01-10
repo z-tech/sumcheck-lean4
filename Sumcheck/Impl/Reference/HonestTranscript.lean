@@ -1,5 +1,6 @@
 import CompPoly.CMvPolynomial
 
+import Sumcheck.Counting.Polynomials
 import Sumcheck.Impl.Transcript
 import Sumcheck.Impl.Reference.HonestProver
 import Sumcheck.Impl.Reference.Verifier
@@ -40,7 +41,7 @@ def is_verifier_accepts_transcript
 by
   let rounds_ok : Bool :=
     (List.finRange n).all (fun i : Fin n =>
-      verifier_check (t.claims (Fin.castSucc i)) (t.round_polys i)
+      verifier_check (ind_degree_k p i) (t.claims (Fin.castSucc i)) (t.round_polys i)
       &&
       decide (t.claims i.succ = next_claim (t.challenges i) (t.round_polys i))
     )
