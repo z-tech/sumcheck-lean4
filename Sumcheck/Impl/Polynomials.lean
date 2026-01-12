@@ -135,6 +135,20 @@ by
       exact add (ih (fun x => F (extend b0 x)))
                 (ih (fun x => F (extend b1 x)))
 
+@[simp]
+def max_ind_degree
+  {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) : ℕ :=
+  (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i p)
+
+@[simp]
+def ind_degree_k
+  {𝔽 n} [CommSemiring 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (k : Fin n) : ℕ :=
+  CPoly.CMvPolynomial.degreeOf k p
+
+
 namespace CPoly
 
 open Std
