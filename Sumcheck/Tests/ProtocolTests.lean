@@ -1,8 +1,8 @@
 import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Counting.Polynomials
-import Sumcheck.Impl.Reference.HonestProver
-import Sumcheck.Impl.Reference.Verifier
+import Sumcheck.Impl.HonestProver
+import Sumcheck.Impl.Verifier
 
 set_option maxHeartbeats 100000
 

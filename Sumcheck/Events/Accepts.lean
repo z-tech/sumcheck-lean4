@@ -1,7 +1,7 @@
 import CompPoly.CMvPolynomial
 
 import Sumcheck.Impl.Transcript
-import Sumcheck.Impl.Reference.HonestTranscript
+import Sumcheck.Impl.HonestTranscript
 import Sumcheck.Events.BadTranscript
 import Sumcheck.Models.Adversary
 import Sumcheck.Models.AdversaryTranscript

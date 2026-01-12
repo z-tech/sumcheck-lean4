@@ -2,8 +2,8 @@ import CompPoly.CMvPolynomial
 
 import Sumcheck.Counting.Polynomials
 import Sumcheck.Impl.Transcript
-import Sumcheck.Impl.Reference.HonestProver
-import Sumcheck.Impl.Reference.Verifier
+import Sumcheck.Impl.HonestProver
+import Sumcheck.Impl.Verifier
 
 def challenge_subset {𝔽} {n} (ch : Fin n → 𝔽) (i : Fin n) : Fin i.val → 𝔽 :=
   fun j => ch ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩

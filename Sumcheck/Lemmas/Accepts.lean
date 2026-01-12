@@ -1,10 +1,10 @@
 import Sumcheck.Events.Agreement
 import Sumcheck.Events.Accepts
 import Sumcheck.Events.BadRound
-import Sumcheck.Impl.Reference.Verifier
+import Sumcheck.Impl.Verifier
 
 import Sumcheck.Events.Accepts
-import Sumcheck.Impl.Reference.HonestTranscript
+import Sumcheck.Impl.HonestTranscript
 
 set_option maxHeartbeats 10000000
 
@@ -181,7 +181,7 @@ lemma honest_nextClaim_eq_sum_succ
 --         = t.claims (Fin.castSucc j) := by
 --       -- `verifier_check` is a `decide (...)`; `= true` turns into the Prop
 --       -- This simp usually works:
---       simpa [Impl.Reference.Verifier.verifier_check] using hj_vcheck
+--       simpa [Impl.Verifier.verifier_check] using hj_vcheck
 
 --     -- Also, by definition of derive_claims, claim at index j is next_claim of round i:
 --     -- (since j.val = i.val+1)
