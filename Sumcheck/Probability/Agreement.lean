@@ -6,4 +6,5 @@ import Sumcheck.Counting.Polynomials
 @[simp] def prob_agreement_at_random_challenge
   {n} {𝔽} [CommRing 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (g h : CPoly.CMvPolynomial n 𝔽)
-  (_h_not_equal : g ≠ h) : ℚ := count_assignenments_causing_agreement g h / count_all_assignments_n (𝔽 := 𝔽) n
+  (_h_not_equal : g ≠ h) : ℚ :=
+    count_assignments_causing_agreement g h / count_all_assignments_n (𝔽 := 𝔽) n

@@ -34,79 +34,6 @@ by
   let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
   exact zero_poly.insert mon_x1 (1 : 𝔽)
 
--- takes fixed vars set and returns set containing all extensions over cube size open_vars
-@[simp] def boolean_extension {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
-  {num_fixed_vars : ℕ}
-  (fixed : Fin num_fixed_vars → 𝔽)
-  (num_open_vars : ℕ) : Finset (Fin (num_fixed_vars + num_open_vars) → 𝔽) :=
-by
-  classical
-  let hypercube : Finset (Fin num_open_vars → 𝔽) :=
-    hypercube_n (𝔽 := 𝔽) num_open_vars
-  exact hypercube.image (fun x => Fin.addCases fixed x)
-
-def sum_over_boolean_extension
-  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
-  {num_challenges num_vars : ℕ}
-  (challenges : Fin num_challenges → 𝔽)
-  (current : 𝔽)
-  (p : CPoly.CMvPolynomial num_vars 𝔽)
-  (hcard : num_challenges + 1 ≤ num_vars) : 𝔽 :=
-by
-  classical
-  let fixed : Fin (num_challenges + 1) → 𝔽 := Fin.snoc challenges current
-  let openVars : ℕ := num_vars - (num_challenges + 1)
-
-  have hn : (num_challenges + 1) + openVars = num_vars := by
-    simpa [openVars] using (Nat.add_sub_of_le hcard)
-
-  -- cast the finset produced by boolean_extension to functions on Fin num_vars
-  let evaluation_points : Finset (Fin num_vars → 𝔽) := by
-    simpa [fixed, openVars, hn] using
-      (boolean_extension (𝔽 := 𝔽) (num_fixed_vars := num_challenges + 1) fixed openVars)
-
-  exact ∑ point ∈ evaluation_points, CPoly.CMvPolynomial.eval point p
-
-
--- computes a univariate polynomial passing through the given points
--- TODO: points should probs instead be list of pairs so we can do like {(0, v), (1, v), (ω, v), (ω^2, v), (ω^3, v), etc ...}
-@[simp] def lagrange_interpolation_n_points
-  {𝔽} [Field 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  (y_vals : Fin num_points → 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
-by
-  classical
-  let x_vals : List (Fin num_points) := List.finRange num_points
-  let terms : Fin num_points → CPoly.CMvPolynomial 1 𝔽 :=
-    fun term_idx =>
-      c1 (y_vals term_idx) *
-        (x_vals.foldl
-          (fun acc j =>
-            if h : j = term_idx then
-              acc
-            else
-              acc *
-                (x0 - c1 (j : 𝔽)) *
-                c1 (((term_idx : 𝔽) - j)⁻¹))
-          1)
-  exact x_vals.foldl (fun acc term_idx => acc + terms term_idx) 0
-
-def zeroP {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] : CPoly.CMvPolynomial 1 𝔽 :=
-  c1 (𝔽 := 𝔽) 0
-
-def oneP {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] : CPoly.CMvPolynomial 1 𝔽 :=
-  c1 (𝔽 := 𝔽) 1
-
-def finsetFoldl
-  {α β} [DecidableEq α] [LinearOrder α]
-  (s : Finset α) (init : β) (op : β → α → β) : β :=
-  (s.sort (· ≤ ·)).foldl op init
-
-def finsetSum'
-  {α β} [DecidableEq α] [LinearOrder α]
-  [Zero β] [Add β]
-  (s : Finset α) (f : α → β) : β :=
-  finsetFoldl (s := s) (init := 0) (op := fun acc a => acc + f a)
-
 def addCasesCastPoly
   {𝔽 : Type _} [CommSemiring 𝔽]
   {k m n : ℕ}
@@ -116,7 +43,6 @@ def addCasesCastPoly
 fun i =>
   Fin.addCases (m := k) (n := m) (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
     left right (Fin.cast hn.symm i)
-
 
 def cubeSum01
   {𝔽 β : Type _}
@@ -147,34 +73,3 @@ def ind_degree_k
   (p : CPoly.CMvPolynomial n 𝔽)
   (k : Fin n) : ℕ :=
   CPoly.CMvPolynomial.degreeOf k p
-
-
-namespace CPoly
-
-open Std
-
-def monExp {n : ℕ} (m : CMvMonomial n) (i : Fin n) : ℕ :=
-  (CMvMonomial.toFinsupp m) i
-
-def powP {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  (p : CPoly.CMvPolynomial 1 𝔽) : ℕ → CPoly.CMvPolynomial 1 𝔽
-| 0     => c1 (𝔽 := 𝔽) 1
-| (e+1) => p * powP p e
-
-def evalMonomialPoly {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  {n : ℕ} (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) (m : CPoly.CMvMonomial n) :
-  CPoly.CMvPolynomial 1 𝔽 :=
-(List.finRange n).foldl
-  (fun acc i => acc * powP (𝔽 := 𝔽) (vs i) (CPoly.monExp m i))
-  (oneP (𝔽 := 𝔽))
-
-def eval₂Poly
-  {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  {n : ℕ}
-  (f : 𝔽 → CPoly.CMvPolynomial 1 𝔽)
-  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
-  (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
-  ExtTreeMap.foldl
-    (fun acc m c => (f c * evalMonomialPoly (𝔽 := 𝔽) vs m) + acc)
-    (zeroP (𝔽 := 𝔽))
-    p.1

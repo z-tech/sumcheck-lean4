@@ -142,29 +142,3 @@ lemma sum_hypercube_succ
 
   -- convert binder sums to `.sum`
   simpa [Finset.sum, S, g] using hsum
-
-def addCasesCast
-  {𝔽 : Type _} [CommSemiring 𝔽]
-  {k m n : ℕ}
-  (hn : k + m = n)
-  (fixed : Fin k → 𝔽)
-  (x : Fin m → 𝔽) : Fin n → 𝔽 :=
-fun i => Fin.addCases (m := k) (n := m) (motive := fun _ => 𝔽)
-  fixed x (Fin.cast hn.symm i)
-
-
-lemma sum_over_boolean_extension_succ
-  {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
-  {num_vars k : ℕ}
-  (ch : Fin k → 𝔽)
-  (a : 𝔽)
-  (p : CPoly.CMvPolynomial num_vars 𝔽)
-  (h1 : k + 1 ≤ num_vars)
-  (h2 : k + 2 ≤ num_vars) :
-  (@sum_over_boolean_extension 𝔽 _ _ k num_vars ch a p h1)
-    =
-    (@sum_over_boolean_extension 𝔽 _ _ (k+1) num_vars (Fin.snoc ch a) (0 : 𝔽) p h2)
-    +
-    (@sum_over_boolean_extension 𝔽 _ _ (k+1) num_vars (Fin.snoc ch a) (1 : 𝔽) p h2) := by
-  -- proof goes here
-  sorry

@@ -18,7 +18,7 @@ def honest_round_fun
   (r : Fin n → 𝔽)
   (i : Fin n) : 𝔽 → 𝔽 :=
 fun a =>
-  sum_over_boolean_extension (num_challenges := i.val) (num_vars := n)
+  round_sum (num_challenges := i.val) (num_vars := n)
     (challenge_subset r i) a p (Nat.succ_le_of_lt i.isLt)
 
 def BadRound

@@ -3,6 +3,7 @@ import CompPoly.CMvMonomial
 import CompPoly.CMvPolynomial
 import Mathlib.Data.ZMod.Basic
 
+import Sumcheck.Impl.CMvPolynomial
 import Sumcheck.Impl.Polynomials
 
 def honest_prover_message
