@@ -57,3 +57,31 @@ by
   classical
   let empty : Fin 0 → 𝔽 := fun i => (Fin.elim0 i)
   exact residual_sum (𝔽 := 𝔽) (k := 0) (num_vars := n) empty p (by simp)
+
+  -- glue together the substitution functions left and right
+def append_variable_assignments
+  {𝔽 : Type _} [CommSemiring 𝔽]
+  {k m n : ℕ}
+  (hn : k + m = n)
+  (left : Fin k → CPoly.CMvPolynomial 1 𝔽)
+  (right : Fin m → CPoly.CMvPolynomial 1 𝔽) : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
+fun i =>
+  Fin.addCases (m := k) (n := m) (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
+    left right (Fin.cast hn.symm i)
+
+def sum_over_hypercube_recursive
+  {𝔽 β : Type _}
+  (b0 b1 : 𝔽)
+  (add : β → β → β)
+  {m : ℕ}
+  (F : (Fin m → 𝔽) → β) : β :=
+by
+  classical
+  induction m with
+  | zero =>
+      exact F (fun i => nomatch i)
+  | succ m ih =>
+      let extend (b : 𝔽) (x : Fin m → 𝔽) : Fin (m+1) → 𝔽 :=
+        Fin.cons b x
+      exact add (ih (fun x => F (extend b0 x)))
+                (ih (fun x => F (extend b1 x)))

@@ -3,7 +3,7 @@ import CompPoly.CMvMonomial
 import CompPoly.Lawful
 import Mathlib.Data.ZMod.Basic
 
-import Sumcheck.Impl.Polynomials
+import Sumcheck.Impl.CMvPolynomial
 import Sumcheck.Impl.Verifier
 
 namespace __VerifierTests__
@@ -13,12 +13,9 @@ namespace __VerifierTests__
     (q : CPoly.CMvPolynomial 1 𝔽) : 𝔽 → 𝔽 :=
   fun a => CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) q
 
-  @[simp] def test_round_p_raw : CPoly.CMvPolynomial 1 (ZMod 19) :=
+  @[simp] def test_round_p : CPoly.CMvPolynomial 1 (ZMod 19) :=
     (CPoly.Lawful.C (n := 1) (R := ZMod 19) (13 : ZMod 19)) * x0
     + (CPoly.Lawful.C (n := 1) (R := ZMod 19) (2 : ZMod 19))
-
-  @[simp] def test_round_p : (ZMod 19) → (ZMod 19) :=
-    asFun test_round_p_raw
 
   namespace __verifier_check_tests__
 

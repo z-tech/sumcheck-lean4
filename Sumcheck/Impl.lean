@@ -1,5 +1,5 @@
 import Sumcheck.Impl.Hypercube
-import Sumcheck.Impl.Polynomials
+import Sumcheck.Impl.CMvPolynomial
 import Sumcheck.Impl.Transcript
 import Sumcheck.Impl.HonestProver
 import Sumcheck.Impl.HonestTranscript
