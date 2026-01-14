@@ -12,3 +12,15 @@ by
   classical
   let Ω : Finset (Fin n → 𝔽) := all_assignments_n (𝔽 := 𝔽) n
   exact ((Ω.filter E).card : ℚ) / (Ω.card : ℚ)
+
+@[simp] lemma prob_over_challenges_eq
+  {𝔽 : Type _} {n : ℕ} [Fintype 𝔽]
+  (E : (Fin n → 𝔽) → Prop) :
+  prob_over_challenges (𝔽 := 𝔽) (n := n) E
+    =
+    (by
+      classical
+      let Ω : Finset (Fin n → 𝔽) := all_assignments_n (𝔽 := 𝔽) n
+      exact ((Ω.filter E).card : ℚ) / (Ω.card : ℚ)) := by
+  -- this is definitional unfolding
+  rfl
