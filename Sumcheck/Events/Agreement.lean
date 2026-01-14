@@ -3,7 +3,7 @@ import CompPoly.CMvPolynomial
 import CompPoly.CMvMonomial
 import CompPoly.Lawful
 
-import Sumcheck.Impl.Verifier
+import Sumcheck.Src.Verifier
 
 def AgreementEvent
   {n} {𝔽} [CommRing 𝔽]

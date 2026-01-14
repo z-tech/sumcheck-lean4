@@ -3,8 +3,8 @@ import CompPoly.CMvMonomial
 import CompPoly.Lawful
 import Mathlib.Data.ZMod.Basic
 
-import Sumcheck.Impl.CMvPolynomial
-import Sumcheck.Impl.Verifier
+import Sumcheck.Src.CMvPolynomial
+import Sumcheck.Src.Verifier
 
 namespace __VerifierTests__
 

@@ -1,4 +1,4 @@
-import Sumcheck.Impl.Hypercube
+import Sumcheck.Src.Hypercube
 
 noncomputable def expected_hypercube_0 : Finset (Fin 0 → ZMod 19) := { (Fin.elim0 : Fin 0 → ZMod 19) }
 lemma it_should_hypercube_n_0_correctly : hypercube_n 0 = expected_hypercube_0 := by

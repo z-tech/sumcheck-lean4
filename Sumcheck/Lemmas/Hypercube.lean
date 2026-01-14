@@ -1,7 +1,7 @@
 import CompPoly.CMvPolynomial
 
-import Sumcheck.Impl.Hypercube
-import Sumcheck.Impl.CMvPolynomial
+import Sumcheck.Src.Hypercube
+import Sumcheck.Src.CMvPolynomial
 
 open scoped BigOperators
 

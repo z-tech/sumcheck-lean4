@@ -1,7 +1,7 @@
 import CompPoly.CMvPolynomial
 
-import Sumcheck.Impl.HonestTranscript
-import Sumcheck.Impl.Verifier
+import Sumcheck.Src.HonestTranscript
+import Sumcheck.Src.Verifier
 
 set_option maxHeartbeats 100000
 

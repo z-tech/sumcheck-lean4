@@ -1,6 +1,6 @@
-import Sumcheck.Impl.HonestProver
-import Sumcheck.Impl.Transcript
-import Sumcheck.Impl.Verifier
+import Sumcheck.Src.HonestProver
+import Sumcheck.Src.Transcript
+import Sumcheck.Src.Verifier
 
 def challenge_subset {𝔽} {n} (ch : Fin n → 𝔽) (i : Fin n) : Fin i.val → 𝔽 :=
   fun j => ch ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩

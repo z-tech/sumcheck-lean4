@@ -1,4 +1,4 @@
-import Sumcheck.Impl.HonestTranscript
+import Sumcheck.Src.HonestTranscript
 
 lemma challenge_subset_succ
   {𝔽 : Type _} {n : ℕ}

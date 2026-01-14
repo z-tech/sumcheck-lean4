@@ -1,5 +1,5 @@
-import Sumcheck.Impl.CMvPolynomial
-import Sumcheck.Impl.Hypercube
+import Sumcheck.Src.CMvPolynomial
+import Sumcheck.Src.Hypercube
 
 def honest_prover_message
   {𝔽} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]

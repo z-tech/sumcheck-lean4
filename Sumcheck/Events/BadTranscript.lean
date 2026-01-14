@@ -2,9 +2,9 @@ import CompPoly.CMvPolynomial
 
 import Sumcheck.Events.BadRound
 
-import Sumcheck.Impl.Transcript
-import Sumcheck.Impl.HonestProver
-import Sumcheck.Impl.HonestTranscript
+import Sumcheck.Src.Transcript
+import Sumcheck.Src.HonestProver
+import Sumcheck.Src.HonestTranscript
 
 def BadTranscriptEvent
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]

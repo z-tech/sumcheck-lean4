@@ -1,10 +1,10 @@
 import Sumcheck.Events.Agreement
 import Sumcheck.Events.Accepts
 import Sumcheck.Events.BadRound
-import Sumcheck.Impl.Verifier
+import Sumcheck.Src.Verifier
 
 import Sumcheck.Events.Accepts
-import Sumcheck.Impl.HonestTranscript
+import Sumcheck.Src.HonestTranscript
 
 set_option maxHeartbeats 10000000
 
