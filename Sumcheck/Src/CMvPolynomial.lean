@@ -9,7 +9,6 @@ import CompPoly.CMvPolynomial
   CPoly.CMvPolynomial 1 𝔽 :=
 by
   let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
-  -- one-term polynomial: 1 * x
   exact CPoly.Lawful.fromUnlawful (n := 1) (R := 𝔽) <|
     CPoly.Unlawful.ofList [(mon_x1, (1 : 𝔽))]
 
@@ -59,3 +58,23 @@ def eval₂Poly
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
 Std.ExtTreeMap.foldl (fun acc m c => (f c * subst_monomial vs m) + acc) (c1 0) p.1
+
+lemma eval₂Poly_eq_list_foldl
+  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (f : 𝔽 → CPoly.CMvPolynomial 1 𝔽)
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (p : CPoly.CMvPolynomial n 𝔽) :
+  CPoly.eval₂Poly (n := n) (𝔽 := 𝔽) f vs p
+    =
+  List.foldl
+    (fun acc (mc : CPoly.CMvMonomial n × 𝔽) =>
+      (f mc.2 * subst_monomial vs mc.1) + acc)
+    (c1 (𝔽 := 𝔽) 0)
+    p.1.toList := by
+  classical
+  -- this is the whole point:
+  simpa [CPoly.eval₂Poly] using
+    (Std.ExtTreeMap.foldl_eq_foldl_toList
+      (t := p.1)
+      (f := fun acc m c => (f c * subst_monomial vs m) + acc)
+      (init := c1 (𝔽 := 𝔽) 0))

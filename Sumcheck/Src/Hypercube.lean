@@ -80,6 +80,41 @@ lemma sum_over_hypercube_recursive_succ_def
         (fun x => F (Fin.cons b1 x))) := by
   simp [sum_over_hypercube_recursive]
 
+lemma sum_over_hypercube_recursive_deg_le
+  {𝔽 β : Type _}
+  (deg : β → ℕ) (d : ℕ)
+  (b0 b1 : 𝔽)
+  (add : β → β → β)
+  {m : ℕ}
+  (F : (Fin m → 𝔽) → β)
+  (hadd : ∀ a b, deg a ≤ d → deg b ≤ d → deg (add a b) ≤ d)
+  (hF : ∀ x, deg (F x) ≤ d) :
+  deg (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F) ≤ d := by
+  classical
+  induction m with
+  | zero =>
+      -- only one assignment exists: Fin 0 → 𝔽
+      simpa [sum_over_hypercube_recursive] using hF (fun i => nomatch i)
+  | succ m ih =>
+      -- split on the last coordinate (0 vs 1)
+      have h0 :
+          deg
+            (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+              (fun x => F (Fin.cons b0 x))) ≤ d :=
+        ih (F := fun x => F (Fin.cons b0 x))
+           (hF := fun x => hF (Fin.cons b0 x))
+      have h1 :
+          deg
+            (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+              (fun x => F (Fin.cons b1 x))) ≤ d :=
+        ih (F := fun x => F (Fin.cons b1 x))
+           (hF := fun x => hF (Fin.cons b1 x))
+      -- now combine the two branches using hadd
+      simpa [sum_over_hypercube_recursive_succ (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (F := F)]
+        using hadd
+          (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b0 x)))
+          (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b1 x)))
+          h0 h1
 
 /-- Non-dependent `Fin.addCases` specialized to functions. Avoids needing to specify `motive`. -/
 def addCasesFun {α : Type} {m n : ℕ}

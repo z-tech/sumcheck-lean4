@@ -72,7 +72,9 @@ by
   exact
     sum_over_hypercube_recursive (β := CPoly.CMvPolynomial 1 𝔽)
       (b0 := 0) (b1 := 1)
-      (add := fun a b => a + b)
+      (add := fun a b =>
+        @HAdd.hAdd (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
+          instHAdd a b)
       (m := honest_num_open_vars (n := n) i)
       (F := fun b =>
         CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
@@ -143,6 +145,27 @@ lemma honest_combined_map_current_is_x0
       (𝔽 := 𝔽) (n := n) (i := i) (challenges := challenges) (b := b) (t := t)
   -- Now `h` ends with `honest_right_map ... t`, and `t` is definitional ⟨0,_⟩
   simpa [t, honest_right_map] using h
+
+lemma honest_current_index_eq (i : Fin n) :
+  Fin.cast (honest_split_eq (n := n) i)
+      (Fin.natAdd i.val ⟨0, Nat.succ_pos _⟩)
+    = i := by
+  -- this is just arithmetic/Fin ext; proves “the first right-slot is exactly i”
+  ext
+  simp
+
+lemma honest_combined_map_at_i_is_x0
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (challenges : Fin i.val → 𝔽)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
+  honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b i = x0 := by
+  -- rewrite the weird index into `i`
+  have :=
+    honest_combined_map_current_is_x0
+      (𝔽 := 𝔽) (n := n) (i := i) (challenges := challenges) (b := b)
+  -- use the new index lemma to rewrite the argument
+  simpa [honest_current_index_eq (n := n) i] using this
 
 lemma honest_right_map_succ
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
