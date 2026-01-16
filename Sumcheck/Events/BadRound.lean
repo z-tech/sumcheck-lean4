@@ -9,7 +9,7 @@ def honest_round_poly
   (p : CPoly.CMvPolynomial n 𝔽)
   (ch : Fin n → 𝔽)
   (i : Fin n) : CPoly.CMvPolynomial 1 𝔽 :=
-  honest_prover_message (n := n) (k := i.val) p (challenge_subset ch i) (Nat.succ_le_of_lt i.isLt)
+  honest_prover_message_at (p := p) (i := i) (challenges := challenge_subset ch i)
 
 def honest_round_fun
   {𝔽 : Type _} {n : ℕ}

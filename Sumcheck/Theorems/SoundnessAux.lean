@@ -58,6 +58,7 @@ lemma prob_over_challenges_mono
   have hdiv := div_le_div_of_nonneg_right hcard hΩnonneg
   simpa [prob_over_challenges, Ω] using hdiv
 
+
 lemma prob_over_challenges_exists_le_sum
   {𝔽 : Type _} {n : ℕ} [Fintype 𝔽]
   (E : Fin n → (Fin n → 𝔽) → Prop) :
@@ -66,7 +67,6 @@ lemma prob_over_challenges_exists_le_sum
   ∑ i : Fin n, prob_over_challenges (𝔽 := 𝔽) (n := n) (fun r => E i r) := by
   classical
 
-  -- Make all the filter predicates decidable (this is what your error is about).
   letI : DecidablePred (fun r : (Fin n → 𝔽) => ∃ i : Fin n, E i r) :=
     Classical.decPred _
   letI (i : Fin n) : DecidablePred (fun r : (Fin n → 𝔽) => E i r) :=
@@ -139,9 +139,6 @@ lemma prob_over_challenges_exists_le_sum
           ≤
         (∑ i : Fin n, ((Ω.filter (fun r => E i r)).card : ℚ)) / (Ω.card : ℚ) := hdiv
       _ = ∑ i : Fin n, ((Ω.filter (fun r => E i r)).card : ℚ) / (Ω.card : ℚ) := hsum
-
-  -- Convert back to `prob_over_challenges` using the *definition* (stable),
-  -- not your `[simp] prob_over_challenges_eq` lemma.
   simpa [prob_over_challenges, Ω] using hfinal
 
 /-!
@@ -173,11 +170,12 @@ axiom accepts_and_bad_implies_exists_round_disagree_but_agree
   AcceptsAndBadOnChallenges claim p adv r →
     ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i
 
--- Core Schwartz–Zippel / per-round soundness estimate (summed over rounds).
-axiom sum_round_disagree_but_agree_bound :
+axiom sum_accepts_and_round_disagree_but_agree_bound :
   (∑ i : Fin n,
       prob_over_challenges (𝔽 := 𝔽) (n := n)
-        (fun r => RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
+        (fun r =>
+          AcceptsAndBadOnChallenges claim p adv r ∧
+          RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
     ≤ n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽)
 
 end SumcheckSpecific

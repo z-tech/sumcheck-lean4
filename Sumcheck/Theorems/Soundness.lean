@@ -4,57 +4,60 @@ import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Agreement
 import Sumcheck.Theorems.SoundnessAux
 
-theorem soundness
-  {𝔽 : Type _} {n : ℕ}
-  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
-  (p : CPoly.CMvPolynomial n 𝔽)
+  (claim_p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n)
-  (hfalse : claim ≠ true_sum (𝔽 := 𝔽) p) :
-  prob_soundness (𝔽 := 𝔽) (n := n) claim p adv
-    ≤ n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽) := by
+  (h_false_claim : claim ≠ true_sum claim_p) :
+    prob_soundness claim claim_p adv
+      ≤ n * (max_ind_degree claim_p) / count_field_size (𝔽 := 𝔽) := by
   classical
-  -- Unfold the definition: soundness is the probability over challenges of `Accepts ∧ BadTranscript`.
   dsimp [prob_soundness]
-  -- Step 1: show that `Accepts ∧ BadTranscript` implies there is some round `i` where the prover's
-  -- round polynomial differs from the honest one, yet they agree at the verifier's random challenge.
+
+  -- New: keep AcceptsAndBad in the per-round event.
+  let E : Fin n → (Fin n → 𝔽) → Prop :=
+    fun i r =>
+      AcceptsAndBadOnChallenges claim claim_p adv r ∧
+        RoundDisagreeButAgreeAtChallenge claim claim_p adv r i
+
+  -- Step 1: Accepts∧Bad implies ∃ i, (Accepts∧Bad ∧ RoundDisagreeButAgreeAtChallenge i).
   have hImp :
       ∀ r : (Fin n → 𝔽),
-        AcceptsAndBadOnChallenges claim p adv r →
-          ∃ i : Fin n,
-            RoundDisagreeButAgreeAtChallenge claim p adv r i := by
-    intro r h
-    exact accepts_and_bad_implies_exists_round_disagree_but_agree (claim := claim) (p := p) (adv := adv)
-      (r := r) hfalse h
+        AcceptsAndBadOnChallenges claim claim_p adv r →
+          ∃ i : Fin n, E i r := by
+    intro r hAB
+    rcases
+      accepts_and_bad_implies_exists_round_disagree_but_agree
+        (claim := claim) (p := claim_p) (adv := adv) (r := r) h_false_claim hAB
+      with ⟨i, hi⟩
+    exact ⟨i, ⟨hAB, hi⟩⟩
 
-  -- Step 2: monotonicity + union bound + per-round Schwartz–Zippel.
-  -- First, reduce the probability of `Accepts∧Bad` to the probability of the existential.
   have hmono :
       prob_over_challenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadOnChallenges claim p adv r)
+          (fun r => AcceptsAndBadOnChallenges claim claim_p adv r)
         ≤
       prob_over_challenges (𝔽 := 𝔽) (n := n)
-          (fun r => ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge claim p adv r i) :=
+          (fun r => ∃ i : Fin n, E i r) :=
     prob_over_challenges_mono (𝔽 := 𝔽) (n := n) hImp
 
-  -- Apply union bound over the `n` possible rounds.
+  -- Step 2: union bound over i.
   have hunion :
       prob_over_challenges (𝔽 := 𝔽) (n := n)
-          (fun r => ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge claim p adv r i)
+          (fun r => ∃ i : Fin n, E i r)
         ≤
       (∑ i : Fin n,
         prob_over_challenges (𝔽 := 𝔽) (n := n)
-          (fun r => RoundDisagreeButAgreeAtChallenge claim p adv r i)) :=
-    prob_over_challenges_exists_le_sum (𝔽 := 𝔽) (n := n)
-      (fun i r => RoundDisagreeButAgreeAtChallenge claim p adv r i)
+          (fun r => E i r)) :=
+    prob_over_challenges_exists_le_sum (𝔽 := 𝔽) (n := n) E
 
-  -- Bound each summand using Schwartz–Zippel (in one variable) and the degree bound `max_ind_degree`.
+  -- Step 3: for now, keep compiling by bounding Pr[E i] ≤ Pr[RoundDisagreeButAgreeAtChallenge i],
+  -- then use your existing axiom (later: replace this with the *real* per-round bound using Accepts).
   have hround :
       (∑ i : Fin n,
-        prob_over_challenges (𝔽 := 𝔽) (n := n)
-          (fun r => RoundDisagreeButAgreeAtChallenge claim p adv r i))
-        ≤
-      n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽) := by
-    simpa using sum_round_disagree_but_agree_bound (claim := claim) (p := p) (adv := adv)
+        prob_over_challenges (𝔽 := 𝔽) (n := n) (fun r => E i r))
+      ≤ n * (max_ind_degree claim_p) / count_field_size (𝔽 := 𝔽) := by
+    simpa [E] using
+      sum_accepts_and_round_disagree_but_agree_bound
+        (claim := claim) (p := claim_p) (adv := adv)
 
   exact le_trans (le_trans hmono hunion) hround

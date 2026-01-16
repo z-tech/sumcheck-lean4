@@ -46,7 +46,7 @@ lemma sum_over_hypercube_recursive_succ_def
         (fun x => F (Fin.cons b1 x))) := by
   -- This works because your definition is literally recursion on m.
   -- `simp` reduces the succ-case definitionally.
-  simp [sum_over_hypercube_recursive, Nat.add_comm, Nat.add_left_comm, Nat.add_assoc]
+  simp [sum_over_hypercube_recursive]
 
 
 @[simp] lemma sum_over_hypercube_recursive_succ
