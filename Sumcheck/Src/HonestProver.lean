@@ -90,3 +90,65 @@ by
   let i : Fin n := ⟨k, hk⟩
   -- i.val = k definitionally, so challenges types line up
   simpa [i] using honest_prover_message_at (p := p) (i := i) (challenges := challenges)
+
+lemma honest_combined_map_def
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (challenges : Fin i.val → 𝔽)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+  (j : Fin n) :
+  honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b j =
+    Fin.addCases (m := i.val) (n := honest_num_open_vars (n := n) i + 1)
+      (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
+      (fun t : Fin i.val => c1 (challenges t))
+      (honest_right_map (𝔽 := 𝔽) (n := n) i b)
+      (Fin.cast (honest_split_eq (n := n) i).symm j) := by
+  -- Unfold the definition through append_variable_assignments
+  simp [honest_combined_map, append_variable_assignments]
+
+lemma honest_combined_map_left
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (challenges : Fin i.val → 𝔽)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+  (t : Fin i.val) :
+  honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b
+      (Fin.cast (honest_split_eq (n := n) i) (Fin.castAdd (honest_num_open_vars (n := n) i + 1) t))
+    = c1 (challenges t) := by
+  -- unfold, then Fin.addCases resolves to the left branch
+  simp [honest_combined_map_def (i := i) (challenges := challenges) (b := b)]
+
+lemma honest_combined_map_right
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (challenges : Fin i.val → 𝔽)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+  (t : Fin (honest_num_open_vars (n := n) i + 1)) :
+  honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b
+      (Fin.cast (honest_split_eq (n := n) i) (Fin.natAdd i.val t))
+    = honest_right_map (𝔽 := 𝔽) (n := n) i b t := by
+  simp [honest_combined_map_def (i := i) (challenges := challenges) (b := b)]
+
+lemma honest_combined_map_current_is_x0
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (challenges : Fin i.val → 𝔽)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
+  honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b
+      (Fin.cast (honest_split_eq (n := n) i) (Fin.natAdd i.val ⟨0, Nat.succ_pos _⟩))
+    = x0 := by
+  let t : Fin (honest_num_open_vars (n := n) i + 1) := ⟨0, Nat.succ_pos _⟩
+  have h :=
+    honest_combined_map_right
+      (𝔽 := 𝔽) (n := n) (i := i) (challenges := challenges) (b := b) (t := t)
+  -- Now `h` ends with `honest_right_map ... t`, and `t` is definitional ⟨0,_⟩
+  simpa [t, honest_right_map] using h
+
+lemma honest_right_map_succ
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+  (j : ℕ) (hj : j + 1 < honest_num_open_vars (n := n) i + 1) :
+  honest_right_map (𝔽 := 𝔽) (n := n) i b ⟨j + 1, hj⟩ =
+    c1 (b ⟨j, Nat.lt_of_succ_lt_succ hj⟩) := by
+  simp [honest_right_map]

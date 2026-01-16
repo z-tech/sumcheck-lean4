@@ -1,0 +1,59 @@
+import CompPoly.CMvMonomial
+import Mathlib.Data.Vector.Basic
+import Mathlib.Data.Vector.Zip
+
+namespace Sumcheck
+open CPoly
+
+
+def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
+  (CPoly.CMvMonomial.toFinsupp m) i
+
+@[simp] lemma extract_exp_var_i_def {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) :
+  extract_exp_var_i (n := n) m i = m.get i := by
+  -- This is definitional: toFinsupp = ⟨support, m.get, ...⟩
+  rfl
+
+@[simp] lemma extract_exp_var_i_zero {n : ℕ} (i : Fin n) :
+  extract_exp_var_i (n := n) (CPoly.CMvMonomial.zero) i = 0 := by
+  -- reduce to Vector.get on a replicated vector
+  simp [extract_exp_var_i, CPoly.CMvMonomial.zero]
+  -- goal is now: (Vector.replicate n 0).get i = 0
+  -- DON'T `simpa` (it will turn the lemma into `True`); just use it directly:
+  exact List.Vector.get_replicate (a := (0 : ℕ)) i
+
+@[simp] lemma extract_exp_var_i_add {n : ℕ} (m₁ m₂ : CPoly.CMvMonomial n) (i : Fin n) :
+  extract_exp_var_i (n := n) (m₁ + m₂) i
+    = extract_exp_var_i (n := n) m₁ i + extract_exp_var_i (n := n) m₂ i := by
+  -- unfold toFinsupp application (definitional) into `.get`
+  -- so we can use the zipWith-get lemma
+  cases' i with idx hidx
+  -- Expand extract_exp_var_i
+  dsimp [extract_exp_var_i]
+  -- Expand toFinsupp for each term (it stores `get` as the function)
+  -- This `change` is definitional: (toFinsupp m) ⟨idx,hidx⟩ = m.get ⟨idx,hidx⟩
+  change (m₁ + m₂).get ⟨idx, hidx⟩ = m₁.get ⟨idx, hidx⟩ + m₂.get ⟨idx, hidx⟩
+  -- Expand monomial addition
+  -- CMvMonomial.add := Vector.zipWith Nat.add
+  -- and `get ⟨idx,hidx⟩` is definitionally the same as indexing `[idx]`
+  -- so we rewrite into a bracket-index goal
+  -- (these two changes are definitional, so `rfl`/`simp` isn't needed)
+  change (CPoly.CMvMonomial.add m₁ m₂)[idx] = m₁[idx] + m₂[idx]
+  -- unfold add to zipWith
+  dsimp [CPoly.CMvMonomial.add, CMvMonomial.add, CPoly.CMvMonomial.add]
+  -- now apply the lemma exactly
+  exact Vector.getElem_zipWith (f := Nat.add) (as := m₁) (bs := m₂) (i := idx) hidx
+
+/-- Your `x^1` monomial in arity 1. -/
+def mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
+
+@[simp] lemma extract_exp_var_i_mon_x1 :
+  extract_exp_var_i (n := 1) mon_x1 (⟨0, by decide⟩ : Fin 1) = 1 := by
+  -- rewrite to `.get`
+  change mon_x1.get (⟨0, by decide⟩ : Fin 1) = 1
+  -- unfold mon_x1 and destruct the Fin index
+  dsimp [mon_x1]
+  -- Fin 1 is only ⟨0, _⟩, so we can rewrite directly:
+  rfl
+
+end Sumcheck

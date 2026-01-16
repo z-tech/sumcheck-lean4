@@ -8,15 +8,10 @@ import CompPoly.CMvPolynomial
 @[simp] def x0 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] :
   CPoly.CMvPolynomial 1 𝔽 :=
 by
-  -- empty poly
-  let zero_poly : CPoly.Unlawful 1 𝔽 := 0
-  -- mon x^1 ... monomials can't have coeffs btw that's why we need this def
   let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
-  let coeff : 𝔽 := 1
-  -- insert the monomial using coeff 1 into the zero polynomial
-  let raw := zero_poly.insert mon_x1 coeff
-  -- convert from raw (unlawful) to checked (lawful) format
-  exact CPoly.Lawful.fromUnlawful raw
+  -- one-term polynomial: 1 * x
+  exact CPoly.Lawful.fromUnlawful (n := 1) (R := 𝔽) <|
+    CPoly.Unlawful.ofList [(mon_x1, (1 : 𝔽))]
 
 @[simp]
 def max_ind_degree
@@ -31,6 +26,17 @@ def ind_degree_k
   (k : Fin n) : ℕ :=
   CPoly.CMvPolynomial.degreeOf k p
 
+lemma ind_degree_k_le_max_ind_degree
+  {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) (k : Fin n) :
+  ind_degree_k (𝔽 := 𝔽) (n := n) p k ≤ max_ind_degree (𝔽 := 𝔽) (n := n) p := by
+  classical
+  simp [ind_degree_k, max_ind_degree]
+  exact
+    Finset.le_sup
+      (s := (Finset.univ : Finset (Fin n)))
+      (f := fun i => CPoly.CMvPolynomial.degreeOf i p)
+      (by simp)
 
 def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
   (CPoly.CMvMonomial.toFinsupp m) i
