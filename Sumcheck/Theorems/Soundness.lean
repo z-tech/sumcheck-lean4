@@ -14,7 +14,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
   classical
   dsimp [prob_soundness]
 
-  -- New: keep AcceptsAndBad in the per-round event.
+  -- Keep AcceptsAndBad in the per-round event.
   let E : Fin n → (Fin n → 𝔽) → Prop :=
     fun i r =>
       AcceptsAndBadOnChallenges claim claim_p adv r ∧
@@ -50,8 +50,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
           (fun r => E i r)) :=
     prob_over_challenges_exists_le_sum (𝔽 := 𝔽) (n := n) E
 
-  -- Step 3: for now, keep compiling by bounding Pr[E i] ≤ Pr[RoundDisagreeButAgreeAtChallenge i],
-  -- then use your existing axiom (later: replace this with the *real* per-round bound using Accepts).
+  -- Step 3: use the (now-lemma) sumcheck-specific bound.
   have hround :
       (∑ i : Fin n,
         prob_over_challenges (𝔽 := 𝔽) (n := n) (fun r => E i r))

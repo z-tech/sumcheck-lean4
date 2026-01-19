@@ -141,41 +141,38 @@ lemma prob_over_challenges_exists_le_sum
       _ = ∑ i : Fin n, ((Ω.filter (fun r => E i r)).card : ℚ) / (Ω.card : ℚ) := hsum
   simpa [prob_over_challenges, Ω] using hfinal
 
-/-!
-### Sumcheck-specific auxiliaries
-
-These encapsulate the core soundness reasoning (extracting a bad round with agreement
-at the sampled challenge, and bounding that agreement with Schwartz–Zippel).
-
-They are left as axioms here, because proving them requires a nontrivial amount of
-algebra about the honest prover polynomials and the sumcheck invariant.
--/
-
-section SumcheckSpecific
-
-variable
-  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
-
-def RoundDisagreeButAgreeAtChallenge (r : Fin n → 𝔽) (i : Fin n) : Prop :=
+def RoundDisagreeButAgreeAtChallenge
+{𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+(claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
+(r : Fin n → 𝔽) (i : Fin n) : Prop :=
   let t : Transcript 𝔽 n := AdversaryTranscript claim p adv r
   t.round_polys i ≠ honest_round_poly (p := p) (ch := r) i
     ∧ next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
         = next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i)
 
 -- Core combinatorial extraction lemma from the standard sumcheck soundness proof.
-axiom accepts_and_bad_implies_exists_round_disagree_but_agree
+lemma accepts_and_bad_implies_exists_round_disagree_but_agree
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
   (hfalse : claim ≠ true_sum (𝔽 := 𝔽) p)
   (r : Fin n → 𝔽) :
   AcceptsAndBadOnChallenges claim p adv r →
-    ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i
+    ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i := by
+  -- TODO: prove this using the standard sumcheck soundness argument:
+  -- from accept + incorrect initial claim, extract a round where the prover's polynomial
+  -- differs from the honest one but agrees at the verifier challenge.
+  sorry
 
-axiom sum_accepts_and_round_disagree_but_agree_bound :
+lemma sum_accepts_and_round_disagree_but_agree_bound
+{𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+(claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
+ :
   (∑ i : Fin n,
       prob_over_challenges (𝔽 := 𝔽) (n := n)
         (fun r =>
           AcceptsAndBadOnChallenges claim p adv r ∧
           RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
-    ≤ n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽)
-
-end SumcheckSpecific
+    ≤ n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽) := by
+  -- TODO: prove by bounding each round's event probability (Schwartz–Zippel style)
+  -- and summing over i.
+  sorry

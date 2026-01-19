@@ -12,7 +12,7 @@ import Sumcheck.Probability.Agreement
   CPoly.fromCMvPolynomial g - CPoly.fromCMvPolynomial h
 
 -- difference poly is not zero bc g != h
-lemma difference_poly_eq_zero_iff
+@[simp] lemma difference_poly_eq_zero_iff
   {n : ℕ} {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial n 𝔽) :
   difference_poly g h = (0 : MvPolynomial (Fin n) 𝔽) ↔ g = h := by
@@ -27,7 +27,7 @@ lemma difference_poly_eq_zero_iff
     simp [difference_poly]
 
 -- pr[ g(x) = h(x), g != h ] ≤ deg(g - h) / |𝔽| from Schwartz-Zippel
-lemma prob_agreement_le_degree_over_field_size
+@[simp] lemma prob_agreement_le_degree_over_field_size
   {𝔽} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (g h : CPoly.CMvPolynomial 1 𝔽)
   (h_not_equal : g ≠ h) :
