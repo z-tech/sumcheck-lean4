@@ -175,3 +175,24 @@ lemma honest_right_map_succ
   honest_right_map (𝔽 := 𝔽) (n := n) i b ⟨j + 1, hj⟩ =
     c1 (b ⟨j, Nat.lt_of_succ_lt_succ hj⟩) := by
   simp [honest_right_map]
+
+@[simp] lemma honest_prover_message_at_def
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ}
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (i : Fin n)
+  (challenges : Fin i.val → 𝔽) :
+  honest_prover_message_at (𝔽 := 𝔽) (n := n) p i challenges
+    =
+  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
+    (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽))
+    (add := fun a b =>
+      @HAdd.hAdd
+        (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
+        instHAdd a b)
+    (m := honest_num_open_vars (n := n) i)
+    (F := fun b =>
+      CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p) := by
+  classical
+  -- your definition is literally `by classical exact ...`
+  simp [honest_prover_message_at]

@@ -1,4 +1,5 @@
 import CompPoly.CMvPolynomial
+import CompPoly.MvPolyEquiv
 
 -- this is a constant for a polynomial w/ one variable (arity must be specified)
 @[simp] def c1 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] c :=
@@ -78,3 +79,31 @@ lemma eval₂Poly_eq_list_foldl
       (t := p.1)
       (f := fun acc m c => (f c * subst_monomial vs m) + acc)
       (init := c1 (𝔽 := 𝔽) 0))
+
+@[simp] lemma eval₂_add
+  {n : ℕ} {R S : Type}
+  [CommSemiring R] [CommSemiring S]
+  [DecidableEq R] [BEq R] [LawfulBEq R]
+  (f : R →+* S) (vals : Fin n → S)
+  (a b : CMvPolynomial n R) :
+  (a + b).eval₂ f vals = a.eval₂ f vals + b.eval₂ f vals := by
+  classical
+  -- move to MvPolynomial
+  calc
+    (a + b).eval₂ f vals
+        = (fromCMvPolynomial (n := n) (R := R) (p := a + b)).eval₂ f vals := by
+            simpa using (eval₂_equiv (n := n) (R := R) (S := S) (p := a + b) (f := f) (vals := vals))
+    _   = (fromCMvPolynomial (n := n) (R := R) a +
+            fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
+            simp [map_add]
+    _   = (fromCMvPolynomial (n := n) (R := R) a).eval₂ f vals +
+          (fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
+            -- eval₂ on MvPolynomial is a ring hom
+            simpa using
+              (map_add (MvPolynomial.eval₂Hom (σ := Fin n) f vals)
+                (fromCMvPolynomial (n := n) (R := R) a)
+                (fromCMvPolynomial (n := n) (R := R) b))
+    _   = a.eval₂ f vals + b.eval₂ f vals := by
+            -- move back from MvPolynomial
+            simp [eval₂_equiv (n := n) (R := R) (S := S) (p := a) (f := f) (vals := vals),
+                  eval₂_equiv (n := n) (R := R) (S := S) (p := b) (f := f) (vals := vals)]
