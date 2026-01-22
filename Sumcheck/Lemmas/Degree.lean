@@ -2,8 +2,9 @@ import CompPoly.CMvPolynomial
 import CompPoly.MvPolyEquiv
 
 import Sumcheck.Src.CMvPolynomial
-import Sumcheck.Src.Hypercube
 import Sumcheck.Src.HonestProver
+
+import Sumcheck.Lemmas.Hypercube
 
 noncomputable def deg1
   {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]

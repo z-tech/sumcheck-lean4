@@ -44,7 +44,7 @@ def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
 def pow_univariate {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (p : CPoly.CMvPolynomial 1 𝔽) : ℕ → CPoly.CMvPolynomial 1 𝔽
 | 0     => c1 1
-| (e+1) => p * pow_univariate p e
+| (e+1) => Mul.mul p (pow_univariate p e)
 
 def subst_monomial {n : ℕ} {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) (m : CPoly.CMvMonomial n) :
@@ -60,50 +60,25 @@ def eval₂Poly
   (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
 Std.ExtTreeMap.foldl (fun acc m c => (f c * subst_monomial vs m) + acc) (c1 0) p.1
 
-lemma eval₂Poly_eq_list_foldl
-  {n : ℕ} {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  (f : 𝔽 → CPoly.CMvPolynomial 1 𝔽)
-  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
-  (p : CPoly.CMvPolynomial n 𝔽) :
-  CPoly.eval₂Poly (n := n) (𝔽 := 𝔽) f vs p
-    =
-  List.foldl
-    (fun acc (mc : CPoly.CMvMonomial n × 𝔽) =>
-      (f mc.2 * subst_monomial vs mc.1) + acc)
-    (c1 (𝔽 := 𝔽) 0)
-    p.1.toList := by
-  classical
-  -- this is the whole point:
-  simpa [CPoly.eval₂Poly] using
-    (Std.ExtTreeMap.foldl_eq_foldl_toList
-      (t := p.1)
-      (f := fun acc m c => (f c * subst_monomial vs m) + acc)
-      (init := c1 (𝔽 := 𝔽) 0))
 
-@[simp] lemma eval₂_add
-  {n : ℕ} {R S : Type}
-  [CommSemiring R] [CommSemiring S]
-  [DecidableEq R] [BEq R] [LawfulBEq R]
-  (f : R →+* S) (vals : Fin n → S)
-  (a b : CMvPolynomial n R) :
-  (a + b).eval₂ f vals = a.eval₂ f vals + b.eval₂ f vals := by
-  classical
-  -- move to MvPolynomial
-  calc
-    (a + b).eval₂ f vals
-        = (fromCMvPolynomial (n := n) (R := R) (p := a + b)).eval₂ f vals := by
-            simpa using (eval₂_equiv (n := n) (R := R) (S := S) (p := a + b) (f := f) (vals := vals))
-    _   = (fromCMvPolynomial (n := n) (R := R) a +
-            fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
-            simp [map_add]
-    _   = (fromCMvPolynomial (n := n) (R := R) a).eval₂ f vals +
-          (fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
-            -- eval₂ on MvPolynomial is a ring hom
-            simpa using
-              (map_add (MvPolynomial.eval₂Hom (σ := Fin n) f vals)
-                (fromCMvPolynomial (n := n) (R := R) a)
-                (fromCMvPolynomial (n := n) (R := R) b))
-    _   = a.eval₂ f vals + b.eval₂ f vals := by
-            -- move back from MvPolynomial
-            simp [eval₂_equiv (n := n) (R := R) (S := S) (p := a) (f := f) (vals := vals),
-                  eval₂_equiv (n := n) (R := R) (S := S) (p := b) (f := f) (vals := vals)]
+
+-- lemma eval₂_eval₂Poly_c1
+--   {𝔽 : Type _} {n : ℕ}
+--   [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+--   (p : CPoly.CMvPolynomial n 𝔽)
+--   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+--   (b : 𝔽) :
+--   CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
+--       (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+--       (CPoly.eval₂Poly (n := n) (𝔽 := 𝔽) c1 vs p)
+--     =
+--   CPoly.CMvPolynomial.eval (n := n) (R := 𝔽)
+--     (fun j =>
+--       CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
+--         (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs j))
+--     p := by
+--   classical
+--   -- Strategy: move to `MvPolynomial` where `eval₂` composition lemmas exist.
+--   -- In many setups, `simp` can do most of the bridge using `eval_equiv`/`eval₂_equiv`.
+--   -- If this doesn't close, paste the new goal and I’ll give the exact `MvPolynomial` proof.
+--   simp [CPoly.eval_equiv, CPoly.eval₂_equiv, CPoly.eval₂Poly]

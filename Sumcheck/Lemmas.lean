@@ -3,3 +3,5 @@ import Sumcheck.Lemmas.Degree
 import Sumcheck.Lemmas.Soundness
 import Sumcheck.Lemmas.Monomials
 import Sumcheck.Lemmas.UnlawfulMulSupport
+import Sumcheck.Lemmas.Eval2
+import Sumcheck.Lemmas.UnlawfulMulSupport

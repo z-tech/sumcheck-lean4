@@ -94,7 +94,7 @@ lemma acceptsEvent_round_facts
     exact List.all_eq_true.mp hRounds
 
   have hi_mem : i ∈ List.finRange n := by
-    simpa using List.mem_finRange i
+    simp [List.mem_finRange i]
 
   have hix := hall i hi_mem
 
@@ -105,3 +105,74 @@ lemma acceptsEvent_round_facts
 
   refine ⟨hsplit.1, ?_⟩
   exact decide_eq_true_eq.mp hsplit.2
+
+lemma acceptsEvent_claims_eq_derive_claims
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (t : Transcript 𝔽 n) :
+  AcceptsEvent p t →
+    t.claims =
+      derive_claims (𝔽 := 𝔽) (n := n)
+        (t.claims ⟨0, Nat.succ_pos n⟩)
+        t.round_polys t.challenges := by
+  intro hAcc
+  funext k
+  cases' k using Fin.cases with k
+  · -- k = 0
+    -- Force the index to be the explicit Fin.mk form so the match reduces.
+    change t.claims ⟨0, Nat.succ_pos n⟩ =
+      derive_claims (𝔽 := 𝔽) (n := n)
+        (t.claims ⟨0, Nat.succ_pos n⟩)
+        t.round_polys t.challenges ⟨0, Nat.succ_pos n⟩
+    simp [derive_claims]
+  · -- k = succ k
+    -- In this branch, `k : Fin n` already (that's how `Fin.cases` works).
+    have hstep :=
+      (acceptsEvent_round_facts (p := p) (t := t) (i := k) hAcc).2
+    -- hstep : t.claims k.succ = next_claim (t.challenges k) (t.round_polys k)
+    simpa [derive_claims] using hstep
+
+lemma acceptsEvent_endpoints_sum_eq_claim
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (t : Transcript 𝔽 n)
+  (i : Fin n) :
+  AcceptsEvent p t →
+    (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽)) (t.round_polys i)
+      +
+     CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽)) (t.round_polys i))
+      =
+    t.claims (Fin.castSucc i) := by
+  intro hAcc
+  have hcheck := (acceptsEvent_round_facts (p := p) (t := t) (i := i) hAcc).1
+  -- unpack verifier_check = true into the endpoint-sum equality
+  have hiff :=
+    (verifier_check_eq_true_iff (𝔽 := 𝔽)
+      (max_degree := ind_degree_k p i)
+      (round_claim := t.claims (Fin.castSucc i))
+      (round_p := t.round_polys i))
+  have hprops : (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽)) (t.round_polys i) +
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽)) (t.round_polys i)
+      = t.claims (Fin.castSucc i)) ∧
+      (CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ (t.round_polys i) ≤ ind_degree_k p i) := by
+    exact (hiff.mp hcheck)
+  exact hprops.1
+
+lemma acceptsEvent_endpoints_sum_eq_claim_of_honest
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (r : Fin n → 𝔽)
+  (t : Transcript 𝔽 n)
+  (i : Fin n)
+  (hi : t.round_polys i = honest_round_poly p r i) :
+  AcceptsEvent p t →
+    (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽)) (honest_round_poly p r i)
+      +
+     CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽)) (honest_round_poly p r i))
+      =
+    t.claims (Fin.castSucc i) := by
+  intro hAcc
+  simpa [hi] using (acceptsEvent_endpoints_sum_eq_claim (p := p) (t := t) (i := i) hAcc)

@@ -13,69 +13,7 @@ import ExtTreeMapLemmas.ExtTreeMap
 import Std.Data.ExtTreeMap
 import Std.Data.ExtTreeMap.Lemmas
 
-lemma Std.ExtTreeMap.foldl_empty
-  {α : Type u} {β : Type v} {cmp : α → α → Ordering} {δ : Type w}
-  [Std.TransCmp cmp]
-  (f : δ → α → β → δ) (init : δ) :
-  Std.ExtTreeMap.foldl (cmp := cmp) f init (∅ : Std.ExtTreeMap α β cmp) = init := by
-  classical
-  have hnil : ((∅ : Std.ExtTreeMap α β cmp).toList) = [] := by
-    exact (Std.ExtTreeMap.toList_eq_nil_iff (t := (∅ : Std.ExtTreeMap α β cmp))).2 rfl
-  simp [Std.ExtTreeMap.foldl_eq_foldl_toList, hnil]
-
-
-lemma Std.ExtTreeMap.foldl_singleton_of_toList
-  {α : Type u} {β : Type v} {cmp : α → α → Ordering} {δ : Type w}
-  [Std.TransCmp cmp]
-  (f : δ → α → β → δ) (init : δ) (t : Std.ExtTreeMap α β cmp) (k : α) (v : β)
-  (ht : t.toList = [(k, v)]) :
-  Std.ExtTreeMap.foldl (cmp := cmp) f init t = f init k v := by
-  classical
-  simp [Std.ExtTreeMap.foldl_eq_foldl_toList, ht]
-
-
-lemma Std.ExtTreeMap.foldl_insert_empty
-  {α : Type u} {β : Type v} {cmp : α → α → Ordering} {δ : Type w}
-  [Std.TransCmp cmp] [Std.LawfulEqCmp cmp]
-  [DecidableEq α] [DecidableEq β]
-  (f : δ → α → β → δ) (init : δ) (k : α) (v : β) :
-  Std.ExtTreeMap.foldl (cmp := cmp) f init
-      ((∅ : Std.ExtTreeMap α β cmp).insert k v)
-    =
-  f init k v := by
-  classical
-  set t : Std.ExtTreeMap α β cmp := (∅ : Std.ExtTreeMap α β cmp).insert k v
-
-  have hknot : k ∉ (∅ : Std.ExtTreeMap α β cmp) := by simp
-  have hsize : t.size = 1 := by
-    -- size_insert + size_empty
-    simpa [t, hknot] using
-      (Std.ExtTreeMap.size_insert
-        (t := (∅ : Std.ExtTreeMap α β cmp)) (k := k) (v := v))
-
-  have hlen : t.toList.length = 1 := by
-    simp [Std.ExtTreeMap.length_toList, hsize]
-
-  rcases (List.length_eq_one_iff.mp hlen) with ⟨a, ha⟩
-
-  have hget : t[k]? = some v := by
-    simpa [t] using
-      (Std.ExtTreeMap.getElem?_insert_self
-        (t := (∅ : Std.ExtTreeMap α β cmp)) (k := k) (v := v))
-
-  have hmem : (k, v) ∈ t.toList := by
-    exact (Std.ExtTreeMap.mem_toList_iff_getElem?_eq_some (t := t) (k := k) (v := v)).2 hget
-
-  have haKV : a = (k, v) := by
-    -- from membership in a singleton list
-    have : (k, v) ∈ [a] := by simpa [ha] using hmem
-    simpa using (List.mem_singleton.1 this).symm
-
-  -- foldl over a singleton list
-  simp [Std.ExtTreeMap.foldl_eq_foldl_toList, t, ha, haKV]
-
 open scoped BigOperators
-
 
 lemma prob_over_challenges_mono
   {𝔽 : Type _} {n : ℕ} [Fintype 𝔽]
@@ -179,97 +117,6 @@ lemma prob_over_challenges_exists_le_sum
       _ = ∑ i : Fin n, ((Ω.filter (fun r => E i r)).card : ℚ) / (Ω.card : ℚ) := hsum
   simpa [prob_over_challenges, Ω] using hfinal
 
-lemma sumcheck_Vector_get_replicate
-  {α : Type} {n : ℕ} (a : α) (x : Fin n) :
-  (Vector.replicate n a).get x = a := by
-  cases x with
-  | mk k hk =>
-    -- unfold WITHOUT simp (avoids the `Vector.replicate.eq_1` simp loop)
-    unfold Vector.replicate
-    -- now reduce `Vector.get` to `List.get`
-    -- `simp` here is safe: there is no `Vector.replicate` left to loop on
-    simpa [Vector.get] using (List.get_replicate (l := n) (a := a) ⟨k, by simpa using hk⟩)
-
-lemma sumcheck_CMvMonomial_zero_get
-  {n : ℕ} (x : Fin n) :
-  (CPoly.CMvMonomial.zero (n := n)).get x = 0 := by
-  -- CMvMonomial.zero = Vector.replicate n 0
-  simpa [CPoly.CMvMonomial.zero] using (sumcheck_Vector_get_replicate (n := n) (a := (0 : ℕ)) x)
-
-lemma sumcheck_evalMonomial_zero
-  {S : Type} {n : ℕ} [CommSemiring S]
-  (vs : Fin n → S) :
-  CPoly.MonoR.evalMonomial (n := n) (R := S) vs (CPoly.CMvMonomial.zero (n := n)) = (1 : S) := by
-  classical
-  -- evalMonomial = ∏ i, vs i ^ m.get i ; and m.get i = 0 for the zero monomial.
-  simp [CPoly.MonoR.evalMonomial, sumcheck_CMvMonomial_zero_get]
-
-@[simp]
-lemma eval₂_Lawful_C
-  {R S : Type} {n : ℕ}
-  [Semiring R] [CommSemiring S] [DecidableEq S]
-  [BEq R] [LawfulBEq R]
-  (f : R →+* S) (vs : Fin n → S) (c : R) :
-  CPoly.CMvPolynomial.eval₂ (R := R) (S := S) (n := n) f vs
-      (CPoly.Lawful.C (n := n) (R := R) c)
-    =
-  f c := by
-  classical
-  by_cases hc : c = 0
-  · subst hc
-    simp [CPoly.CMvPolynomial.eval₂, CPoly.Lawful.C, CPoly.Unlawful.C]
-    simpa using
-      (Std.ExtTreeMap.foldl_empty
-        (α := CPoly.CMvMonomial n) (β := R) (δ := S)
-        (cmp := Ord.compare (α := CPoly.CMvMonomial n))
-        (f := fun s m a => f a * CPoly.MonoR.evalMonomial vs m + s)
-        (init := (0 : S)))
-  ·
-    simp [CPoly.CMvPolynomial.eval₂, CPoly.Lawful.C, CPoly.Unlawful.C, hc]
-
-    let t :
-        Std.ExtTreeMap (CPoly.CMvMonomial n) R (Ord.compare (α := CPoly.CMvMonomial n)) :=
-      (∅ : Std.ExtTreeMap (CPoly.CMvMonomial n) R (Ord.compare (α := CPoly.CMvMonomial n))).insert
-        (CPoly.CMvMonomial.zero (n := n)) c
-
-    have h :
-        Std.ExtTreeMap.foldl (cmp := Ord.compare (α := CPoly.CMvMonomial n))
-          (fun s m a => CPoly.MonoR.evalMonomial vs m * f a + s)
-          (0 : S) t
-        =
-        CPoly.MonoR.evalMonomial vs (CPoly.CMvMonomial.zero (n := n)) * f c := by
-      simpa [t] using
-        (Std.ExtTreeMap.foldl_insert_empty
-          (α := CPoly.CMvMonomial n) (β := R) (δ := S)
-          (cmp := Ord.compare (α := CPoly.CMvMonomial n))
-          (f := fun s m a => CPoly.MonoR.evalMonomial vs m * f a + s)
-          (init := (0 : S))
-          (k := CPoly.CMvMonomial.zero (n := n))
-          (v := c))
-
-    have hcomm :
-        (fun s m a => CPoly.MonoR.evalMonomial vs m * f a + s)
-          =
-        (fun s m a => f a * CPoly.MonoR.evalMonomial vs m + s) := by
-      funext s m a
-      simp [mul_comm]
-
-    have h' :
-        Std.ExtTreeMap.foldl (cmp := Ord.compare (α := CPoly.CMvMonomial n))
-          (fun s m a => f a * CPoly.MonoR.evalMonomial vs m + s)
-          (0 : S) t
-        =
-        f c * CPoly.MonoR.evalMonomial vs (CPoly.CMvMonomial.zero (n := n)) := by
-      simpa [hcomm, mul_comm] using h
-
-    have hz :
-        CPoly.MonoR.evalMonomial (n := n) (R := S) vs (CPoly.CMvMonomial.zero (n := n)) = (1 : S) := by
-      simpa using (sumcheck_evalMonomial_zero (n := n) (S := S) vs)
-
-    -- finish
-    simpa [t, hz, mul_one] using h'
-
-
 def RoundDisagreeButAgreeAtChallenge
 {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
@@ -278,6 +125,28 @@ def RoundDisagreeButAgreeAtChallenge
   t.round_polys i ≠ honest_round_poly (p := p) (ch := r) i
     ∧ next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
         = next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i)
+
+lemma roundDisagreeButAgreeAtChallenge_iff_claims
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
+  (r : Fin n → 𝔽) (i : Fin n) :
+  RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i
+    ↔
+    let t : Transcript 𝔽 n := AdversaryTranscript claim p adv r
+    t.round_polys i ≠ honest_round_poly (p := p) (ch := r) i
+      ∧
+    t.claims i.succ =
+      next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i) := by
+  classical
+  -- unfold the definition
+  simp [RoundDisagreeButAgreeAtChallenge]
+  -- now unfold how `AdversaryTranscript` defines `claims`
+  -- so that `t.claims i.succ` becomes `next_claim (r i) (t.round_polys i)`
+  -- (this is just the `derive_claims` recursion step)
+  cases i with
+  | mk k hk =>
+    -- After `cases`, `i.succ` is definitional, and `simp` can reduce `derive_claims`.
+    simp [AdversaryTranscript, derive_claims]
 
 -- Core combinatorial extraction lemma from the standard sumcheck soundness proof.
 lemma accepts_and_bad_implies_exists_round_disagree_but_agree
