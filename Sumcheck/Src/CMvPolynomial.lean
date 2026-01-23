@@ -49,7 +49,9 @@ def pow_univariate {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
 def subst_monomial {n : ℕ} {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) (m : CPoly.CMvMonomial n) :
   CPoly.CMvPolynomial 1 𝔽 :=
-(List.finRange n).foldl (fun acc i => acc * pow_univariate (vs i) (extract_exp_var_i m i)) (c1 1)
+(List.finRange n).foldl
+  (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+  (c1 1)
 
 namespace CPoly
 
@@ -59,26 +61,3 @@ def eval₂Poly
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
 Std.ExtTreeMap.foldl (fun acc m c => (f c * subst_monomial vs m) + acc) (c1 0) p.1
-
-
-
--- lemma eval₂_eval₂Poly_c1
---   {𝔽 : Type _} {n : ℕ}
---   [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
---   (p : CPoly.CMvPolynomial n 𝔽)
---   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
---   (b : 𝔽) :
---   CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
---       (RingHom.id 𝔽) (fun _ : Fin 1 => b)
---       (CPoly.eval₂Poly (n := n) (𝔽 := 𝔽) c1 vs p)
---     =
---   CPoly.CMvPolynomial.eval (n := n) (R := 𝔽)
---     (fun j =>
---       CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
---         (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs j))
---     p := by
---   classical
---   -- Strategy: move to `MvPolynomial` where `eval₂` composition lemmas exist.
---   -- In many setups, `simp` can do most of the bridge using `eval_equiv`/`eval₂_equiv`.
---   -- If this doesn't close, paste the new goal and I’ll give the exact `MvPolynomial` proof.
---   simp [CPoly.eval_equiv, CPoly.eval₂_equiv, CPoly.eval₂Poly]

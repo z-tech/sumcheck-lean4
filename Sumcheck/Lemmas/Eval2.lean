@@ -1,3 +1,7 @@
+import Mathlib.Algebra.BigOperators.Group.Finset.Basic
+import Mathlib.Data.Fintype.Basic
+import Mathlib.Data.Finset.Fold
+
 import CompPoly.CMvPolynomial
 import CompPoly.Lawful
 
@@ -378,5 +382,338 @@ lemma eval₂_pow_univariate
   -- `eval₂` is a ring hom in the polynomial argument, so it preserves addition.
   -- This simp lemma name varies; one of these usually exists:
   --   `CPoly.CMvPolynomial.eval₂_add`, or `map_add`, or simp can do it after unfolding.
-  simpa using (CPoly.CMvPolynomial.eval₂_add
+  simpa using (eval₂_add
     (R := 𝔽) (S := 𝔽) (n := 1) (f := (RingHom.id 𝔽)) (vs := vs) a b)
+
+lemma List.foldl_mul_assoc
+  {α : Type} [CommMonoid α] :
+  ∀ (a b : α) (xs : List α),
+    List.foldl (fun acc x => acc * x) (a * b) xs
+      =
+    a * List.foldl (fun acc x => acc * x) b xs
+| a, b, [] => by
+    simp [List.foldl]
+| a, b, x :: xs => by
+    -- foldl f (a*b) (x::xs) = foldl f ((a*b)*x) xs
+    -- RHS = a * foldl f (b*x) xs
+    -- use commutativity/associativity to rewrite ((a*b)*x) = a*(b*x)
+    simp [List.foldl, mul_left_comm, mul_comm, List.foldl_mul_assoc a (b * x) xs]
+
+lemma extract_exp_var_i_eq_get
+  {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) :
+  extract_exp_var_i m i = Vector.get m i := by
+  rfl
+
+lemma List.foldr_mul_eq_foldl_mul
+  {α : Type} [CommMonoid α] (l : List α) :
+  List.foldr (fun x acc => x * acc) 1 l =
+    List.foldl (fun acc x => acc * x) 1 l := by
+  classical
+  induction l with
+  | nil =>
+      simp [List.foldr, List.foldl]
+  | cons a t ih =>
+      simpa [List.foldr, List.foldl, ih, mul_assoc] using
+        (List.foldl_mul_assoc (a := a) (b := (1 : α)) (xs := t)).symm
+
+lemma eval₂_foldl_mul_pow_univariate
+  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ}
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (m : CPoly.CMvMonomial n)
+  (b : 𝔽) :
+  ∀ (A : CPoly.CMvPolynomial 1 𝔽) (L : List (Fin n)),
+    CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+        (List.foldl
+          (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+          A L)
+      =
+    List.foldl
+      (fun acc i =>
+        acc *
+          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)) ^
+            (extract_exp_var_i m i))
+      (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => b) A)
+      L
+  | A, [] => by
+      simp [List.foldl]
+  | A, i :: L => by
+      have hp :
+          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+              (pow_univariate (vs i) (extract_exp_var_i m i))
+            =
+          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)) ^
+            (extract_exp_var_i m i) := by
+        simpa using eval₂_pow_univariate (𝔽 := 𝔽) (q := vs i) (b := b) (e := extract_exp_var_i m i)
+
+      -- now eval₂_mul_Mul matches *definitionally*
+      have hmul :
+          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+              (Mul.mul A (pow_univariate (vs i) (extract_exp_var_i m i)))
+            =
+          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b) A)
+            *
+          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+              (pow_univariate (vs i) (extract_exp_var_i m i))) := by
+        simpa using
+          (eval₂_mul_Mul
+            (n := 1) (R := 𝔽) (S := 𝔽)
+            (f := RingHom.id 𝔽) (vals := fun _ : Fin 1 => b)
+            (a := A) (b := pow_univariate (vs i) (extract_exp_var_i m i)))
+
+      -- unfold foldl once and apply IH on updated accumulator (which is Mul.mul A ...)
+      simp [List.foldl, hmul, hp, eval₂_foldl_mul_pow_univariate]
+
+lemma Fin_foldr_loop_map
+  {α β : Type} (g : α → β) :
+  ∀ {n : ℕ} (f : Fin n → α) (k : ℕ) (hk : k ≤ n) (acc : List α),
+    List.map g (Fin.foldr.loop n (fun x xs => f x :: xs) k hk acc) =
+      Fin.foldr.loop n (fun x xs => g (f x) :: xs) k hk (List.map g acc)
+| n, f, 0, hk, acc => by
+    simp [Fin.foldr.loop]
+| n, f, Nat.succ k, hk, acc => by
+    -- unfold one step of the loop, then use IH
+    simp [Fin.foldr.loop, Fin_foldr_loop_map (n := n) (f := f) (k := k) (hk := Nat.le_of_lt (Nat.lt_of_lt_of_le (Nat.lt_succ_self k) hk))]
+
+lemma Fin_foldr_map
+  {α β : Type} {n : ℕ}
+  (f : Fin n → α) (g : α → β) :
+  List.map g (Fin.foldr n (fun x xs => f x :: xs) [])
+    =
+  Fin.foldr n (fun x xs => g (f x) :: xs) [] := by
+  -- expand `Fin.foldr` into `loop` and use the loop-map lemma
+  simp [Fin.foldr, Fin_foldr_loop_map (g := g) (n := n) (f := f) (k := n) (hk := le_rfl) (acc := ([] : List α))]
+
+lemma List.foldr_map'
+  {α β γ : Type} (g : α → β) (h : β → γ → γ) (z : γ) :
+  ∀ l : List α,
+    List.foldr h z (List.map g l) = List.foldr (fun a acc => h (g a) acc) z l
+| [] => by simp
+| a :: l => by simp [List.foldr_map' g h z l]
+
+lemma Fin_foldr_loop_cons
+  {α : Type} {N : ℕ} (f : Fin N → α → α) :
+  ∀ (k : ℕ) (hk : k ≤ N) (acc : α),
+    Fin.foldr.loop N f k hk acc = Fin.foldr.loop N f k hk (by
+      -- default accumulator for the “prefix” part; will be supplied by caller
+      exact acc) := by
+  -- dummy lemma; keep if you need later
+  intro k hk acc
+  rfl
+
+lemma Fin_foldr_loop_cons_list
+  (N : ℕ) :
+  ∀ (k : ℕ) (hk : k ≤ N) (acc : List (Fin N)),
+    Fin.foldr.loop N (fun x xs => x :: xs) k hk acc =
+      Fin.foldr.loop N (fun x xs => x :: xs) k hk [] ++ acc
+| 0, hk, acc => by
+    simp [Fin.foldr.loop]
+| Nat.succ k, hk, acc => by
+    have hk' : k ≤ N := Nat.le_trans (Nat.le_succ k) hk
+    have lt : k < N := Nat.lt_of_lt_of_le (Nat.lt_succ_self k) hk
+
+    have step1 :
+        Fin.foldr.loop N (fun x xs => x :: xs) (Nat.succ k) hk acc
+          =
+        Fin.foldr.loop N (fun x xs => x :: xs) k hk' ((⟨k, lt⟩ : Fin N) :: acc) := by
+      simp [Fin.foldr.loop]  -- one-step unfold
+
+    have step2 :
+        Fin.foldr.loop N (fun x xs => x :: xs) (Nat.succ k) hk []
+          =
+        Fin.foldr.loop N (fun x xs => x :: xs) k hk' [((⟨k, lt⟩ : Fin N))] := by
+      simp [Fin.foldr.loop]  -- one-step unfold
+
+    calc
+      Fin.foldr.loop N (fun x xs => x :: xs) (Nat.succ k) hk acc
+          = Fin.foldr.loop N (fun x xs => x :: xs) k hk' ((⟨k, lt⟩ : Fin N) :: acc) := step1
+      _ = Fin.foldr.loop N (fun x xs => x :: xs) k hk' [] ++ ((⟨k, lt⟩ : Fin N) :: acc) := by
+            simpa using (Fin_foldr_loop_cons_list N k hk' ((⟨k, lt⟩ : Fin N) :: acc))
+      _ = (Fin.foldr.loop N (fun x xs => x :: xs) k hk' [] ++ [((⟨k, lt⟩ : Fin N))]) ++ acc := by
+            simp [List.append_assoc]
+      _ = Fin.foldr.loop N (fun x xs => x :: xs) k hk' [((⟨k, lt⟩ : Fin N))] ++ acc := by
+            -- use IH backwards on the singleton accumulator
+            have hsing :
+                Fin.foldr.loop N (fun x xs => x :: xs) k hk' [((⟨k, lt⟩ : Fin N))]
+                  =
+                Fin.foldr.loop N (fun x xs => x :: xs) k hk' [] ++ [((⟨k, lt⟩ : Fin N))] := by
+              simpa using (Fin_foldr_loop_cons_list N k hk' [((⟨k, lt⟩ : Fin N))])
+            -- rewrite the LHS of our goal with this
+            simpa [List.append_assoc] using congrArg (fun t => t ++ acc) hsing.symm
+      _ = Fin.foldr.loop N (fun x xs => x :: xs) (Nat.succ k) hk [] ++ acc := by
+            simp [step2]
+
+lemma Fin_foldr_loop_castSucc_general
+  {N k : ℕ} (hk : k ≤ N) :
+  Fin.foldr.loop (N + 1) (fun x xs => x :: xs) k (Nat.le_trans hk (Nat.le_succ N)) [] =
+    List.map Fin.castSucc (Fin.foldr.loop N (fun x xs => x :: xs) k hk []) := by
+  classical
+  induction k with
+  | zero =>
+      simp [Fin.foldr.loop]
+  | succ k ih =>
+      -- hk : k+1 ≤ N
+      have hk' : k ≤ N := Nat.le_of_succ_le hk
+      have hkL : k ≤ N + 1 := Nat.le_trans hk' (Nat.le_succ N)
+
+      have ltN : k < N := Nat.lt_of_lt_of_le (Nat.lt_succ_self k) hk
+      have ltNp1 : k < N + 1 := Nat.lt_trans ltN (Nat.lt_succ_self N)
+
+      have hcast :
+          (Fin.castSucc (⟨k, ltN⟩ : Fin N)) = (⟨k, ltNp1⟩ : Fin (N+1)) := by
+        simp [(Fin.castSucc_mk (n := N) (i := k) (h := ltN))]
+
+      -- unfold one loop step on both sides
+      have stepL :
+          Fin.foldr.loop (N + 1) (fun x xs => x :: xs) (k + 1) (Nat.le_trans hk (Nat.le_succ N)) [] =
+            Fin.foldr.loop (N + 1) (fun x xs => x :: xs) k hkL [⟨k, ltNp1⟩] := by
+        simp [Fin.foldr.loop]
+
+      have stepR :
+          Fin.foldr.loop N (fun x xs => x :: xs) (k + 1) hk [] =
+            Fin.foldr.loop N (fun x xs => x :: xs) k hk' [⟨k, ltN⟩] := by
+        simp [Fin.foldr.loop]
+
+      -- use your already-working cons-list lemma to move singleton acc to the end
+      have hconsL :=
+        (Fin_foldr_loop_cons_list (N := (N+1)) (k := k) (hk := hkL) (acc := [⟨k, ltNp1⟩]))
+      have hconsR :=
+        (Fin_foldr_loop_cons_list (N := N) (k := k) (hk := hk') (acc := [⟨k, ltN⟩]))
+
+      -- rewrite and finish
+      rw [stepL, stepR]
+      rw [hconsL, hconsR]
+      -- apply IH on the empty-loop piece
+      have ih' :
+          Fin.foldr.loop (N + 1) (fun x xs => x :: xs) k (Nat.le_trans hk' (Nat.le_succ N)) [] =
+            List.map Fin.castSucc (Fin.foldr.loop N (fun x xs => x :: xs) k hk' []) :=
+        ih (hk := hk')
+
+      rw [ih']
+      simp [List.map_append, hcast]
+
+lemma Fin_foldr_loop_castSucc
+  (n : ℕ)
+  (hkL : n ≤ n + 1 + 1)
+  (hkR : n ≤ n + 1) :
+  Fin.foldr.loop (n + 1 + 1) (fun x xs => x :: xs) n hkL [] =
+    List.map Fin.castSucc
+      (Fin.foldr.loop (n + 1) (fun x xs => x :: xs) n hkR []) := by
+  simpa [Nat.add_assoc, Nat.add_comm, Nat.add_left_comm] using
+    (Fin_foldr_loop_castSucc_general (N := (n+1)) (k := n) hkR)
+
+lemma List.foldl_mul_start
+  {α : Type} [CommMonoid α]
+  (a : α) (xs : List α) :
+  a * List.foldl (fun acc x => acc * x) 1 xs
+    =
+  List.foldl (fun acc x => acc * x) a xs := by
+  simpa using
+    (List.foldl_mul_assoc (α := α) (a := a) (b := (1 : α)) (xs := xs)).symm
+
+lemma foldl_ofFn_succ_mul_start
+  {α : Type} [CommMonoid α]
+  (n : ℕ) (f : Fin n.succ → α) :
+  f 0 * List.foldl (fun acc x => acc * x) 1 (List.ofFn (fun i : Fin n => f i.succ))
+    =
+  List.foldl (fun acc x => acc * x) (f 0) (List.ofFn (fun i : Fin n => f i.succ)) := by
+  simpa using List.foldl_mul_start (α := α) (a := f 0) (xs := List.ofFn (fun i : Fin n => f i.succ))
+
+lemma Fin_foldr_loop_cons_list_values
+  {α : Type} (N : ℕ) (f : Fin N → α) :
+  ∀ (k : ℕ) (hk : k ≤ N) (acc : List α),
+    Fin.foldr.loop N (fun i xs => f i :: xs) k hk acc
+      =
+    Fin.foldr.loop N (fun i xs => f i :: xs) k hk [] ++ acc
+| 0, hk, acc => by
+    simp [Fin.foldr.loop]
+| Nat.succ k, hk, acc => by
+    have hk' : k ≤ N := Nat.le_trans (Nat.le_succ k) hk
+    have lt : k < N := Nat.lt_of_lt_of_le (Nat.lt_succ_self k) hk
+    have step :
+        Fin.foldr.loop N (fun i xs => f i :: xs) (Nat.succ k) hk acc
+          =
+        Fin.foldr.loop N (fun i xs => f i :: xs) k hk' (f (⟨k, lt⟩ : Fin N) :: acc) := by
+      simp [Fin.foldr.loop]
+    have step0 :
+        Fin.foldr.loop N (fun i xs => f i :: xs) (Nat.succ k) hk []
+          =
+        Fin.foldr.loop N (fun i xs => f i :: xs) k hk' [f (⟨k, lt⟩ : Fin N)] := by
+      simp [Fin.foldr.loop]
+
+    calc
+      Fin.foldr.loop N (fun i xs => f i :: xs) (Nat.succ k) hk acc
+          = Fin.foldr.loop N (fun i xs => f i :: xs) k hk' (f (⟨k, lt⟩ : Fin N) :: acc) := step
+      _ = Fin.foldr.loop N (fun i xs => f i :: xs) k hk' [] ++ (f (⟨k, lt⟩ : Fin N) :: acc) := by
+            simpa using (Fin_foldr_loop_cons_list_values N f k hk' (f (⟨k, lt⟩ : Fin N) :: acc))
+      _ = (Fin.foldr.loop N (fun i xs => f i :: xs) k hk' [] ++ [f (⟨k, lt⟩ : Fin N)]) ++ acc := by
+            simp [List.append_assoc]
+      _ = Fin.foldr.loop N (fun i xs => f i :: xs) k hk' [f (⟨k, lt⟩ : Fin N)] ++ acc := by
+            have hsing :
+                Fin.foldr.loop N (fun i xs => f i :: xs) k hk' [f (⟨k, lt⟩ : Fin N)]
+                  =
+                Fin.foldr.loop N (fun i xs => f i :: xs) k hk' [] ++ [f (⟨k, lt⟩ : Fin N)] := by
+              simpa using (Fin_foldr_loop_cons_list_values N f k hk' [f (⟨k, lt⟩ : Fin N)])
+            simpa [List.append_assoc] using congrArg (fun t => t ++ acc) hsing.symm
+      _ = Fin.foldr.loop N (fun i xs => f i :: xs) (Nat.succ k) hk [] ++ acc := by
+            simp [step0]
+
+lemma Fin_foldr_loop_values_eq_map
+  {α : Type} {N : ℕ} (f : Fin N → α) (k : ℕ) (hk : k ≤ N) (acc : List (Fin N)) :
+  Fin.foldr.loop N (fun i xs => f i :: xs) k hk (List.map f acc) =
+    List.map f (Fin.foldr.loop N (fun i xs => i :: xs) k hk acc) := by
+  simpa using
+    (Fin_foldr_loop_map (g := f) (n := N) (f := fun i : Fin N => i)
+      (k := k) (hk := hk) (acc := acc)).symm
+
+lemma Fin_foldr_loop_values_eq_map_nil
+  {α : Type} {N : ℕ} (f : Fin N → α) (k : ℕ) (hk : k ≤ N) :
+  Fin.foldr.loop N (fun i xs => f i :: xs) k hk [] =
+    List.map f (Fin.foldr.loop N (fun i xs => i :: xs) k hk []) := by
+  simpa using
+    (Fin_foldr_loop_values_eq_map (f := f) (k := k) (hk := hk) (acc := ([] : List (Fin N))))
+
+lemma Finset_univ_prod_eq_foldl_ofFn
+  {α : Type} [CommMonoid α] :
+  ∀ (n : ℕ) (f : Fin n → α),
+    (∏ x, f x) = List.foldl (fun acc x => acc * x) 1 (List.ofFn f)
+| 0, f => by
+    simp
+| Nat.succ n, f => by
+    classical
+    have ih := Finset_univ_prod_eq_foldl_ofFn n (fun i : Fin n => f i.succ)
+    have hprod : (∏ x : Fin (Nat.succ n), f x) = f 0 * (∏ x : Fin n, f x.succ) := by
+      simpa using (Fin.prod_univ_succ (f := f))
+    have hofn : List.ofFn f = f 0 :: List.ofFn (fun i : Fin n => f i.succ) := by
+      simp
+    calc
+      (∏ x : Fin (Nat.succ n), f x)
+          = f 0 * (∏ x : Fin n, f x.succ) := hprod
+      _ = f 0 * List.foldl (fun acc x => acc * x) 1 (List.ofFn (fun i : Fin n => f i.succ)) := by
+            simp [ih]
+      _ = List.foldl (fun acc x => acc * x) 1 (List.ofFn f) := by
+            rw [hofn]
+            simp [List.foldl]
+            simpa using
+              (foldl_ofFn_succ_mul_start (α := α) (n := n) (f := f))
+
+lemma List.ofFn_succ
+  {α : Type} (n : ℕ) (f : Fin n.succ → α) :
+  List.ofFn f = f 0 :: List.ofFn (fun i : Fin n => f i.succ) := by
+  simp
+
+lemma Fin_foldr_map_symm
+  {α β : Type} {n : ℕ}
+  (f : Fin n → α) (g : α → β) :
+  Fin.foldr n (fun x xs => g (f x) :: xs) ([] : List β)
+    =
+  List.map g (Fin.foldr n (fun x xs => f x :: xs) ([] : List α)) := by
+  simpa using (Fin_foldr_map (f := f) (g := g)).symm
