@@ -16,6 +16,7 @@ import Std.Data.ExtTreeMap.Lemmas
 import Sumcheck.Lemmas.BadTranscript
 import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Challenges
+import Sumcheck.Lemmas.Eval2
 
 open scoped BigOperators
 
@@ -142,14 +143,9 @@ lemma roundDisagreeButAgreeAtChallenge_iff_claims
     t.claims i.succ =
       next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i) := by
   classical
-  -- unfold the definition
   simp [RoundDisagreeButAgreeAtChallenge]
-  -- now unfold how `AdversaryTranscript` defines `claims`
-  -- so that `t.claims i.succ` becomes `next_claim (r i) (t.round_polys i)`
-  -- (this is just the `derive_claims` recursion step)
   cases i with
   | mk k hk =>
-    -- After `cases`, `i.succ` is definitional, and `simp` can reduce `derive_claims`.
     simp [AdversaryTranscript, derive_claims]
 
 lemma CMvPolynomial.eval_eq_eval₂
@@ -161,7 +157,296 @@ lemma CMvPolynomial.eval_eq_eval₂
     =
   CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := n)
     (RingHom.id 𝔽) r p := by
-  rfl  -- if your `eval` is definitional; otherwise `simp [CPoly.CMvPolynomial.eval]`
+  rfl
+
+lemma two_add (m : ℕ) : 2 + m = 1 + (1 + m) := by
+  induction m with
+  | zero =>
+      rfl
+  | succ m ih =>
+      change Nat.succ (2 + m) = Nat.succ (1 + (1 + m))
+      exact congrArg Nat.succ ih
+
+lemma nat_sub_add_two (n k : ℕ) (hk : k.succ < n) :
+    n - (k + 1) = 1 + (n - (k + 2)) := by
+  have hle1 : k + 1 ≤ n := Nat.le_of_lt hk
+  have hle2 : k + 2 ≤ n := Nat.succ_le_of_lt hk
+
+  -- Let m = n - (k+2), so (k+2) + m = n
+  set m : ℕ := n - (k + 2) with hm
+  have hsub1 : (k + 1) + (n - (k + 1)) = n := Nat.add_sub_of_le hle1
+  have hsub2 : (k + 2) + m = n := by
+    simpa [m] using (Nat.add_sub_of_le hle2)
+
+  have heq :
+      (k + 1) + (n - (k + 1)) = (k + 1) + (1 + m) := by
+    calc
+      (k + 1) + (n - (k + 1)) = n := hsub1
+      _ = (k + 2) + m := by simpa using hsub2.symm
+      _ = (k + 1) + (1 + m) := by
+        -- Prove (k+2)+m = (k+1)+(1+m) by reassociating to `k + (2+m)`
+        -- then rewriting `2+m` using `two_add`, then reassociating back.
+        calc
+          (k + 2) + m = k + (2 + m) := by
+            -- (k+2)+m = k+(2+m)
+            simp [Nat.add_assoc]
+          _ = k + (1 + (1 + m)) := by
+            -- rewrite the inner 2+m
+            rw [two_add m]
+          _ = (k + 1) + (1 + m) := by
+            -- k + (1 + (1+m)) = (k+1) + (1+m)
+            simp [Nat.add_assoc]
+
+  have : n - (k + 1) = 1 + m := Nat.add_left_cancel heq
+  simpa [m] using this
+
+lemma honest_num_open_vars_succ {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) :
+    honest_num_open_vars (n := n) i
+      = honest_num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 := by
+  -- unfold to Nat subtraction
+  -- honest_num_open_vars k = n - (k.val + 1)
+  -- and j.val = i.val+1, so j.val+1 = i.val+2
+  have hNat : n - (i.val + 1) = 1 + (n - (i.val + 2)) := by
+    simpa using nat_sub_add_two n i.val hlt
+  -- put it back in the project’s definition shape
+  -- note: `simp` should rewrite the j-val arithmetic
+  simpa [honest_num_open_vars, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hNat
+
+lemma List.foldl_mul_pull_out
+  {α β : Type _} [Monoid α]
+  (h : β → α) :
+  ∀ (a : α) (l : List β),
+    List.foldl (fun acc x => acc * h x) a l
+      =
+    a * List.foldl (fun acc x => acc * h x) 1 l
+  | a, [] =>
+      by
+        -- LHS = a, RHS = a * 1
+        simpa using (Eq.symm (mul_one a))
+  | a, x :: xs =>
+      by
+        -- recursive instances (IMPORTANT: pass h := h)
+        have ih_a :
+            List.foldl (fun acc t => acc * h t) (a * h x) xs
+              =
+            (a * h x) * List.foldl (fun acc t => acc * h t) 1 xs :=
+          (List.foldl_mul_pull_out (h := h) (a := a * h x) (l := xs))
+
+        have ih_hx :
+            List.foldl (fun acc t => acc * h t) (h x) xs
+              =
+            (h x) * List.foldl (fun acc t => acc * h t) 1 xs :=
+          (List.foldl_mul_pull_out (h := h) (a := h x) (l := xs))
+
+        -- main calc
+        calc
+          List.foldl (fun acc t => acc * h t) a (x :: xs)
+              = List.foldl (fun acc t => acc * h t) (a * h x) xs := rfl
+          _ = (a * h x) * List.foldl (fun acc t => acc * h t) 1 xs := ih_a
+          _ = a * (h x * List.foldl (fun acc t => acc * h t) 1 xs) := by
+                -- reassociate: (a*h x)*rest = a*(h x*rest)
+                simp [mul_assoc]
+          _ = a * List.foldl (fun acc t => acc * h t) (h x) xs := by
+                -- use ih_hx backwards inside `a * _`
+                simpa using congrArg (fun z => a * z) ih_hx.symm
+          _ = a * List.foldl (fun acc t => acc * h t) (1 * h x) xs := by
+                simp
+          _ = a * List.foldl (fun acc t => acc * h t) 1 (x :: xs) := rfl
+
+
+lemma foldl_finRange_mul_eq_prod
+  {α : Type _} : ∀ {n : ℕ} [CommMonoid α] (g : Fin n → α),
+    List.foldl (fun acc i => acc * g i) 1 (List.finRange n)
+      = (∏ i : Fin n, g i)
+  | 0, _, g => by
+      simp
+  | (n+1), inst, g => by
+      classical
+      -- expand finRange (n+1) and the ∏ over Fin (n+1)
+      -- after this simp, the goal becomes the “head * tail” shape
+      simp [List.finRange_succ]
+
+      -- rewrite foldl over the mapped list using the existing List.foldl_map
+      have hmap :
+          List.foldl (fun acc j => acc * g j) (g 0) (List.map Fin.succ (List.finRange n))
+            =
+          List.foldl (fun acc i => acc * g i.succ) (g 0) (List.finRange n) := by
+        simpa using
+          (List.foldl_map (f := Fin.succ)
+            (g := fun acc (j : Fin (n + 1)) => acc * g j)
+            (l := List.finRange n) (init := g 0))
+
+      -- factor out the initial g 0
+      have hpull :
+          List.foldl (fun acc i => acc * g i.succ) (g 0) (List.finRange n)
+            =
+          g 0 * List.foldl (fun acc i => acc * g i.succ) 1 (List.finRange n) := by
+        simpa using
+          (List.foldl_mul_pull_out (h := fun i : Fin n => g i.succ)
+            (a := g 0) (l := List.finRange n))
+
+      -- IH applied to the tail function i ↦ g i.succ
+      have hih :
+          List.foldl (fun acc i => acc * g i.succ) 1 (List.finRange n)
+            =
+          (∏ i : Fin n, g i.succ) := by
+        simpa using (foldl_finRange_mul_eq_prod (n := n) (g := fun i : Fin n => g i.succ))
+
+      -- finish: rewrite foldl → product using hih, then use Fin.prod_univ_succ
+      calc
+        List.foldl (fun acc j => acc * g j) (g 0) (List.map Fin.succ (List.finRange n))
+            =
+        List.foldl (fun acc i => acc * g i.succ) (g 0) (List.finRange n) := hmap
+        _ =
+        g 0 * List.foldl (fun acc i => acc * g i.succ) 1 (List.finRange n) := hpull
+        _ =
+        g 0 * (∏ i : Fin n, g i.succ) := by
+              -- bridge the foldl tail to the product tail
+              simp [hih]
+        _ =
+        (∏ i : Fin (n + 1), g i) := by
+              -- reverse of `∏ i, g i = g 0 * ∏ i, g i.succ`
+              simpa using (Fin.prod_univ_succ (f := g)).symm
+
+lemma extract_exp_var_i_eq_get {n : ℕ} (m : CPoly.CMvMonomial n) (x : Fin n) :
+    extract_exp_var_i m x = Vector.get m x := by
+  rfl
+
+lemma eval₂_subst_monomial
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (m : CPoly.CMvMonomial n)
+  (b : 𝔽) :
+  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+      (subst_monomial (n := n) (𝔽 := 𝔽) vs m)
+    =
+  CPoly.MonoR.evalMonomial (n := n) (R := 𝔽)
+      (fun i =>
+        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i))
+      m := by
+  classical
+  -- Expand subst_monomial into the foldl product
+  unfold subst_monomial
+
+  -- Push eval₂ through the foldl product of powers
+  have hfold :=
+    CPoly.eval₂_foldl_mul_pow_univariate
+      (𝔽 := 𝔽) (n := n) (vs := vs) (m := m) (b := b)
+      (A := (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽)))
+      (L := List.finRange n)
+
+  -- eval₂(C 1) = 1
+  have hA :
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
+        = (1 : 𝔽) := by
+    simpa using
+      (CPoly.eval₂_Lawful_C (R := 𝔽) (S := 𝔽) (n := 1)
+        (f := RingHom.id 𝔽) (vs := fun _ : Fin 1 => b) (c := (1 : 𝔽)))
+
+  -- This is the exact foldl equality you already saw (keep Mul.mul in the fold body!)
+  have hscalar :
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (List.foldl
+            (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+            (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
+            (List.finRange n))
+        =
+      List.foldl
+        (fun acc i =>
+          acc *
+            (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+                (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)) ^
+              (extract_exp_var_i m i))
+        1
+        (List.finRange n) := by
+    simpa [hA] using hfold
+
+  -- Name the scalar values at b
+  let vals : Fin n → 𝔽 :=
+    fun i =>
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)
+
+  -- Convert the RHS foldl into a ∏ using your new lemma
+  have hprod :
+      List.foldl (fun acc i => acc * (vals i) ^ (extract_exp_var_i m i)) 1 (List.finRange n)
+        =
+      (∏ i : Fin n, (vals i) ^ (extract_exp_var_i m i)) := by
+    simpa [vals] using
+      (foldl_finRange_mul_eq_prod (α := 𝔽) (n := n)
+        (g := fun i : Fin n => (vals i) ^ (extract_exp_var_i m i)))
+
+  -- Finish: rewrite hscalar into vals-form, rewrite via hprod, then match evalMonomial definition
+  calc
+    CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+        (List.foldl
+          (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+          (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
+          (List.finRange n))
+        =
+      List.foldl (fun acc i => acc * (vals i) ^ (extract_exp_var_i m i)) 1 (List.finRange n) := by
+        simpa [vals] using hscalar
+    _ =
+      (∏ i : Fin n, (vals i) ^ (extract_exp_var_i m i)) := hprod
+    _ =
+      CPoly.MonoR.evalMonomial (n := n) (R := 𝔽) vals m := by
+      -- Here is the only possible remaining mismatch: `extract_exp_var_i` vs `Vector.get`.
+      -- If you have a lemma equating them, add it here (common name: `extract_exp_var_i_eq_get`).
+      -- Otherwise, unfolding evalMonomial should show you exactly the exponent accessor.
+      simp [CPoly.MonoR.evalMonomial, vals]
+      simp [extract_exp_var_i_eq_get]
+
+@[simp] lemma coe_Lawful_mul_CMvPolynomial_1
+  {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (a : CPoly.Lawful 1 𝔽) (q : CPoly.CMvPolynomial 1 𝔽) :
+  ((a * q : CPoly.Lawful 1 𝔽) : CPoly.CMvPolynomial 1 𝔽) =
+    ((a : CPoly.CMvPolynomial 1 𝔽) * q) := by
+  rfl
+
+lemma lawful_coe_roundtrip[Zero 𝔽] (q : CPoly.CMvPolynomial 1 𝔽) :
+  (show CPoly.CMvPolynomial 1 𝔽 from (show CPoly.Lawful 1 𝔽 from q)) = q := by rfl
+
+lemma eval₂_mul_fun_CPoly
+  {n : ℕ} {R S : Type}
+  [CommSemiring R] [CommSemiring S]
+  [DecidableEq R] [BEq R] [LawfulBEq R]
+  (f : R →+* S) (vals : Fin n → S)
+  (a b : CPoly.CMvPolynomial n R) :
+  CPoly.CMvPolynomial.eval₂ (R := R) (S := S) (n := n) f vals (a * b)
+    =
+  CPoly.CMvPolynomial.eval₂ (R := R) (S := S) (n := n) f vals a *
+  CPoly.CMvPolynomial.eval₂ (R := R) (S := S) (n := n) f vals b := by
+  -- This is definitional/notation alignment only; it should be very fast.
+  simp [(CPoly.eval₂_mul_fun (n := n) (R := R) (S := S) f vals a b)]
+
+lemma honest_last_round
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽] [Fintype 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
+  (hlast : i.val.succ = n) :
+  next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i)
+    = CPoly.CMvPolynomial.eval r p := by
+  sorry
+
+lemma honest_step_round
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
+  (hlt : i.val.succ < n) :
+  let j : Fin n := ⟨i.val.succ, hlt⟩
+  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽))
+      (honest_round_poly (p := p) (ch := r) j)
+    +
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
+      (honest_round_poly (p := p) (ch := r) j)
+    =
+    next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i) := by
+  sorry
 
 lemma accepts_and_bad_implies_exists_round_disagree_but_agree
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
@@ -317,7 +602,6 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
               simpa using hsum.symm
       _ = next_claim (𝔽 := 𝔽) (round_challenge := r i)
             (honest_round_poly (p := p) (ch := r) i) := honest_step
-
 
 lemma sum_accepts_and_round_disagree_but_agree_bound
 {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
