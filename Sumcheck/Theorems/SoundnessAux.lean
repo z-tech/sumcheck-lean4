@@ -253,7 +253,6 @@ lemma List.foldl_mul_pull_out
                 simp
           _ = a * List.foldl (fun acc t => acc * h t) 1 (x :: xs) := rfl
 
-
 lemma foldl_finRange_mul_eq_prod
   {α : Type _} : ∀ {n : ℕ} [CommMonoid α] (g : Fin n → α),
     List.foldl (fun acc i => acc * g i) 1 (List.finRange n)

@@ -4,6 +4,8 @@ import Sumcheck.Src.HonestTranscript
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.Verifier
 
+import Sumcheck.Events.BadRound
+
 import Sumcheck.Lemmas.Eval2
 
 open scoped BigOperators
@@ -236,7 +238,7 @@ lemma eval₂_addCases_honest_right_map
   | left t =>
       -- left branch: we are evaluating a constant polynomial `C (...)`
       -- and RHS is the corresponding r ⟨t, _⟩.
-      simp [Fin.addCases, addCasesFun, h, CPoly.eval₂_Lawful_C, c1, challenge_subset]
+      simp [Fin.addCases, CPoly.eval₂_Lawful_C, challenge_subset]
   | right t =>
       -- right branch: use your `eval₂_honest_right_map`
       -- RHS is `Fin.cases a b t`
