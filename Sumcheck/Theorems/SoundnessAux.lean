@@ -589,6 +589,106 @@ lemma eval₂_c1_mul_subst_add
       CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc := by
         rw [hc, hs]
 
+lemma eval₂_foldl_step_eq_foldl_g
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (b : 𝔽)
+  (pt : Fin n → 𝔽)
+  (g : 𝔽 → (CPoly.CMvMonomial n × 𝔽) → 𝔽)
+  (step : CPoly.CMvPolynomial 1 𝔽 → (CPoly.CMvMonomial n × 𝔽) → CPoly.CMvPolynomial 1 𝔽)
+  (hstep :
+    ∀ (acc : CPoly.CMvPolynomial 1 𝔽) (mc : CPoly.CMvMonomial n × 𝔽),
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (step acc mc)
+        =
+      g (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc) mc)
+  :
+  ∀ (l : List (CPoly.CMvMonomial n × 𝔽)) (acc : CPoly.CMvPolynomial 1 𝔽),
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+        (List.foldl step acc l)
+      =
+    List.foldl g
+      (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc)
+      l := by
+  intro l acc
+  induction l generalizing acc with
+  | nil =>
+      simp
+  | cons mc tl ih =>
+      simp [List.foldl, ih, hstep]
+
+def step_fun
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) :
+  CPoly.CMvPolynomial 1 𝔽 → (CPoly.CMvMonomial n × 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
+fun acc mc =>
+  (@HAdd.hAdd _ _ _ instHAdd
+    (@HMul.hMul _ _ _ instHMul
+      (c1 (𝔽 := 𝔽) mc.2)
+      (subst_monomial vs mc.1))
+    acc)
+
+lemma step_def
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) :
+  step_fun (𝔽 := 𝔽) (n := n) vs
+    =
+    (fun acc mc =>
+      (@HAdd.hAdd _ _ _ instHAdd
+        (@HMul.hMul _ _ _ instHMul (c1 (𝔽 := 𝔽) mc.2) (subst_monomial vs mc.1))
+        acc)) := by
+  rfl
+
+@[simp] lemma toList_coe_CMvPolynomial
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) :
+  Std.ExtTreeMap.toList (p.1) = p.1.toList := by
+  rfl
+
+lemma eval_eq_foldl_toList
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (pt : Fin n → 𝔽)
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (g : 𝔽 → (CPoly.CMvMonomial n × 𝔽) → 𝔽)
+  (hg :
+    g = (fun s mc => s + mc.2 * CPoly.MonoR.evalMonomial pt mc.1))
+  :
+  CPoly.CMvPolynomial.eval pt p
+    =
+  List.foldl g 0 (p.1.toList) := by
+  subst hg
+  simp [CPoly.CMvPolynomial.eval]
+  rw [eval₂_eq_foldl (f := RingHom.id 𝔽) (vals := pt) (p := p)]
+  have hf :=
+    (Std.ExtTreeMap.foldl_eq_foldl_toList
+      (t := p.1)
+      (f := fun s m c => (RingHom.id 𝔽) c * CPoly.MonoR.evalMonomial pt m + s)
+      (init := (0 : 𝔽)))
+  simpa [add_comm, add_left_comm, add_assoc, mul_assoc, mul_comm, mul_left_comm] using hf
+
+
+lemma eval₂_eval₂Poly_c1
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (b : 𝔽) :
+  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+      (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p)
+    =
+  CPoly.CMvPolynomial.eval
+      (fun i =>
+        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+            (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i))
+      p := by
+  sorry
+
+
 lemma honest_last_round
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽] [Fintype 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
