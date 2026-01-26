@@ -717,3 +717,24 @@ lemma Fin_foldr_map_symm
     =
   List.map g (Fin.foldr n (fun x xs => f x :: xs) ([] : List α)) := by
   simpa using (Fin_foldr_map (f := f) (g := g)).symm
+
+@[simp] lemma CMvPolynomial_zero_val_eq_empty
+  {n : ℕ} {R : Type _} [Zero R] [BEq R] [LawfulBEq R] :
+  ((0 : CPoly.CMvPolynomial n R).1 : CPoly.Unlawful n R) =
+    (Std.ExtTreeMap.empty : CPoly.Unlawful n R) := by
+  classical
+  simpa [CPoly.CMvPolynomial] using congrArg Subtype.val (CPoly.Lawful.zero_eq_empty (n := n) (R := R))
+
+@[simp] lemma Std_ExtTreeMap_foldl_empty
+  {α β σ : Type _} {cmp : α → α → Ordering} [Std.TransCmp cmp]
+  (f : σ → α → β → σ) (init : σ) :
+  Std.ExtTreeMap.foldl (cmp := cmp) f init (∅ : Std.ExtTreeMap α β cmp) = init := by
+  simpa using (Std.ExtTreeMap.foldl_empty (cmp := cmp) (f := f) (init := init))
+
+@[simp] lemma CMvPolynomial_eval₂_zero
+  {R S : Type _} {n : ℕ} [Semiring R] [CommSemiring S]
+  [BEq R] [LawfulBEq R]
+  (f : R →+* S) (g : Fin n → S) :
+  CPoly.CMvPolynomial.eval₂ (R := R) (S := S) (n := n) f g (0 : CPoly.CMvPolynomial n R) = 0 := by
+  classical
+  simp [CPoly.CMvPolynomial.eval₂, CMvPolynomial_zero_val_eq_empty]

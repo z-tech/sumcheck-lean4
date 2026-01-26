@@ -425,6 +425,170 @@ lemma eval₂_mul_fun_CPoly
   -- This is definitional/notation alignment only; it should be very fast.
   simp [(CPoly.eval₂_mul_fun (n := n) (R := R) (S := S) f vals a b)]
 
+lemma CPoly.eval₂_add_fun
+  {n : ℕ} {R S : Type}
+  [CommSemiring R] [CommSemiring S]
+  [DecidableEq R] [BEq R] [LawfulBEq R]
+  (f : R →+* S) (vals : Fin n → S)
+  (a b : CPoly.CMvPolynomial n R) :
+  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals (a + b)
+    =
+  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals a
+    +
+  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals b := by
+  -- your existing lemma is in dot-form; this re-expresses it in function-form
+  simp [(CPoly.eval₂_add (n := n) (R := R) (S := S) (f := f) (vals := vals) a b)]
+
+@[simp] lemma c1_eq_Lawful_C
+  {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) :
+  (c1 (𝔽 := 𝔽) c) = (CPoly.Lawful.C (n := 1) (R := 𝔽) c) := by
+  rfl
+
+lemma Lawful_C_eq_c1
+  {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (c : 𝔽) :
+  (CPoly.Lawful.C (n := 1) (R := 𝔽) c : CPoly.CMvPolynomial 1 𝔽)
+    =
+  (c1 (𝔽 := 𝔽) c) := by
+  rfl
+
+lemma eval₂_eq_foldl
+  {R S : Type _} {n : ℕ} [Semiring R] [CommSemiring S]
+  [BEq R] [LawfulBEq R]
+  (f : R →+* S) (vals : Fin n → S) (p : CPoly.CMvPolynomial n R) :
+  CPoly.CMvPolynomial.eval₂ (R := R) (S := S) (n := n) f vals p
+    =
+  Std.ExtTreeMap.foldl
+    (fun s m c => f c * CPoly.MonoR.evalMonomial vals m + s)
+    0
+    (p.1) := by
+  -- just unfold your definition of eval₂
+  simp [CPoly.CMvPolynomial.eval₂]
+
+lemma eval₂_c1
+  {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+  (b c : 𝔽) :
+  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b) (c1 (𝔽 := 𝔽) c)
+    = c := by
+  -- turn c1 into Lawful.C, then use the library lemma
+  -- CPoly.eval₂_Lawful_C gives = (RingHom.id 𝔽) c, which is definitional = c
+  simpa [c1_eq_Lawful_C] using
+    (CPoly.eval₂_Lawful_C (f := (RingHom.id 𝔽)) (vs := (fun _ : Fin 1 => b)) (c := c))
+
+lemma eval₂_c1_mul_subst_add
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
+  (b : 𝔽)
+  (m : CPoly.CMvMonomial n)
+  (c : 𝔽)
+  (acc : CPoly.CMvPolynomial 1 𝔽) :
+  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+      ( @HAdd.hAdd _ _ _ instHAdd
+          ( @HMul.hMul _ _ _ instHMul (c1 (𝔽 := 𝔽) c) (subst_monomial vs m) )
+          acc )
+    =
+  c * CPoly.MonoR.evalMonomial
+        (fun i =>
+          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+              (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i))
+        m
+    +
+  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc := by
+  classical
+
+  -- Force the homogeneous operations
+  let add1 : CPoly.CMvPolynomial 1 𝔽 → CPoly.CMvPolynomial 1 𝔽 → CPoly.CMvPolynomial 1 𝔽 :=
+    fun A B => @HAdd.hAdd _ _ _ instHAdd A B
+  let mul1 : CPoly.CMvPolynomial 1 𝔽 → CPoly.CMvPolynomial 1 𝔽 → CPoly.CMvPolynomial 1 𝔽 :=
+    fun A B => @HMul.hMul _ _ _ instHMul A B
+
+  -- rewrite goal in terms of add1/mul1
+  change
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+        (add1 (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m)) acc)
+      =
+    c * CPoly.MonoR.evalMonomial
+          (fun i =>
+            CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)) m
+      +
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc
+
+  -- eval₂ distributes over + (now it matches because add1 is homogeneous)
+  have hadd :
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (add1 (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m)) acc)
+        =
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m))
+      +
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc := by
+    simpa [add1] using
+      (CPoly.eval₂_add_fun
+        (n := 1) (R := 𝔽) (S := 𝔽)
+        (f := RingHom.id 𝔽) (vals := (fun _ : Fin 1 => b))
+        (a := (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m)))
+        (b := acc))
+
+  -- eval₂ distributes over * (matches because mul1 is homogeneous)
+  have hmul :
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m))
+        =
+      (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (c1 (𝔽 := 𝔽) c))
+        *
+      (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (subst_monomial vs m)) := by
+    simpa [mul1] using
+      (eval₂_mul_fun_CPoly
+        (n := 1) (R := 𝔽) (S := 𝔽)
+        (f := RingHom.id 𝔽) (vals := (fun _ : Fin 1 => b))
+        (a := (c1 (𝔽 := 𝔽) c)) (b := (subst_monomial vs m)))
+
+  -- eval₂(c1 c) = c (go one-way to Lawful.C to avoid simp loop)
+  have hc :
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (c1 (𝔽 := 𝔽) c) = c := by
+    rw [c1_eq_Lawful_C (𝔽 := 𝔽) (c := c)]
+    simpa using
+      (CPoly.eval₂_Lawful_C
+        (n := 1) (R := 𝔽) (S := 𝔽)
+        (f := RingHom.id 𝔽) (vs := (fun _ : Fin 1 => b)) (c := c))
+
+  -- eval₂(subst_monomial vs m) = evalMonomial(...)
+  have hs :
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (subst_monomial vs m)
+        =
+      CPoly.MonoR.evalMonomial
+        (fun i => CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i))
+        m := by
+    simpa using (eval₂_subst_monomial (vs := vs) (m := m) (b := b))
+
+  -- assemble using rw (not simpa [hmul]) so we don't trigger rewriting to Lawful.C
+  calc
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+        (add1 (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m)) acc)
+        =
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (mul1 (c1 (𝔽 := 𝔽) c) (subst_monomial vs m))
+      +
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc := by
+        exact hadd
+    _ =
+      (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (c1 (𝔽 := 𝔽) c))
+        *
+      (CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (subst_monomial vs m))
+      +
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc := by
+        rw [hmul]
+    _ =
+      c * CPoly.MonoR.evalMonomial
+            (fun i => CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)) m
+      +
+      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc := by
+        rw [hc, hs]
+
 lemma honest_last_round
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽] [Fintype 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
@@ -667,22 +831,3 @@ lemma evalMonomial_monomial_x1
   -- `simp` knows `pow_one`, and the product over Fin 1 is a singleton.
   -- if `simp` doesn't close it in your env, see the helper lemma below.
   simp [Std.ExtTreeMap.foldl_insert_empty, evalMonomial_monomial_x1]
-
-@[simp] lemma c1_eq_Lawful_C
-  {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) :
-  (c1 (𝔽 := 𝔽) c) = (CPoly.Lawful.C (n := 1) (R := 𝔽) c) := by
-  rfl
-
-lemma CPoly.eval₂_add_fun
-  {n : ℕ} {R S : Type}
-  [CommSemiring R] [CommSemiring S]
-  [DecidableEq R] [BEq R] [LawfulBEq R]
-  (f : R →+* S) (vals : Fin n → S)
-  (a b : CPoly.CMvPolynomial n R) :
-  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals (a + b)
-    =
-  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals a
-    +
-  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals b := by
-  -- your existing lemma is in dot-form; this re-expresses it in function-form
-  simp [(CPoly.eval₂_add (n := n) (R := R) (S := S) (f := f) (vals := vals) a b)]

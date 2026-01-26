@@ -2,7 +2,8 @@ import CompPoly.CMvPolynomial
 import CompPoly.MvPolyEquiv
 
 -- this is a constant for a polynomial w/ one variable (arity must be specified)
-@[simp] def c1 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] c :=
+@[simp] def c1 {𝔽} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) :
+  CPoly.CMvPolynomial 1 𝔽 :=
   CPoly.Lawful.C (n := 1) (R := 𝔽) c
 
 -- this is the polynomial 1x^1
