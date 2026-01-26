@@ -616,3 +616,74 @@ lemma sum_accepts_and_round_disagree_but_agree_bound
   -- TODO: prove by bounding each round's event probability (Schwartz–Zippel style)
   -- and summing over i.
   sorry
+
+lemma sum_over_hypercube_recursive_zero
+  {𝔽 β : Type _}
+  (b0 b1 : 𝔽) (add : β → β → β)
+  (F : (Fin 0 → 𝔽) → β) :
+  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
+    (b0 := b0) (b1 := b1) (add := add) (m := 0) F
+    =
+  F (fun x : Fin 0 => nomatch x) := by
+  -- unfold the recursion at m=0
+  simp [sum_over_hypercube_recursive]
+  -- remaining goal is just α-renaming of the empty function
+  rfl
+
+-- Helper: an “empty assignment” at the dependent type Fin (honest_num_open_vars i) → 𝔽
+-- WITHOUT doing `cases hopen`.
+noncomputable def empty_open_assignment
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽]
+  (i : Fin n) (hopen : honest_num_open_vars (n := n) i = 0) :
+  Fin (honest_num_open_vars (n := n) i) → 𝔽 :=
+by
+  -- build it at Fin 0, then transport along hopen.symm : 0 = honest_num_open_vars i
+  refine Eq.ndrec (motive := fun m => Fin m → 𝔽) (fun x : Fin 0 => nomatch x) hopen.symm
+
+lemma evalMonomial_monomial_x1
+  {𝔽 : Type _} [CommSemiring 𝔽]
+  (b : 𝔽) :
+  CPoly.MonoR.evalMonomial (n := 1) (R := 𝔽)
+      (fun _ : Fin 1 => b) (⟨#[1], by decide⟩ : CPoly.CMvMonomial 1)
+    = b := by
+  classical
+  -- evalMonomial is ∏ i, vs i ^ m.get i; for n=1 this is just b^(m.get 0)=b^1=b
+  simp [CPoly.MonoR.evalMonomial, pow_one]
+
+@[simp] lemma eval₂_x0
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽]
+  (b : 𝔽) :
+  CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b) (x0 (𝔽 := 𝔽))
+    = b := by
+  classical
+  -- unfold x0 into the singleton map
+  -- unfold eval₂ into foldl over that map
+  simp [CPoly.CMvPolynomial.eval₂, x0]
+
+  -- after the simp above, the goal should be exactly the foldl over an insert-empty tree
+  -- apply your helper lemma to reduce the foldl
+  -- then it remains to show evalMonomial of #[1] at (fun _ => b) is b
+  --
+  -- `simp` knows `pow_one`, and the product over Fin 1 is a singleton.
+  -- if `simp` doesn't close it in your env, see the helper lemma below.
+  simp [Std.ExtTreeMap.foldl_insert_empty, evalMonomial_monomial_x1]
+
+@[simp] lemma c1_eq_Lawful_C
+  {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) :
+  (c1 (𝔽 := 𝔽) c) = (CPoly.Lawful.C (n := 1) (R := 𝔽) c) := by
+  rfl
+
+lemma CPoly.eval₂_add_fun
+  {n : ℕ} {R S : Type}
+  [CommSemiring R] [CommSemiring S]
+  [DecidableEq R] [BEq R] [LawfulBEq R]
+  (f : R →+* S) (vals : Fin n → S)
+  (a b : CPoly.CMvPolynomial n R) :
+  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals (a + b)
+    =
+  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals a
+    +
+  CPoly.CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals b := by
+  -- your existing lemma is in dot-form; this re-expresses it in function-form
+  simp [(CPoly.eval₂_add (n := n) (R := R) (S := S) (f := f) (vals := vals) a b)]

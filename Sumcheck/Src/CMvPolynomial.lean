@@ -6,12 +6,58 @@ import CompPoly.MvPolyEquiv
   CPoly.Lawful.C (n := 1) (R := 𝔽) c
 
 -- this is the polynomial 1x^1
-@[simp] def x0 {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] :
-  CPoly.CMvPolynomial 1 𝔽 :=
-by
+@[simp] def x0 {𝔽} [Field 𝔽] [DecidableEq 𝔽] :
+  CPoly.CMvPolynomial 1 𝔽 := by
+  classical
   let mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
-  exact CPoly.Lawful.fromUnlawful (n := 1) (R := 𝔽) <|
-    CPoly.Unlawful.ofList [(mon_x1, (1 : 𝔽))]
+  let t :
+      Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1)) :=
+    (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))).insert
+      mon_x1 (1 : 𝔽)
+
+  refine ⟨(show CPoly.Unlawful 1 𝔽 from t), ?_⟩
+  intro m
+  -- prove: t[m]? ≠ some 0
+  intro hm0
+
+  -- if t[m]? = some 0 then (m,0) is in toList
+  have hmem0 : (m, (0 : 𝔽)) ∈ t.toList := by
+    exact (Std.ExtTreeMap.mem_toList_iff_getElem?_eq_some (t := t) (k := m) (v := (0 : 𝔽))).2 hm0
+
+  -- but t has size 1, hence toList = [a]
+  have hknot : mon_x1 ∉ (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))) := by
+    simp
+  have hsize : t.size = 1 := by
+    simpa [t, hknot] using
+      (Std.ExtTreeMap.size_insert
+        (t := (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))))
+        (k := mon_x1) (v := (1 : 𝔽)))
+  have hlen : t.toList.length = 1 := by
+    simp [Std.ExtTreeMap.length_toList, hsize]
+  rcases (List.length_eq_one_iff.mp hlen) with ⟨a, ha⟩
+
+  -- and (mon_x1,1) is in the toList (because lookup at mon_x1 is some 1)
+  have hget1 : t[mon_x1]? = some (1 : 𝔽) := by
+    simpa [t] using
+      (Std.ExtTreeMap.getElem?_insert_self
+        (t := (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))))
+        (k := mon_x1) (v := (1 : 𝔽)))
+  have hmem1 : (mon_x1, (1 : 𝔽)) ∈ t.toList := by
+    exact (Std.ExtTreeMap.mem_toList_iff_getElem?_eq_some (t := t) (k := mon_x1) (v := (1 : 𝔽))).2 hget1
+
+  -- since toList = [a], both (m,0) and (mon_x1,1) must equal a
+  have ha0 : (m, (0 : 𝔽)) = a := by
+    have : (m, (0 : 𝔽)) ∈ [a] := by simpa [ha] using hmem0
+    simpa using (List.mem_singleton.1 this)
+  have ha1 : (mon_x1, (1 : 𝔽)) = a := by
+    have : (mon_x1, (1 : 𝔽)) ∈ [a] := by simpa [ha] using hmem1
+    simpa using (List.mem_singleton.1 this)
+
+  -- compare second components: 0 = 1, contradiction
+  have : (0 : 𝔽) = (1 : 𝔽) := by
+    have := congrArg Prod.snd (ha0.trans ha1.symm)
+    simpa using this
+  exact one_ne_zero (this.symm)
 
 @[simp]
 def max_ind_degree
