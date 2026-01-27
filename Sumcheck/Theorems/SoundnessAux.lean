@@ -592,9 +592,7 @@ lemma eval₂_c1_mul_subst_add
 lemma eval₂_foldl_step_eq_foldl_g
   {𝔽 : Type _} {n : ℕ}
   [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (b : 𝔽)
-  (pt : Fin n → 𝔽)
   (g : 𝔽 → (CPoly.CMvMonomial n × 𝔽) → 𝔽)
   (step : CPoly.CMvPolynomial 1 𝔽 → (CPoly.CMvMonomial n × 𝔽) → CPoly.CMvPolynomial 1 𝔽)
   (hstep :
@@ -670,6 +668,17 @@ lemma eval_eq_foldl_toList
       (init := (0 : 𝔽)))
   simpa [add_comm, add_left_comm, add_assoc, mul_assoc, mul_comm, mul_left_comm] using hf
 
+lemma eval₂Poly_eq_foldl_step_fun_c1
+  {𝔽 : Type _} {n : ℕ}
+  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) :
+  CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p
+    =
+  List.foldl (step_fun (𝔽 := 𝔽) (n := n) vs) (c1 (𝔽 := 𝔽) 0) (p.1.toList) := by
+  classical
+  simpa [step_def] using
+    (CPoly.eval₂Poly_eq_list_foldl (n := n) (𝔽 := 𝔽) (f := c1) (vs := vs) (p := p))
 
 lemma eval₂_eval₂Poly_c1
   {𝔽 : Type _} {n : ℕ}
@@ -686,7 +695,79 @@ lemma eval₂_eval₂Poly_c1
         CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
             (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i))
       p := by
-  sorry
+  classical
+
+  let pt : Fin n → 𝔽 :=
+    fun i =>
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)
+
+  let g : 𝔽 → (CPoly.CMvMonomial n × 𝔽) → 𝔽 :=
+    fun s mc => mc.2 * CPoly.MonoR.evalMonomial pt mc.1 + s
+
+  have hg :
+      g = (fun s mc => s + mc.2 * CPoly.MonoR.evalMonomial pt mc.1) := by
+    funext s mc
+    simp [g, add_comm]
+
+  -- turn eval₂Poly into foldl step_fun
+  have hpoly :
+      CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p
+        =
+      List.foldl (step_fun (𝔽 := 𝔽) (n := n) vs) (c1 (𝔽 := 𝔽) 0) (p.1.toList) :=
+    eval₂Poly_eq_foldl_step_fun_c1 (𝔽 := 𝔽) (n := n) (p := p) (vs := vs)
+
+  -- eval₂ commutes with one step
+  have hstep :
+      ∀ (acc : CPoly.CMvPolynomial 1 𝔽) (mc : CPoly.CMvMonomial n × 𝔽),
+        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+            (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+            (step_fun (𝔽 := 𝔽) (n := n) vs acc mc)
+          =
+        g
+          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+            (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc)
+          mc := by
+    intro acc mc
+    -- this lemma is already in SoundnessAux.lean and matches step_fun's definition
+    simpa [g, pt, step_def, step_fun, mul_assoc, add_assoc, add_comm, add_left_comm] using
+      (eval₂_c1_mul_subst_add (𝔽 := 𝔽) (n := n)
+        (vs := vs) (b := b) (m := mc.1) (c := mc.2) (acc := acc))
+
+  -- initial accumulator evaluates to 0
+  have hinit :
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => b) (c1 (𝔽 := 𝔽) 0)
+        =
+      (0 : 𝔽) := by
+    simp
+
+  -- push eval₂ through the fold
+  have hfold :
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => b)
+          (List.foldl (step_fun (𝔽 := 𝔽) (n := n) vs) (c1 (𝔽 := 𝔽) 0) (p.1.toList))
+        =
+      List.foldl g 0 (p.1.toList) := by
+    simpa [hinit] using
+      (eval₂_foldl_step_eq_foldl_g (𝔽 := 𝔽) (n := n)
+        (b := b) (g := g)
+        (step := step_fun (𝔽 := 𝔽) (n := n) vs)
+        (hstep := hstep)
+        (l := p.1.toList) (acc := c1 (𝔽 := 𝔽) 0))
+
+  -- eval pt p is the same fold
+  have heval :
+      CPoly.CMvPolynomial.eval pt p = List.foldl g 0 (p.1.toList) := by
+    simpa using
+      (eval_eq_foldl_toList (𝔽 := 𝔽) (n := n) (pt := pt) (p := p) (g := g) (hg := hg))
+
+  -- finish
+  rw [hpoly]
+  rw [hfold]
+  simpa [pt] using heval.symm
+
+
 
 
 lemma honest_last_round

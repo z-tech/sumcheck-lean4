@@ -174,15 +174,19 @@ lemma eval₂Poly_eq_list_foldl
     =
   List.foldl
     (fun acc (mc : CPoly.CMvMonomial n × 𝔽) =>
-      (f mc.2 * subst_monomial vs mc.1) + acc)
+      @HAdd.hAdd _ _ _ instHAdd
+        (@HMul.hMul _ _ _ instHMul (f mc.2) (subst_monomial vs mc.1))
+        acc)
     (c1 (𝔽 := 𝔽) 0)
     p.1.toList := by
   classical
-  -- this is the whole point:
   simpa [CPoly.eval₂Poly] using
     (Std.ExtTreeMap.foldl_eq_foldl_toList
       (t := p.1)
-      (f := fun acc m c => (f c * subst_monomial vs m) + acc)
+      (f := fun acc m c =>
+        @HAdd.hAdd _ _ _ instHAdd
+          (@HMul.hMul _ _ _ instHMul (f c) (subst_monomial vs m))
+          acc)
       (init := c1 (𝔽 := 𝔽) 0))
 
 @[simp] lemma eval₂_add

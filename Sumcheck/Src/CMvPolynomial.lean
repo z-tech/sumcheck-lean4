@@ -107,4 +107,10 @@ def eval₂Poly
   (f : 𝔽 → CPoly.CMvPolynomial 1 𝔽)
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
-Std.ExtTreeMap.foldl (fun acc m c => (f c * subst_monomial vs m) + acc) (c1 0) p.1
+Std.ExtTreeMap.foldl
+  (fun acc m c =>
+    @HAdd.hAdd _ _ _ instHAdd
+      (@HMul.hMul _ _ _ instHMul (f c) (subst_monomial vs m))
+      acc)
+  (c1 (𝔽 := 𝔽) 0)
+  p.1
