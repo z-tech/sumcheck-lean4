@@ -59,9 +59,7 @@ lemma Std.ExtTreeMap.foldl_insert_empty
   rcases (List.length_eq_one_iff.mp hlen) with ⟨a, ha⟩
 
   have hget : t[k]? = some v := by
-    simpa [t] using
-      (Std.ExtTreeMap.getElem?_insert_self
-        (t := (∅ : Std.ExtTreeMap α β cmp)) (k := k) (v := v))
+    simp [t]
 
   have hmem : (k, v) ∈ t.toList := by
     exact (Std.ExtTreeMap.mem_toList_iff_getElem?_eq_some (t := t) (k := k) (v := v)).2 hget
@@ -83,13 +81,13 @@ lemma sumcheck_Vector_get_replicate
     unfold Vector.replicate
     -- now reduce `Vector.get` to `List.get`
     -- `simp` here is safe: there is no `Vector.replicate` left to loop on
-    simpa [Vector.get] using (List.get_replicate (l := n) (a := a) ⟨k, by simpa using hk⟩)
+    simp [Vector.get]
 
 lemma sumcheck_CMvMonomial_zero_get
   {n : ℕ} (x : Fin n) :
   (CPoly.CMvMonomial.zero (n := n)).get x = 0 := by
   -- CMvMonomial.zero = Vector.replicate n 0
-  simpa [CPoly.CMvMonomial.zero] using (sumcheck_Vector_get_replicate (n := n) (a := (0 : ℕ)) x)
+  simp [CPoly.CMvMonomial.zero]
 
 lemma sumcheck_evalMonomial_zero
   {S : Type} {n : ℕ} [CommSemiring S]
@@ -208,10 +206,7 @@ lemma eval₂Poly_eq_list_foldl
     _   = (fromCMvPolynomial (n := n) (R := R) a).eval₂ f vals +
           (fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
             -- eval₂ on MvPolynomial is a ring hom
-            simpa using
-              (map_add (MvPolynomial.eval₂Hom (σ := Fin n) f vals)
-                (fromCMvPolynomial (n := n) (R := R) a)
-                (fromCMvPolynomial (n := n) (R := R) b))
+          simp
     _   = a.eval₂ f vals + b.eval₂ f vals := by
             -- move back from MvPolynomial
             simp [eval₂_equiv (n := n) (R := R) (S := S) (p := a) (f := f) (vals := vals),
@@ -236,10 +231,7 @@ lemma eval₂Poly_eq_list_foldl
     _   = (fromCMvPolynomial (n := n) (R := R) a).eval₂ f vals *
           (fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
             -- eval₂ on MvPolynomial is a ring hom
-            simpa using
-              (map_mul (MvPolynomial.eval₂Hom (σ := Fin n) f vals)
-                (fromCMvPolynomial (n := n) (R := R) a)
-                (fromCMvPolynomial (n := n) (R := R) b))
+            simp
     _   = a.eval₂ f vals * b.eval₂ f vals := by
             -- move back from MvPolynomial
             simp [eval₂_equiv (n := n) (R := R) (S := S) (p := a) (f := f) (vals := vals),
@@ -270,10 +262,7 @@ lemma eval₂Poly_eq_list_foldl
     _   =
       (fromCMvPolynomial (n := n) (R := R) a).eval₂ f vals *
       (fromCMvPolynomial (n := n) (R := R) b).eval₂ f vals := by
-        simpa using
-          (map_mul (MvPolynomial.eval₂Hom (σ := Fin n) f vals)
-            (fromCMvPolynomial (n := n) (R := R) a)
-            (fromCMvPolynomial (n := n) (R := R) b))
+        simp
     _   =
       CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals a *
       CMvPolynomial.eval₂ (n := n) (R := R) (S := S) f vals b := by
@@ -311,12 +300,7 @@ lemma eval₂_pow_univariate
       (RingHom.id 𝔽) (fun _ : Fin 1 => b) q) ^ e
 | 0 => by
     dsimp [pow_univariate]
-    simpa [c1] using
-      (eval₂_Lawful_C
-        (𝔽 := 𝔽) (n := 1)
-        (f := RingHom.id 𝔽)
-        (vs := fun _ : Fin 1 => b)
-        (c := (1 : 𝔽)))
+    simp
 | Nat.succ e => by
     let vs : Fin 1 → 𝔽 := fun _ => b
     -- unfold pow_univariate once; you said you changed it to use Mul.mul
@@ -386,8 +370,7 @@ lemma eval₂_pow_univariate
   -- `eval₂` is a ring hom in the polynomial argument, so it preserves addition.
   -- This simp lemma name varies; one of these usually exists:
   --   `CPoly.CMvPolynomial.eval₂_add`, or `map_add`, or simp can do it after unfolding.
-  simpa using (eval₂_add
-    (R := 𝔽) (S := 𝔽) (n := 1) (f := (RingHom.id 𝔽)) (vs := vs) a b)
+  simp
 
 lemma List.foldl_mul_assoc
   {α : Type} [CommMonoid α] :

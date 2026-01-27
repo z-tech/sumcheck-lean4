@@ -17,6 +17,7 @@ import Sumcheck.Lemmas.BadTranscript
 import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Challenges
 import Sumcheck.Lemmas.Eval2
+import Sumcheck.Lemmas.HonestProver
 
 open scoped BigOperators
 
@@ -820,13 +821,200 @@ lemma evalMonomial_monomial_x1
   -- if `simp` doesn't close it in your env, see the helper lemma below.
   simp [Std.ExtTreeMap.foldl_insert_empty, evalMonomial_monomial_x1]
 
+-- transport sum_over_hypercube_recursive across m=0 without dependent rewrite pain
+lemma sum_over_hypercube_recursive_eq_of_m_eq_zero
+  {𝔽 β : Type _}
+  (b0 b1 : 𝔽) (add : β → β → β)
+  {m : ℕ} (hm : m = 0)
+  (F : (Fin m → 𝔽) → β) :
+  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
+    (b0 := b0) (b1 := b1) (add := add) (m := m) F
+    =
+  F (by
+    -- build the empty function at Fin 0, then transport to Fin m via hm.symm
+    refine Eq.ndrec (motive := fun k => Fin k → 𝔽) (fun x : Fin 0 => nomatch x) hm.symm) := by
+  subst hm
+  -- now m = 0 definitionally
+  simp [sum_over_hypercube_recursive_zero]
+
 lemma honest_last_round
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽] [Fintype 𝔽]
+  [BEq 𝔽] [LawfulBEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
   (hlast : i.val.succ = n) :
-  next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i)
-    = CPoly.CMvPolynomial.eval r p := by
-  sorry
+  next_claim (𝔽 := 𝔽) (round_challenge := r i)
+      (honest_round_poly (p := p) (ch := r) i)
+    =
+  CPoly.CMvPolynomial.eval r p := by
+  classical
+
+  have hi : i.val + 1 = n := by
+    simpa [Nat.succ_eq_add_one] using hlast
+
+  have hopen : honest_num_open_vars (n := n) i = 0 := by
+    simp [honest_num_open_vars, hi]
+
+  -- define b0 at the dependent type via simp [hopen]
+  let b0 : Fin (honest_num_open_vars (n := n) i) → 𝔽 :=
+    empty_open_assignment (𝔽 := 𝔽) (n := n) i hopen
+
+  -- last round => honest_round_poly is just F applied to the empty assignment
+  have hround :
+      honest_round_poly (p := p) (ch := r) i
+        =
+      CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
+        (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0)
+        p := by
+    -- unfold to the hypercube sum
+    simp [honest_round_poly, honest_prover_message_at_def]
+
+    -- name the function being summed
+    let F :
+        (Fin (honest_num_open_vars (n := n) i) → 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
+      fun b =>
+        CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
+          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) p
+
+    -- rewrite the goal *into* the shape the helper lemma produces, without `change`
+    -- crucial: keep the same `add` that simp produced (it’s the CMvPolynomial instHAdd one)
+    -- so we use `by` + `simpa [F]` to replace the anonymous function with `F`.
+    have hcollapse :=
+      sum_over_hypercube_recursive_eq_of_m_eq_zero
+        (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
+        (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽))
+        (add := fun a b =>
+          @HAdd.hAdd (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
+            (CPoly.CMvPolynomial 1 𝔽) instHAdd a b)
+        (m := honest_num_open_vars (n := n) i) (F := F) hopen
+
+    -- now `hcollapse` is exactly: sum_over... F = F (ndrec empty)
+    -- and your `b0` is exactly that transported empty function by definition.
+    simpa [F, b0, empty_open_assignment] using hcollapse
+
+  -- expand next_claim, rewrite by hround
+  have hnc :
+      next_claim (𝔽 := 𝔽) (round_challenge := r i)
+          (honest_round_poly (p := p) (ch := r) i)
+        =
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+        (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
+          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p) := by
+    simp [next_claim, hround]
+
+  have heval :
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+        (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
+          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p)
+        =
+      CPoly.CMvPolynomial.eval
+        (fun j =>
+          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+            (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+            (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
+        p := by
+    simpa using
+      (eval₂_eval₂Poly_c1 (𝔽 := 𝔽) (n := n) (p := p)
+        (vs := honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0)
+        (b := r i))
+
+  have hpt :
+      (fun j =>
+        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+          (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
+      =
+      r := by
+    funext j
+    by_cases hj : j = i
+    · subst hj
+      -- key: combined_map at i is x0, and eval₂_x0 computes it
+      have hcm :
+          honest_combined_map (𝔽 := 𝔽) (n := n) j (challenge_subset r j) b0 j = x0 := by
+        simpa using
+          (honest_combined_map_at_i_is_x0 (𝔽 := 𝔽) (n := n)
+            (i := j) (challenges := challenge_subset r j) (b := b0))
+
+      -- now eval₂ of x0 at r j is r j
+      simpa [hcm, x0] using (eval₂_x0 (𝔽 := 𝔽) (b := r j))
+    ·
+      -- j ≠ i, with i last => j.val < i.val
+      have hjlt_succ : j.val < i.val.succ := by
+        -- j.isLt : j.val < n
+        -- hlast : i.val.succ = n  so  hlast.symm : n = i.val.succ
+        exact (hlast.symm ▸ j.isLt)
+
+
+      have hjle : j.val ≤ i.val := Nat.le_of_lt_succ hjlt_succ
+      have hne : j.val ≠ i.val := by
+        intro hEq
+        apply hj
+        ext
+        exact hEq
+      have hjlt : j.val < i.val := Nat.lt_of_le_of_ne hjle hne
+
+      let t : Fin i.val := ⟨j.val, hjlt⟩
+
+      -- cast the left index back to Fin n
+      let j' : Fin n :=
+        Fin.cast (honest_split_eq (n := n) i)
+          (Fin.castAdd (honest_num_open_vars (n := n) i + 1) t)
+
+      have hj' : j' = j := by
+        ext
+        simp [j', t]
+
+      have hmap' :
+          honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j'
+            =
+          c1 (challenge_subset r i t) := by
+        simpa [j'] using
+          (honest_combined_map_left (𝔽 := 𝔽) (n := n)
+            (i := i) (challenges := challenge_subset r i) (b := b0) (t := t))
+
+      have hmap :
+          honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j
+            =
+          c1 (challenge_subset r i t) := by
+        simpa [hj'] using hmap'
+
+      have hc :
+          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+            (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+            (c1 (challenge_subset r i t))
+          =
+          challenge_subset r i t := by
+        simp
+
+      have htj :
+          (⟨t.val, Nat.lt_trans t.isLt i.isLt⟩ : Fin n) = j := by
+        ext
+        rfl
+
+      simp [hmap, challenge_subset, htj]
+
+  -- final assembly
+  calc
+    next_claim (𝔽 := 𝔽) (round_challenge := r i)
+        (honest_round_poly (p := p) (ch := r) i)
+        =
+      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+        (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+        (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
+          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p) := by
+          exact hnc
+    _ =
+      CPoly.CMvPolynomial.eval
+        (fun j =>
+          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
+            (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+            (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
+        p := by
+          exact heval
+    _ =
+      CPoly.CMvPolynomial.eval r p := by
+          simp [hpt]
 
 lemma honest_step_round
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
