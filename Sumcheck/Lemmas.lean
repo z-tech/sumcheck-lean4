@@ -1,6 +1,9 @@
+import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Agreement
+import Sumcheck.Lemmas.BadTranscript
+import Sumcheck.Lemmas.Challenges
 import Sumcheck.Lemmas.Degree
-import Sumcheck.Lemmas.Monomials
-import Sumcheck.Lemmas.UnlawfulMulSupport
 import Sumcheck.Lemmas.Eval2
 import Sumcheck.Lemmas.HonestProver
+import Sumcheck.Lemmas.Monomials
+import Sumcheck.Lemmas.UnlawfulMulSupport
