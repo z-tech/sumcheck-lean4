@@ -8,14 +8,10 @@ import Sumcheck.Src.Verifier
 
 namespace __VerifierTests__
 
-  def asFun
-    {𝔽} [CommRing 𝔽]
-    (q : CPoly.CMvPolynomial 1 𝔽) : 𝔽 → 𝔽 :=
-  fun a => CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) q
-
-  @[simp] def test_round_p : CPoly.CMvPolynomial 1 (ZMod 19) :=
-    (CPoly.Lawful.C (n := 1) (R := ZMod 19) (13 : ZMod 19)) * x0
-    + (CPoly.Lawful.C (n := 1) (R := ZMod 19) (2 : ZMod 19))
+  def test_round_p : CPoly.CMvPolynomial 1 (ZMod 19) :=
+    CPoly.Lawful.fromUnlawful <|
+      ((0 : CPoly.Unlawful 1 (ZMod 19)).insert ⟨#[1], by decide⟩ (13 : ZMod 19))
+        |>.insert ⟨#[0], by decide⟩ (2 : ZMod 19)
 
   namespace __verifier_check_tests__
 

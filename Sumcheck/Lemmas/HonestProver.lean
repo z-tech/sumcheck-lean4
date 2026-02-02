@@ -92,12 +92,7 @@ lemma eval₂_subst_monomial
           (RingHom.id 𝔽) (fun _ : Fin 1 => b)
           (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
         = (1 : 𝔽) := by
-    simpa using
-      (eval₂_Lawful_C
-        (𝔽 := 𝔽) (n := 1)
-        (f := RingHom.id 𝔽)
-        (vs := fun _ : Fin 1 => b)
-        (c := (1 : 𝔽)))
+    simp
 
   have hscalar :
       CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)

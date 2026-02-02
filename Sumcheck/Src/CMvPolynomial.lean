@@ -39,10 +39,7 @@ import CompPoly.MvPolyEquiv
 
   -- and (mon_x1,1) is in the toList (because lookup at mon_x1 is some 1)
   have hget1 : t[mon_x1]? = some (1 : 𝔽) := by
-    simpa [t] using
-      (Std.ExtTreeMap.getElem?_insert_self
-        (t := (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))))
-        (k := mon_x1) (v := (1 : 𝔽)))
+    simp [t]
   have hmem1 : (mon_x1, (1 : 𝔽)) ∈ t.toList := by
     exact (Std.ExtTreeMap.mem_toList_iff_getElem?_eq_some (t := t) (k := mon_x1) (v := (1 : 𝔽))).2 hget1
 
@@ -57,7 +54,7 @@ import CompPoly.MvPolyEquiv
   -- compare second components: 0 = 1, contradiction
   have : (0 : 𝔽) = (1 : 𝔽) := by
     have := congrArg Prod.snd (ha0.trans ha1.symm)
-    simpa using this
+    simp at this
   exact one_ne_zero (this.symm)
 
 @[simp]
