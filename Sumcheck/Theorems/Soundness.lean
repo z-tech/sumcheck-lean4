@@ -10,7 +10,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
   (adv : Adversary 𝔽 n)
   (h_false_claim : claim ≠ true_sum claim_p) :
     prob_soundness claim claim_p adv
-      ≤ n * (max_ind_degree claim_p) / count_field_size (𝔽 := 𝔽) := by
+      ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) := by
   classical
   dsimp [prob_soundness]
 
@@ -54,7 +54,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
   have hround :
       (∑ i : Fin n,
         prob_over_challenges (𝔽 := 𝔽) (n := n) (fun r => E i r))
-      ≤ n * (max_ind_degree claim_p) / count_field_size (𝔽 := 𝔽) := by
+      ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) := by
     simpa [E] using
       sum_accepts_and_round_disagree_but_agree_bound
         (claim := claim) (p := claim_p) (adv := adv)

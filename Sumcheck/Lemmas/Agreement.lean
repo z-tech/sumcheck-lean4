@@ -33,7 +33,7 @@ import Sumcheck.Probability.Agreement
   (h_not_equal : g ≠ h) :
   prob_agreement_at_random_challenge g h h_not_equal
     ≤ (MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (difference_poly g h))
-        / count_field_size (𝔽 := 𝔽) := by
+        / field_size (𝔽 := 𝔽) := by
   classical
   have h_diff_non_zero : difference_poly g h ≠ (0 : MvPolynomial (Fin 1) 𝔽) := by
     intro h0

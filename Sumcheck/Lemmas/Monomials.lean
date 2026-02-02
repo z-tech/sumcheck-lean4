@@ -51,3 +51,12 @@ def mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
   extract_exp_var_i (n := 1) mon_x1 (⟨0, by decide⟩ : Fin 1) = 1 := by
   change mon_x1.get (⟨0, by decide⟩ : Fin 1) = 1
   dsimp [mon_x1]
+
+lemma evalMonomial_monomial_x1
+  {𝔽 : Type _} [CommSemiring 𝔽]
+  (b : 𝔽) :
+  CPoly.MonoR.evalMonomial (n := 1) (R := 𝔽)
+      (fun _ : Fin 1 => b) (⟨#[1], by decide⟩ : CPoly.CMvMonomial 1)
+    = b := by
+  classical
+  simp [CPoly.MonoR.evalMonomial, pow_one]

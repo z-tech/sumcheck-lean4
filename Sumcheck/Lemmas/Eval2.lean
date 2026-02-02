@@ -435,8 +435,10 @@ lemma eval₂_subst_monomial
       List.foldl (fun acc i => acc * (vals i) ^ (extract_exp_var_i m i)) 1 (List.finRange n)
         =
       (∏ i : Fin n, (vals i) ^ (extract_exp_var_i m i)) := by
-    simpa using (foldl_finRange_mul_eq_prod (α := 𝔽) (n := n)
-      (g := fun i : Fin n => (vals i) ^ (extract_exp_var_i m i)))
+    simpa using
+      (foldl_finRange_mul_eq_prod (α := 𝔽) (n := n)
+        (g := fun i : Fin n => (vals i) ^ (extract_exp_var_i m i))
+        (s0 := (1 : 𝔽)))
 
   calc
     CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
@@ -595,3 +597,16 @@ theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
   rw [hpoly]
   rw [hfold]
   simpa [pt] using heval.symm
+
+@[simp] lemma eval₂_x0
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽]
+  (b : 𝔽) :
+  CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
+      (RingHom.id 𝔽) (fun _ : Fin 1 => b) (x0 (𝔽 := 𝔽))
+    = b := by
+  classical
+  -- unfold x0 and eval₂
+  simp [CPoly.CMvPolynomial.eval₂, x0]
+  -- after simp, it’s exactly foldl over (∅.insert mon_x1 1)
+  -- kill the foldl using your lemma from Lemmas/Eval2.lean
+  simp [Std.ExtTreeMap.foldl_insert_empty, evalMonomial_monomial_x1]

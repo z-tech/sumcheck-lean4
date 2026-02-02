@@ -7,72 +7,17 @@ import Sumcheck.Src.Verifier
 import Sumcheck.Events.BadRound
 
 import Sumcheck.Lemmas.Eval2
+import Sumcheck.Lemmas.Monomials
 
-open scoped BigOperators
-
-namespace Sumcheck
-
-/-- evalMonomial for the monomial #[1] in arity 1. -/
-lemma evalMonomial_monomial_x1
-  {𝔽 : Type _} [CommSemiring 𝔽]
-  (b : 𝔽) :
-  CPoly.MonoR.evalMonomial (n := 1) (R := 𝔽)
-      (fun _ : Fin 1 => b) (⟨#[1], by decide⟩ : CPoly.CMvMonomial 1)
-    = b := by
-  classical
-  simp [CPoly.MonoR.evalMonomial, pow_one]
-
-/-- This is the one that was failing for you: prove it by reducing the foldl on the singleton map. -/
-@[simp] lemma eval₂_x0
-  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽]
-  (b : 𝔽) :
-  CPoly.CMvPolynomial.eval₂ (R := 𝔽) (S := 𝔽) (n := 1)
-      (RingHom.id 𝔽) (fun _ : Fin 1 => b) (x0 (𝔽 := 𝔽))
-    = b := by
-  classical
-  -- unfold x0 and eval₂
-  simp [CPoly.CMvPolynomial.eval₂, x0]
-  -- after simp, it’s exactly foldl over (∅.insert mon_x1 1)
-  -- kill the foldl using your lemma from Lemmas/Eval2.lean
-  simp [Std.ExtTreeMap.foldl_insert_empty, evalMonomial_monomial_x1]
-
-lemma foldl_finRange_mul_eq_prod'
-  {α : Type _} [CommMonoid α] :
-  ∀ (n : ℕ) (g : Fin n → α) (s0 : α),
-    List.foldl (fun s i => s * g i) s0 (List.finRange n)
-      =
-    s0 * ∏ i : Fin n, g i
-| 0, g, s0 => by
-    simp
-| n+1, g, s0 => by
-    classical
-    simp [List.finRange_succ, List.foldl_map, Fin.prod_univ_succ]
-    have h := foldl_finRange_mul_eq_prod' n (fun i : Fin n => g i.succ) (s0 * g 0)
-    simpa [mul_assoc, mul_left_comm, mul_comm] using h
-
-lemma foldl_finRange_mul_eq_prod
-  {α : Type _} [CommMonoid α]
-  (n : ℕ) (g : Fin n → α) :
-  List.foldl (fun s i => s * g i) 1 (List.finRange n)
-    =
-  ∏ i : Fin n, g i := by
-  simpa using (foldl_finRange_mul_eq_prod' (α := α) n g (1 : α))
-
-@[simp] lemma Fin.mk_eq_mk {n : ℕ} {a : ℕ} (h₁ h₂ : a < n) :
-    (⟨a, h₁⟩ : Fin n) = ⟨a, h₂⟩ := by
-  ext
-  rfl
+noncomputable def empty_open_assignment
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽]
+  (i : Fin n) (hopen : honest_num_open_vars (n := n) i = 0) :
+  Fin (honest_num_open_vars (n := n) i) → 𝔽 :=
+by
+  -- build it at Fin 0, then transport along hopen.symm : 0 = honest_num_open_vars i
+  refine Eq.ndrec (motive := fun m => Fin m → 𝔽) (fun x : Fin 0 => nomatch x) hopen.symm
 
 lemma honest_right_map_zero
-  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  {n : ℕ} (i : Fin n)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
-  honest_right_map (𝔽 := 𝔽) (n := n) i b ⟨0, Nat.succ_pos _⟩
-    = x0 (𝔽 := 𝔽) := by
-  classical
-  simp [honest_right_map]
-
-lemma honest_right_map_zero'
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
   (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
@@ -115,9 +60,9 @@ lemma eval₂_honest_right_map
   | zero =>
       -- t = 0
       -- rewrite honest_right_map ... 0 = x0, then eval₂_x0
-      rw [honest_right_map_zero' (𝔽 := 𝔽) (i := i) (b := b)]
+      rw [honest_right_map_zero (𝔽 := 𝔽) (i := i) (b := b)]
       -- RHS is `a`
-      simpa using (eval₂_x0 (𝔽 := 𝔽) a)
+      simpa using (CPoly.eval₂_x0 (𝔽 := 𝔽) a)
   | succ t =>
       -- t = succ t
       -- RHS is `b t`
@@ -179,6 +124,3 @@ lemma eval₂_honest_combined_map_eq_addCasesFun
   -- then apply your lemma
   simpa [honest_combined_map_def, addCasesFun] using
     (eval₂_addCases_honest_right_map (𝔽 := 𝔽) (r := r) (i := i) (a := a) (b := b) (j := j))
-
-
-end Sumcheck

@@ -7,3 +7,4 @@ import Sumcheck.Lemmas.HonestProver
 import Sumcheck.Lemmas.List
 import Sumcheck.Lemmas.ExtTreeMap
 import Sumcheck.Lemmas.CMvPolynomial
+import Sumcheck.Lemmas.Nat

@@ -27,18 +27,7 @@ import Sumcheck.Lemmas.List
 import Sumcheck.Lemmas.Fin
 import Sumcheck.Lemmas.CMvPolynomial
 import Sumcheck.Lemmas.Eval2
-
-open scoped BigOperators
-
--- Helper: an “empty assignment” at the dependent type Fin (honest_num_open_vars i) → 𝔽
--- WITHOUT doing `cases hopen`.
-noncomputable def empty_open_assignment
-  {𝔽 : Type _} {n : ℕ} [Field 𝔽]
-  (i : Fin n) (hopen : honest_num_open_vars (n := n) i = 0) :
-  Fin (honest_num_open_vars (n := n) i) → 𝔽 :=
-by
-  -- build it at Fin 0, then transport along hopen.symm : 0 = honest_num_open_vars i
-  refine Eq.ndrec (motive := fun m => Fin m → 𝔽) (fun x : Fin 0 => nomatch x) hopen.symm
+import Sumcheck.Lemmas.Nat
 
 lemma honest_last_round
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽] [Fintype 𝔽]
@@ -140,7 +129,7 @@ lemma honest_last_round
             (i := j) (challenges := challenge_subset r j) (b := b0))
 
       -- now eval₂ of x0 at r j is r j
-      simpa [hcm, x0] using (Sumcheck.eval₂_x0 (𝔽 := 𝔽) (b := r j))
+      simpa [hcm, x0] using (CPoly.eval₂_x0 (𝔽 := 𝔽) (b := r j))
     ·
       -- j ≠ i, with i last => j.val < i.val
       have hjlt_succ : j.val < i.val.succ := by
@@ -239,32 +228,7 @@ theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   classical
   unfold honest_round_poly
   -- unfold the honest prover polynomial and push eval₂ through the hypercube sum
-  simp [CPoly.eval₂_eval₂Poly_c1, Sumcheck.eval₂_honest_combined_map_eq_addCasesFun]
-
-
-theorem nat_sub_add_two (n k : ℕ) (hk : k.succ < n) :
-    n - (k + 1) = 1 + (n - (k + 2)) := by
-  have hle1 : k + 1 ≤ n := Nat.le_of_lt hk
-  have hle2 : k + 2 ≤ n := Nat.succ_le_of_lt hk
-  let m : ℕ := n - (k + 2)
-  have hkm : (k + 2) + m = n := by
-    simpa [m] using (Nat.add_sub_of_le hle2)
-  have hk1 : (k + 1) + (n - (k + 1)) = n := by
-    simpa using (Nat.add_sub_of_le hle1)
-  have hk2 : (k + 1) + (1 + m) = n := by
-    calc
-      (k + 1) + (1 + m) = ((k + 1) + 1) + m := by
-        simpa using (Nat.add_assoc (k + 1) 1 m).symm
-      _ = (k + 2) + m := by
-        simp [Nat.add_assoc]
-      _ = n := by
-        exact hkm
-  have hcancel : n - (k + 1) = 1 + m := by
-    -- compare the two decompositions of n and cancel (k+1)
-    have hEq : (k + 1) + (n - (k + 1)) = (k + 1) + (1 + m) := by
-      exact hk1.trans hk2.symm
-    exact Nat.add_left_cancel hEq
-  simpa [m] using hcancel
+  simp [CPoly.eval₂_eval₂Poly_c1, eval₂_honest_combined_map_eq_addCasesFun]
 
 
 theorem honest_num_open_vars_succ {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) :
@@ -643,409 +607,6 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
       _ = next_claim (𝔽 := 𝔽) (round_challenge := r i)
             (honest_round_poly (p := p) (ch := r) i) := honest_step
 
-
-theorem fromCMvPolynomial_c1_eq_C {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(c : 𝔽) :
-  CPoly.fromCMvPolynomial (R := 𝔽) (c1 (𝔽 := 𝔽) c)
-    = (MvPolynomial.C c : MvPolynomial (Fin 1) 𝔽) := by
-  classical
-  ext m
-  simp [CPoly.coeff_eq, c1, MvPolynomial.coeff_C, CPoly.Lawful.C, CPoly.CMvPolynomial.coeff,
-    CPoly.Unlawful.C]
-  by_cases hc : c = 0
-  · simp [hc]
-    change
-      ((∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1)))[
-          CPoly.CMvMonomial.ofFinsupp m]?).getD 0 = 0
-    simp
-  · simp [hc]
-    have hz : ((CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1)).toFinsupp = (0 : Fin 1 →₀ ℕ) := by
-      ext
-      simp [CPoly.CMvMonomial.toFinsupp, CPoly.CMvMonomial.zero]
-    by_cases hm : (0 : Fin 1 →₀ ℕ) = m
-    · subst hm
-      have hmono0 :
-          CPoly.CMvMonomial.ofFinsupp (0 : Fin 1 →₀ ℕ) = (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) := by
-        apply CPoly.CMvMonomial.injective_toFinsupp
-        simp [hz]
-      change
-        ((
-            (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))).insert
-              (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) c)[
-            CPoly.CMvMonomial.ofFinsupp (0 : Fin 1 →₀ ℕ)]?).getD 0 = c
-      rw [hmono0]
-      simp
-    · simp [hm]
-      have hneq :
-          CPoly.CMvMonomial.ofFinsupp m ≠ (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) := by
-        intro h
-        apply hm
-        have ht := congrArg (fun t => CPoly.CMvMonomial.toFinsupp t) h
-        have hm0 : m = (0 : Fin 1 →₀ ℕ) := by
-          simpa [hz] using ht
-        exact hm0.symm
-      haveI : Std.LawfulBEqOrd (CPoly.CMvMonomial 1) := by
-        infer_instance
-      haveI : LawfulBEq (CPoly.CMvMonomial 1) := by
-        infer_instance
-      have hcmp :
-          compare (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) (CPoly.CMvMonomial.ofFinsupp m) ≠ Ordering.eq := by
-        intro h
-        have hiff :
-            compare (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) (CPoly.CMvMonomial.ofFinsupp m) = Ordering.eq ↔
-              ((CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) == CPoly.CMvMonomial.ofFinsupp m) := by
-          simp
-        have hbeq : ((CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) == CPoly.CMvMonomial.ofFinsupp m) :=
-          hiff.1 h
-        have hne' : (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) ≠ CPoly.CMvMonomial.ofFinsupp m :=
-          fun hEq => hneq hEq.symm
-        exact (not_beq_of_ne hne') hbeq
-      change
-        ((
-            (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))).insert
-              (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) c)[
-            CPoly.CMvMonomial.ofFinsupp m]?).getD 0 = 0
-      have hins :
-          ((
-              (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))).insert
-                (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) c)[
-              CPoly.CMvMonomial.ofFinsupp m]?) =
-            if compare (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) (CPoly.CMvMonomial.ofFinsupp m) = Ordering.eq then
-              some c
-            else
-              (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1)))[
-                CPoly.CMvMonomial.ofFinsupp m]? := by
-        simpa using
-          (Std.ExtTreeMap.getElem?_insert
-            (t := (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))))
-            (k := (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1)) (v := c) :
-            ((
-                (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))).insert
-                  (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) c)[
-                CPoly.CMvMonomial.ofFinsupp m]?) =
-              if compare (CPoly.CMvMonomial.zero : CPoly.CMvMonomial 1) (CPoly.CMvMonomial.ofFinsupp m) = Ordering.eq then
-                some c
-              else
-                (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1)))[
-                  CPoly.CMvMonomial.ofFinsupp m]?)
-      have hinsD := congrArg (fun o : Option 𝔽 => o.getD 0) hins
-      simp [hcmp]
-
-theorem fromCMvPolynomial_x0_eq_X {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :
-  CPoly.fromCMvPolynomial (R := 𝔽) (x0 (𝔽 := 𝔽)) = (MvPolynomial.X (0 : Fin 1) : MvPolynomial (Fin 1) 𝔽) := by
-  classical
-  ext s
-  simp [CPoly.coeff_eq, x0, CPoly.CMvPolynomial.coeff, MvPolynomial.coeff_X']
-  set mon_x1 : CPoly.CMvMonomial 1 := { toArray := #[1], size_toArray := x0._proof_1 }
-  have hmon_toF : CPoly.CMvMonomial.toFinsupp mon_x1 = (Finsupp.single (0 : Fin 1) 1) := by
-    refine Finsupp.ext ?_
-    intro i
-    fin_cases i
-    simp [CPoly.CMvMonomial.toFinsupp, mon_x1]
-  have hmon : mon_x1 = CPoly.CMvMonomial.ofFinsupp (Finsupp.single (0 : Fin 1) 1) := by
-    apply (CPoly.CMvMonomial.injective_toFinsupp (n := 1))
-    simp [hmon_toF]
-  let t : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1)) :=
-    (∅ : Std.ExtTreeMap (CPoly.CMvMonomial 1) 𝔽 (Ord.compare (α := CPoly.CMvMonomial 1))).insert
-      mon_x1 (1 : 𝔽)
-  change t[CPoly.CMvMonomial.ofFinsupp s]?.getD 0 = if (fun₀ | 0 => 1) = s then 1 else 0
-  by_cases h : CPoly.CMvMonomial.ofFinsupp s = mon_x1
-  · have hs : (Finsupp.single (0 : Fin 1) 1) = s := by
-      apply (CPoly.CMvMonomial.injective_ofFinsupp (n := 1))
-      calc
-        CPoly.CMvMonomial.ofFinsupp (Finsupp.single (0 : Fin 1) 1)
-            = mon_x1 := by simp [hmon]
-        _ = CPoly.CMvMonomial.ofFinsupp s := by simpa using h.symm
-    have hlookup : t[CPoly.CMvMonomial.ofFinsupp s]? = some (1 : 𝔽) := by
-      simp [t, h]
-    simp [hlookup, hs]
-  · have hs : (Finsupp.single (0 : Fin 1) 1) ≠ s := by
-      intro hs
-      apply h
-      have : CPoly.CMvMonomial.ofFinsupp s = CPoly.CMvMonomial.ofFinsupp (Finsupp.single (0 : Fin 1) 1) := by
-        simp [hs]
-      exact this.trans hmon.symm
-    have hne : mon_x1 ≠ CPoly.CMvMonomial.ofFinsupp s := by
-      intro h'
-      apply h
-      simpa using h'.symm
-    have hlookup : t[CPoly.CMvMonomial.ofFinsupp s]? = none := by
-      -- unfold the insert-lookup formula and simplify
-      simp [t, Std.compare_eq_iff_eq, hne]
-    simp [hlookup, hs]
-
-theorem degreeOf_x0_le_one {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :
-  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (x0 (𝔽 := 𝔽)) ≤ 1 := by
-  classical
-  -- sanity check: our helper axiom works
-  have hx :
-      CPoly.fromCMvPolynomial (R := 𝔽) (x0 (𝔽 := 𝔽))
-        = (MvPolynomial.X (0 : Fin 1) : MvPolynomial (Fin 1) 𝔽) := by
-    simpa using (fromCMvPolynomial_x0_eq_X (𝔽 := 𝔽))
-
-  -- now translate CPoly.degreeOf to MvPolynomial.degreeOf
-  let i0 : Fin 1 := 0
-  have hEq :
-      CPoly.CMvPolynomial.degreeOf i0 (x0 (𝔽 := 𝔽))
-        =
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0
-        (CPoly.fromCMvPolynomial (R := 𝔽) (x0 (𝔽 := 𝔽))) := by
-    simpa using
-      congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := (x0 (𝔽 := 𝔽))) (S := 𝔽))
-
-  have h : CPoly.CMvPolynomial.degreeOf i0 (x0 (𝔽 := 𝔽)) ≤ 1 := by
-    rw [hEq]
-    -- use the explicit rewrite first, then compute degree
-    rw [hx]
-    simp [MvPolynomial.degreeOf_X, i0]
-
-  simpa [i0] using h
-
-theorem degreeOf_mul_le_univariate {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(a b : CPoly.CMvPolynomial 1 𝔽) :
-  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (Mul.mul a b)
-    ≤ CPoly.CMvPolynomial.degreeOf (0 : Fin 1) a + CPoly.CMvPolynomial.degreeOf (0 : Fin 1) b := by
-  classical
-  let i0 : Fin 1 := 0
-  let A : MvPolynomial (Fin 1) 𝔽 := CPoly.fromCMvPolynomial (R := 𝔽) a
-  let B : MvPolynomial (Fin 1) 𝔽 := CPoly.fromCMvPolynomial (R := 𝔽) b
-
-  -- CPoly degreeOf = MvPolynomial degreeOf (at i0)
-  have hEqA :
-      CPoly.CMvPolynomial.degreeOf i0 a
-        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 A := by
-    simpa [A] using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := a) (S := 𝔽))
-
-  have hEqB :
-      CPoly.CMvPolynomial.degreeOf i0 b
-        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 B := by
-    simpa [B] using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := b) (S := 𝔽))
-
-  have hEqAB :
-      CPoly.CMvPolynomial.degreeOf i0 (Mul.mul a b)
-        =
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 (CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b)) := by
-    simpa using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := Mul.mul a b) (S := 𝔽))
-
-  -- Rewrite `fromCMvPolynomial (Mul.mul a b)` as `A * B`
-  have hmap :
-      CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b) = A * B := by
-    -- Avoid `simp` here: `CPoly.map_mul` is itself a simp lemma and `simpa` would reduce to `True`.
-    dsimp [A, B]
-    change
-      CPoly.fromCMvPolynomial (R := 𝔽) (a * b) =
-        CPoly.fromCMvPolynomial (R := 𝔽) a * CPoly.fromCMvPolynomial (R := 𝔽) b
-    exact CPoly.map_mul (a := a) (b := b) (R := 𝔽)
-
-  -- Main MvPolynomial inequality
-  have hMv :
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 (CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b))
-        ≤
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 A + MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 B := by
-    -- apply Mathlib on `A * B`, then rewrite by `hmap`
-    -- `hmap` is oriented `from = A*B`, so we rewrite in the reverse direction.
-    simpa [hmap] using
-      (MvPolynomial.degreeOf_mul_le (R := 𝔽) (σ := Fin 1) i0 A B)
-
-  -- transfer back to CPoly
-  have : CPoly.CMvPolynomial.degreeOf i0 (Mul.mul a b)
-      ≤ CPoly.CMvPolynomial.degreeOf i0 a + CPoly.CMvPolynomial.degreeOf i0 b := by
-    simpa [hEqAB, hEqA, hEqB] using hMv
-
-  simpa [i0] using this
-
-theorem degreeOf_c1_eq_zero {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(c : 𝔽) :
-  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (c1 (𝔽 := 𝔽) c) = 0 := by
-  classical
-  let i0 : Fin 1 := 0
-
-  -- Bridge `CPoly.CMvPolynomial.degreeOf` to `MvPolynomial.degreeOf`.
-  have hEq :
-      CPoly.CMvPolynomial.degreeOf i0 (c1 (𝔽 := 𝔽) c)
-        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0
-            (CPoly.fromCMvPolynomial (R := 𝔽) (c1 (𝔽 := 𝔽) c)) := by
-    simpa using
-      congrArg (fun f => f i0)
-        (CPoly.degreeOf_equiv (p := c1 (𝔽 := 𝔽) c) (S := 𝔽))
-
-  -- Rewrite to the `MvPolynomial` side and use `MvPolynomial.degreeOf_C`.
-  rw [hEq]
-  rw [fromCMvPolynomial_c1_eq_C (𝔽 := 𝔽) (c := c)]
-  simp [i0]
-
-theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(q : CPoly.CMvPolynomial 1 𝔽) :
-  ∀ e : ℕ,
-    CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (pow_univariate (𝔽 := 𝔽) q e)
-      ≤ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
-  intro e
-  induction e with
-  | zero =>
-      have h0 :
-          CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-              (pow_univariate (𝔽 := 𝔽) q 0) = 0 := by
-        simpa [pow_univariate] using
-          (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := (1 : 𝔽)))
-      -- goal is an inequality, but simp turns `≤ 0` into `= 0`
-      simp [h0]
-  | succ e ih =>
-      have hmul :=
-        degreeOf_mul_le_univariate (𝔽 := 𝔽) q (pow_univariate (𝔽 := 𝔽) q e)
-      have h1 :
-          CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-              (Mul.mul q (pow_univariate (𝔽 := 𝔽) q e))
-            ≤
-            CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
-              e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
-        refine le_trans hmul ?_
-        exact Nat.add_le_add_left ih (CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q)
-      have harith :
-          CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
-              e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q
-            ≤
-            Nat.succ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
-        -- rewrite the RHS using `succ_mul`, then commute the sum on the LHS
-        -- to make it reflexive.
-        simp [Nat.succ_mul, Nat.add_comm]
-      have h2 := le_trans h1 harith
-      simpa [pow_univariate] using h2
-
-
-theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-(r : Fin n → 𝔽) (i : Fin n)
-(b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
-(m : CPoly.CMvMonomial n) :
-  CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-      (subst_monomial (n := n) (𝔽 := 𝔽)
-        (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) m)
-    ≤ extract_exp_var_i m i := by
-  classical
-  -- set up abbreviations
-  let vs : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
-    honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b
-  let deg : CPoly.CMvPolynomial 1 𝔽 → ℕ :=
-    fun q => CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q
-  let term : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
-    fun j => pow_univariate (𝔽 := 𝔽) (vs j) (extract_exp_var_i m j)
-  let degPow : Fin n → ℕ := fun j => deg (term j)
-
-  -- bound degree of a foldl product by degree(acc) + sum of degrees
-  have hfold :
-      ∀ (L : List (Fin n)) (acc : CPoly.CMvPolynomial 1 𝔽),
-        deg (L.foldl (fun a j => Mul.mul a (term j)) acc)
-          ≤ deg acc + ((L.map degPow).sum) := by
-    intro L acc
-    induction L generalizing acc with
-    | nil =>
-        simp [deg]
-    | cons j L ih =>
-        have ih' := ih (acc := Mul.mul acc (term j))
-        have hmul : deg (Mul.mul acc (term j)) ≤ deg acc + deg (term j) := by
-          simpa [deg] using (degreeOf_mul_le_univariate (a := acc) (b := term j))
-        have h := le_trans ih' (Nat.add_le_add_right hmul _)
-        simpa [List.foldl, List.map, degPow, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h
-
-  -- specialize to subst_monomial
-  have hdeg_subst_le_list :
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m)
-        ≤ ((List.finRange n).map degPow).sum := by
-    have h0 : deg (c1 (𝔽 := 𝔽) (1 : 𝔽)) = 0 := by
-      simpa [deg] using (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := (1 : 𝔽)))
-    have h := hfold (L := List.finRange n) (acc := c1 (𝔽 := 𝔽) (1 : 𝔽))
-    have h' := h
-    rw [h0] at h'
-    simpa [subst_monomial, term, degPow, deg] using h'
-
-  -- rewrite list sum as a Fintype sum
-  have hsum_univ : (∑ j : Fin n, degPow j) = ((List.finRange n).map degPow).sum := by
-    simpa using (Fin.sum_univ_def (n := n) (f := degPow))
-
-  have hdeg_subst_le_sum :
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m) ≤ ∑ j : Fin n, degPow j := by
-    have hsum_univ' : ((List.finRange n).map degPow).sum = ∑ j : Fin n, degPow j := by
-      simpa using hsum_univ.symm
-    simpa [hsum_univ'] using hdeg_subst_le_list
-
-  -- show deg (vs j) = 0 for j ≠ i
-  have hdeg_vs_other : ∀ j : Fin n, j ≠ i → deg (vs j) = 0 := by
-    intro j hj
-    have hdef :=
-      (honest_combined_map_def (𝔽 := 𝔽) (n := n) (i := i)
-        (challenges := challenge_subset r i) (b := b) (j := j))
-    have hcast :
-        vs j =
-          Fin.addCases (m := i.val) (n := honest_num_open_vars (n := n) i + 1)
-            (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
-            (fun t : Fin i.val => c1 (𝔽 := 𝔽) (challenge_subset r i t))
-            (honest_right_map (𝔽 := 𝔽) (n := n) i b)
-            (Fin.cast (honest_split_eq (n := n) i).symm j) := by
-      simpa [vs] using hdef
-    rw [hcast]
-    cases h : (Fin.cast (honest_split_eq (n := n) i).symm j) using Fin.addCases with
-    | left t =>
-        simpa [Fin.addCases, h, deg] using
-          (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := challenge_subset r i t))
-    | right t =>
-        -- simplify the goal but keep the equation `h` around
-        simp [Fin.addCases]
-        cases t using Fin.cases with
-        | zero =>
-            exfalso
-            have hjEq : j = i := by
-              have := congrArg (Fin.cast (honest_split_eq (n := n) i)) h
-              simpa [honest_current_index_eq (n := n) i] using this
-            exact hj hjEq
-        | succ t' =>
-            cases t' with
-            | mk tv htv =>
-                simpa [deg, honest_right_map] using
-                  (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := b ⟨tv, htv⟩))
-
-  -- show degPow j = 0 for j ≠ i
-  have hdegPow_other : ∀ j : Fin n, j ≠ i → degPow j = 0 := by
-    intro j hj
-    have hpow : degPow j ≤ (extract_exp_var_i m j) * deg (vs j) := by
-      simpa [degPow, deg] using
-        (degreeOf_pow_univariate_le (𝔽 := 𝔽) (q := vs j) (extract_exp_var_i m j))
-    have hdeg0 : deg (vs j) = 0 := hdeg_vs_other j hj
-    have : degPow j ≤ 0 := by
-      simpa [hdeg0] using hpow
-    exact Nat.eq_zero_of_le_zero this
-
-  -- collapse the Fintype sum to the single i-term
-  have hsum_single : (∑ j : Fin n, degPow j) = degPow i := by
-    classical
-    refine (Fintype.sum_eq_single (a := i) (f := degPow) ?_)
-    intro j hj
-    exact hdegPow_other j hj
-
-  -- bound the i-term by the exponent
-  have hdegPow_i : degPow i ≤ extract_exp_var_i m i := by
-    have hxi : vs i = x0 (𝔽 := 𝔽) := by
-      simpa [vs] using
-        (honest_combined_map_at_i_is_x0 (𝔽 := 𝔽) (n := n) (i := i)
-          (challenges := challenge_subset r i) (b := b))
-    have hpow : degPow i ≤ (extract_exp_var_i m i) * deg (vs i) := by
-      simpa [degPow, deg] using
-        (degreeOf_pow_univariate_le (𝔽 := 𝔽) (q := vs i) (extract_exp_var_i m i))
-    have hx0 : deg (vs i) ≤ 1 := by
-      simpa [deg, hxi] using (degreeOf_x0_le_one (𝔽 := 𝔽))
-    have hmul : (extract_exp_var_i m i) * deg (vs i) ≤ extract_exp_var_i m i := by
-      simpa [Nat.mul_one] using (Nat.mul_le_mul_left (extract_exp_var_i m i) hx0)
-    exact le_trans hpow hmul
-
-  -- final assembly
-  have :
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m) ≤ extract_exp_var_i m i := by
-    calc
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m)
-          ≤ ∑ j : Fin n, degPow j := hdeg_subst_le_sum
-      _ = degPow i := hsum_single
-      _ ≤ extract_exp_var_i m i := hdegPow_i
-
-  simpa [degPow, deg, term, vs] using this
-
 theorem degree_eval2Poly_honest_combined_map_le_ind_degree_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
 (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
@@ -1207,7 +768,6 @@ theorem degree_eval2Poly_honest_combined_map_le_ind_degree_k {𝔽 : Type _} {n 
   -- conclude
   simpa [vs, d, heq] using hfold
 
-
 theorem honest_round_poly_degree_le_ind_degree_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n) :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
@@ -1228,10 +788,10 @@ theorem prob_over_challenges_fiber_le {𝔽 : Type _} {n : ℕ} [Fintype 𝔽] [
 (i : Fin (n + 1)) (d : ℕ) (E : (Fin (n + 1) → 𝔽) → Prop) [DecidablePred E]
 (hfiber : ∀ rRest : (Fin n → 𝔽),
   ((Finset.univ : Finset 𝔽).filter (fun a => E (Fin.insertNth i a rRest))).card ≤ d) :
-  prob_over_challenges (𝔽 := 𝔽) (n := n + 1) E ≤ (d : ℚ) / count_field_size (𝔽 := 𝔽) := by
+  prob_over_challenges (𝔽 := 𝔽) (n := n + 1) E ≤ (d : ℚ) / field_size (𝔽 := 𝔽) := by
   classical
   -- unfold the probability definition
-  simp [prob_over_challenges, all_assignments_n, count_field_size]
+  simp [prob_over_challenges, all_assignments_n, field_size]
 
   -- The `prob_over_challenges` definition uses a classical decidable instance for `E`.
   -- Rewrite it to use the provided `[DecidablePred E]`.
@@ -1339,14 +899,13 @@ theorem prob_over_challenges_fiber_le {𝔽 : Type _} {n : ℕ} [Fintype 𝔽] [
       (mul_div_mul_left (a := (d : ℚ)) (b := (Fintype.card 𝔽 : ℚ))
         (c := (Fintype.card 𝔽 : ℚ) ^ n) hpow_ne)
 
-
 theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n) (i : Fin n) :
   prob_over_challenges (𝔽 := 𝔽) (n := n)
     (fun r =>
       AcceptsAndBadOnChallenges claim p adv r ∧
       RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i)
-    ≤ (max_ind_degree p) / count_field_size (𝔽 := 𝔽) := by
+    ≤ (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
   classical
   cases n with
   | zero =>
@@ -1595,26 +1154,26 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
                 (count_assignments_causing_agreement g h : ℚ) / (count_all_assignments_n (𝔽 := 𝔽) 1 : ℚ)
                   ≤
                 (MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (difference_poly g h) : ℚ)
-                  / (count_field_size (𝔽 := 𝔽) : ℚ) := by
+                  / (field_size (𝔽 := 𝔽) : ℚ) := by
               -- unfold prob_agreement_at_random_challenge
               simpa [prob_agreement_at_random_challenge] using hprob
 
-            have hdenom : count_all_assignments_n (𝔽 := 𝔽) 1 = count_field_size (𝔽 := 𝔽) := by
-              simp [count_all_assignments_n, count_field_size, all_assignments_n]
+            have hdenom : count_all_assignments_n (𝔽 := 𝔽) 1 = field_size (𝔽 := 𝔽) := by
+              simp [count_all_assignments_n, field_size, all_assignments_n]
 
             have hprob'' :
-                (count_assignments_causing_agreement g h : ℚ) / (count_field_size (𝔽 := 𝔽) : ℚ)
+                (count_assignments_causing_agreement g h : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)
                   ≤
                 (MvPolynomial.degreeOf (⟨0, by decide⟩ : Fin 1) (difference_poly g h) : ℚ)
-                  / (count_field_size (𝔽 := 𝔽) : ℚ) := by
+                  / (field_size (𝔽 := 𝔽) : ℚ) := by
               simpa [hdenom] using hprob'
 
-            have hpos : 0 < (count_field_size (𝔽 := 𝔽) : ℚ) := by
-              have : 0 < count_field_size (𝔽 := 𝔽) := by
-                simpa [count_field_size] using (Fintype.card_pos_iff.2 ⟨(0 : 𝔽)⟩)
+            have hpos : 0 < (field_size (𝔽 := 𝔽) : ℚ) := by
+              have : 0 < field_size (𝔽 := 𝔽) := by
+                simpa [field_size] using (Fintype.card_pos_iff.2 ⟨(0 : 𝔽)⟩)
               exact_mod_cast this
 
-            have hne : (count_field_size (𝔽 := 𝔽) : ℚ) ≠ 0 := ne_of_gt hpos
+            have hne : (field_size (𝔽 := 𝔽) : ℚ) ≠ 0 := ne_of_gt hpos
 
             have hcount_le_deg :
                 (count_assignments_causing_agreement g h : ℚ)
@@ -1675,7 +1234,6 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
         (prob_over_challenges_fiber_le (𝔽 := 𝔽) (n := n') (i := i) (d := max_ind_degree p)
           (E := E) (hfiber := hfiber))
 
-
 theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n) :
   (∑ i : Fin n,
@@ -1683,7 +1241,7 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
         (fun r =>
           AcceptsAndBadOnChallenges claim p adv r ∧
           RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
-    ≤ n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽) := by
+    ≤ n * (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
   classical
   -- Sum the pointwise bounds.
   have hsum :
@@ -1692,7 +1250,7 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
             (fun r =>
               AcceptsAndBadOnChallenges claim p adv r ∧
               RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
-        ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (count_field_size (𝔽 := 𝔽) : ℚ)) := by
+        ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := by
     -- `Fintype.sum_mono` works in any ordered additive commutative monoid.
     refine Fintype.sum_mono ?_
     intro i
@@ -1708,10 +1266,10 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
           (fun r =>
             AcceptsAndBadOnChallenges claim p adv r ∧
             RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
-        ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (count_field_size (𝔽 := 𝔽) : ℚ)) := hsum
-    _ = (n : ℚ) * ((max_ind_degree p : ℚ) / (count_field_size (𝔽 := 𝔽) : ℚ)) := by
+        ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := hsum
+    _ = (n : ℚ) * ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := by
       -- sum of a constant over `Fin n`
       simp
-    _ = n * (max_ind_degree p) / count_field_size (𝔽 := 𝔽) := by
+    _ = n * (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
       -- put it back in the form used by the statement
       simp [div_eq_mul_inv, mul_left_comm, mul_comm]
