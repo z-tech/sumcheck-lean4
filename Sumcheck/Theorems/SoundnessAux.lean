@@ -14,7 +14,6 @@ import Std.Data.ExtTreeMap.Lemmas
 import Sumcheck.Lemmas.BadTranscript
 import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Challenges
-import Sumcheck.Lemmas.Eval2
 import Sumcheck.Lemmas.HonestProver
 import Mathlib
 
@@ -28,16 +27,6 @@ import Sumcheck.Lemmas.List
 import Sumcheck.Lemmas.Fin
 
 open scoped BigOperators
-
-def honest_split_eq_cast {n : ℕ} (i : Fin n) (m : ℕ)
-    (hm : honest_num_open_vars (n := n) i = m) :
-    i.val + (m + 1) = n :=
-by
-  exact
-    Eq.ndrec
-      (motive := fun m => i.val + (m + 1) = n)
-      (honest_split_eq (n := n) i)
-      hm
 
 theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
   [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
@@ -181,20 +170,6 @@ theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
   rw [hfold]
   simpa [pt] using heval.symm
 
-
-lemma sum_over_hypercube_recursive_zero
-  {𝔽 β : Type _}
-  (b0 b1 : 𝔽) (add : β → β → β)
-  (F : (Fin 0 → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
-    (b0 := b0) (b1 := b1) (add := add) (m := 0) F
-    =
-  F (fun x : Fin 0 => nomatch x) := by
-  -- unfold the recursion at m=0
-  simp [sum_over_hypercube_recursive]
-  -- remaining goal is just α-renaming of the empty function
-  rfl
-
 -- Helper: an “empty assignment” at the dependent type Fin (honest_num_open_vars i) → 𝔽
 -- WITHOUT doing `cases hopen`.
 noncomputable def empty_open_assignment
@@ -204,22 +179,6 @@ noncomputable def empty_open_assignment
 by
   -- build it at Fin 0, then transport along hopen.symm : 0 = honest_num_open_vars i
   refine Eq.ndrec (motive := fun m => Fin m → 𝔽) (fun x : Fin 0 => nomatch x) hopen.symm
-
--- transport sum_over_hypercube_recursive across m=0 without dependent rewrite pain
-lemma sum_over_hypercube_recursive_eq_of_m_eq_zero
-  {𝔽 β : Type _}
-  (b0 b1 : 𝔽) (add : β → β → β)
-  {m : ℕ} (hm : m = 0)
-  (F : (Fin m → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
-    (b0 := b0) (b1 := b1) (add := add) (m := m) F
-    =
-  F (by
-    -- build the empty function at Fin 0, then transport to Fin m via hm.symm
-    refine Eq.ndrec (motive := fun k => Fin k → 𝔽) (fun x : Fin 0 => nomatch x) hm.symm) := by
-  subst hm
-  -- now m = 0 definitionally
-  simp [sum_over_hypercube_recursive_zero]
 
 lemma honest_last_round
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽] [Fintype 𝔽]
@@ -400,73 +359,6 @@ lemma honest_last_round
       CPoly.CMvPolynomial.eval r p := by
           simp [hpt]
 
-theorem cast_split_eq_succ_castSucc {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (k : Fin n) (t0 : Fin i.val) :
-  let j : Fin n := ⟨i.val.succ, hlt⟩
-  Fin.cast (honest_split_eq (n := n) j).symm k
-      =
-    Fin.castAdd (honest_num_open_vars (n := n) j + 1) (Fin.castSucc t0)
-  →
-  Fin.cast (honest_split_eq (n := n) i).symm k
-    =
-  Fin.castAdd (honest_num_open_vars (n := n) i + 1) t0 := by
-  classical
-  dsimp
-  intro h
-  have hv : k.val = t0.val := by
-    -- take values
-    have := congrArg Fin.val h
-    simpa using this
-  -- now ext
-  apply Fin.ext
-  -- show vals equal
-  simp [hv]
-
-theorem cast_split_eq_succ_last {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (k : Fin n) :
-  let j : Fin n := ⟨i.val.succ, hlt⟩
-  Fin.cast (honest_split_eq (n := n) j).symm k
-      =
-    Fin.castAdd (honest_num_open_vars (n := n) j + 1) (Fin.last i.val)
-  →
-  Fin.cast (honest_split_eq (n := n) i).symm k
-    =
-  Fin.natAdd i.val (0 : Fin (honest_num_open_vars (n := n) i + 1)) := by
-  -- unfold the `let` binder in the statement
-  dsimp
-  intro h
-  have hk : k.val = i.val := by
-    have hval := congrArg Fin.val h
-    simpa using hval
-  apply Fin.ext
-  -- Compare values on both sides.
-  simp [hk]
-
-theorem cast_split_eq_succ_right {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (k : Fin n)
-  (t : Fin (honest_num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1))
-  (hm1 :
-    honest_num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 + 1
-      = honest_num_open_vars (n := n) i + 1) :
-  let j : Fin n := ⟨i.val.succ, hlt⟩
-  Fin.cast (honest_split_eq (n := n) j).symm k = Fin.natAdd j.val t
-  →
-  Fin.cast (honest_split_eq (n := n) i).symm k
-    =
-  Fin.natAdd i.val (Fin.cast hm1 (Fin.succ t)) := by
-  classical
-  dsimp
-  intro hk
-  have hkval : k.val = i.val + t.val.succ := by
-    have hk' := congrArg Fin.val hk
-    -- hk' : (Fin.cast ... k).val = (Fin.natAdd ... t).val
-    -- simplify values
-    -- first get k.val = i.val.succ + t.val
-    have hk'' : k.val = i.val.succ + t.val := by
-      simpa using hk'
-    -- convert succ_add
-    simpa [Nat.succ_add_eq_add_succ] using hk''
-  apply Fin.ext
-  -- reduce to equality on values
-  simpa using hkval
-
 theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n) (a : 𝔽) :
@@ -520,53 +412,6 @@ theorem honest_num_open_vars_succ {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) :
       = honest_num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 := by
   have hNat : n - (i.val + 1) = 1 + (n - (i.val + 2)) := nat_sub_add_two n i.val hlt
   simpa [honest_num_open_vars, Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hNat
-
-
-theorem sum_over_hypercube_recursive_cast {𝔽 β : Type _}
-  (b0 b1 : 𝔽)
-  (add : β → β → β)
-  {m m' : ℕ}
-  (hm : m = m')
-  (F : (Fin m → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F
-    =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m')
-    (fun x => F (x ∘ Fin.cast hm)) := by
-  cases hm
-  simp
-
-theorem sum_over_hypercube_recursive_congr {𝔽 β : Type _}
-  (b0 b1 : 𝔽)
-  (add : β → β → β)
-  {m : ℕ}
-  {F G : (Fin m → 𝔽) → β}
-  (hFG : ∀ x, F x = G x) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F
-    =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) G := by
-  classical
-  induction m with
-  | zero =>
-      simp [sum_over_hypercube_recursive, hFG]
-  | succ m ih =>
-      simp [sum_over_hypercube_recursive, Nat.recAux, hFG]
-
-theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
-  (b0 b1 : 𝔽)
-  (add : β → β → β)
-  {m m' : ℕ}
-  (hm : m' = m + 1)
-  (F : (Fin m' → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m') F
-    =
-  add
-    (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
-      (fun x => F ((Fin.cons b0 x) ∘ Fin.cast hm)))
-    (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
-      (fun x => F ((Fin.cons b1 x) ∘ Fin.cast hm))) := by
-  cases hm
-  simp
-
 
 theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
@@ -938,59 +783,6 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
       _ = next_claim (𝔽 := 𝔽) (round_challenge := r i)
             (honest_round_poly (p := p) (ch := r) i) := honest_step
 
-theorem degreeOf_mul_le_univariate {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(a b : CPoly.CMvPolynomial 1 𝔽) :
-  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (Mul.mul a b)
-    ≤ CPoly.CMvPolynomial.degreeOf (0 : Fin 1) a + CPoly.CMvPolynomial.degreeOf (0 : Fin 1) b := by
-  classical
-  let i0 : Fin 1 := 0
-  let A : MvPolynomial (Fin 1) 𝔽 := CPoly.fromCMvPolynomial (R := 𝔽) a
-  let B : MvPolynomial (Fin 1) 𝔽 := CPoly.fromCMvPolynomial (R := 𝔽) b
-
-  -- CPoly degreeOf = MvPolynomial degreeOf (at i0)
-  have hEqA :
-      CPoly.CMvPolynomial.degreeOf i0 a
-        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 A := by
-    simpa [A] using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := a) (S := 𝔽))
-
-  have hEqB :
-      CPoly.CMvPolynomial.degreeOf i0 b
-        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 B := by
-    simpa [B] using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := b) (S := 𝔽))
-
-  have hEqAB :
-      CPoly.CMvPolynomial.degreeOf i0 (Mul.mul a b)
-        =
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 (CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b)) := by
-    simpa using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := Mul.mul a b) (S := 𝔽))
-
-  -- Rewrite `fromCMvPolynomial (Mul.mul a b)` as `A * B`
-  have hmap :
-      CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b) = A * B := by
-    -- Avoid `simp` here: `CPoly.map_mul` is itself a simp lemma and `simpa` would reduce to `True`.
-    dsimp [A, B]
-    change
-      CPoly.fromCMvPolynomial (R := 𝔽) (a * b) =
-        CPoly.fromCMvPolynomial (R := 𝔽) a * CPoly.fromCMvPolynomial (R := 𝔽) b
-    exact CPoly.map_mul (a := a) (b := b) (R := 𝔽)
-
-  -- Main MvPolynomial inequality
-  have hMv :
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 (CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b))
-        ≤
-      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 A + MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 B := by
-    -- apply Mathlib on `A * B`, then rewrite by `hmap`
-    -- `hmap` is oriented `from = A*B`, so we rewrite in the reverse direction.
-    simpa [hmap] using
-      (MvPolynomial.degreeOf_mul_le (R := 𝔽) (σ := Fin 1) i0 A B)
-
-  -- transfer back to CPoly
-  have : CPoly.CMvPolynomial.degreeOf i0 (Mul.mul a b)
-      ≤ CPoly.CMvPolynomial.degreeOf i0 a + CPoly.CMvPolynomial.degreeOf i0 b := by
-    simpa [hEqAB, hEqA, hEqB] using hMv
-
-  simpa [i0] using this
-
 
 theorem fromCMvPolynomial_c1_eq_C {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
 (c : 𝔽) :
@@ -1079,63 +871,6 @@ theorem fromCMvPolynomial_c1_eq_C {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽]
       have hinsD := congrArg (fun o : Option 𝔽 => o.getD 0) hins
       simp [hcmp]
 
-theorem degreeOf_c1_eq_zero {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(c : 𝔽) :
-  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (c1 (𝔽 := 𝔽) c) = 0 := by
-  classical
-  let i0 : Fin 1 := 0
-
-  -- Bridge `CPoly.CMvPolynomial.degreeOf` to `MvPolynomial.degreeOf`.
-  have hEq :
-      CPoly.CMvPolynomial.degreeOf i0 (c1 (𝔽 := 𝔽) c)
-        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0
-            (CPoly.fromCMvPolynomial (R := 𝔽) (c1 (𝔽 := 𝔽) c)) := by
-    simpa using
-      congrArg (fun f => f i0)
-        (CPoly.degreeOf_equiv (p := c1 (𝔽 := 𝔽) c) (S := 𝔽))
-
-  -- Rewrite to the `MvPolynomial` side and use `MvPolynomial.degreeOf_C`.
-  rw [hEq]
-  rw [fromCMvPolynomial_c1_eq_C (𝔽 := 𝔽) (c := c)]
-  simp [i0]
-
-theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-(q : CPoly.CMvPolynomial 1 𝔽) :
-  ∀ e : ℕ,
-    CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (pow_univariate (𝔽 := 𝔽) q e)
-      ≤ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
-  intro e
-  induction e with
-  | zero =>
-      have h0 :
-          CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-              (pow_univariate (𝔽 := 𝔽) q 0) = 0 := by
-        simpa [pow_univariate] using
-          (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := (1 : 𝔽)))
-      -- goal is an inequality, but simp turns `≤ 0` into `= 0`
-      simp [h0]
-  | succ e ih =>
-      have hmul :=
-        degreeOf_mul_le_univariate (𝔽 := 𝔽) q (pow_univariate (𝔽 := 𝔽) q e)
-      have h1 :
-          CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-              (Mul.mul q (pow_univariate (𝔽 := 𝔽) q e))
-            ≤
-            CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
-              e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
-        refine le_trans hmul ?_
-        exact Nat.add_le_add_left ih (CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q)
-      have harith :
-          CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
-              e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q
-            ≤
-            Nat.succ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
-        -- rewrite the RHS using `succ_mul`, then commute the sum on the LHS
-        -- to make it reflexive.
-        simp [Nat.succ_mul, Nat.add_comm]
-      have h2 := le_trans h1 harith
-      simpa [pow_univariate] using h2
-
 theorem fromCMvPolynomial_x0_eq_X {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :
   CPoly.fromCMvPolynomial (R := 𝔽) (x0 (𝔽 := 𝔽)) = (MvPolynomial.X (0 : Fin 1) : MvPolynomial (Fin 1) 𝔽) := by
   classical
@@ -1205,6 +940,117 @@ theorem degreeOf_x0_le_one {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :
     simp [MvPolynomial.degreeOf_X, i0]
 
   simpa [i0] using h
+
+theorem degreeOf_mul_le_univariate {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+(a b : CPoly.CMvPolynomial 1 𝔽) :
+  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (Mul.mul a b)
+    ≤ CPoly.CMvPolynomial.degreeOf (0 : Fin 1) a + CPoly.CMvPolynomial.degreeOf (0 : Fin 1) b := by
+  classical
+  let i0 : Fin 1 := 0
+  let A : MvPolynomial (Fin 1) 𝔽 := CPoly.fromCMvPolynomial (R := 𝔽) a
+  let B : MvPolynomial (Fin 1) 𝔽 := CPoly.fromCMvPolynomial (R := 𝔽) b
+
+  -- CPoly degreeOf = MvPolynomial degreeOf (at i0)
+  have hEqA :
+      CPoly.CMvPolynomial.degreeOf i0 a
+        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 A := by
+    simpa [A] using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := a) (S := 𝔽))
+
+  have hEqB :
+      CPoly.CMvPolynomial.degreeOf i0 b
+        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 B := by
+    simpa [B] using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := b) (S := 𝔽))
+
+  have hEqAB :
+      CPoly.CMvPolynomial.degreeOf i0 (Mul.mul a b)
+        =
+      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 (CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b)) := by
+    simpa using congrArg (fun f => f i0) (CPoly.degreeOf_equiv (p := Mul.mul a b) (S := 𝔽))
+
+  -- Rewrite `fromCMvPolynomial (Mul.mul a b)` as `A * B`
+  have hmap :
+      CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b) = A * B := by
+    -- Avoid `simp` here: `CPoly.map_mul` is itself a simp lemma and `simpa` would reduce to `True`.
+    dsimp [A, B]
+    change
+      CPoly.fromCMvPolynomial (R := 𝔽) (a * b) =
+        CPoly.fromCMvPolynomial (R := 𝔽) a * CPoly.fromCMvPolynomial (R := 𝔽) b
+    exact CPoly.map_mul (a := a) (b := b) (R := 𝔽)
+
+  -- Main MvPolynomial inequality
+  have hMv :
+      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 (CPoly.fromCMvPolynomial (R := 𝔽) (Mul.mul a b))
+        ≤
+      MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 A + MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0 B := by
+    -- apply Mathlib on `A * B`, then rewrite by `hmap`
+    -- `hmap` is oriented `from = A*B`, so we rewrite in the reverse direction.
+    simpa [hmap] using
+      (MvPolynomial.degreeOf_mul_le (R := 𝔽) (σ := Fin 1) i0 A B)
+
+  -- transfer back to CPoly
+  have : CPoly.CMvPolynomial.degreeOf i0 (Mul.mul a b)
+      ≤ CPoly.CMvPolynomial.degreeOf i0 a + CPoly.CMvPolynomial.degreeOf i0 b := by
+    simpa [hEqAB, hEqA, hEqB] using hMv
+
+  simpa [i0] using this
+
+theorem degreeOf_c1_eq_zero {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+(c : 𝔽) :
+  CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (c1 (𝔽 := 𝔽) c) = 0 := by
+  classical
+  let i0 : Fin 1 := 0
+
+  -- Bridge `CPoly.CMvPolynomial.degreeOf` to `MvPolynomial.degreeOf`.
+  have hEq :
+      CPoly.CMvPolynomial.degreeOf i0 (c1 (𝔽 := 𝔽) c)
+        = MvPolynomial.degreeOf (σ := Fin 1) (R := 𝔽) i0
+            (CPoly.fromCMvPolynomial (R := 𝔽) (c1 (𝔽 := 𝔽) c)) := by
+    simpa using
+      congrArg (fun f => f i0)
+        (CPoly.degreeOf_equiv (p := c1 (𝔽 := 𝔽) c) (S := 𝔽))
+
+  -- Rewrite to the `MvPolynomial` side and use `MvPolynomial.degreeOf_C`.
+  rw [hEq]
+  rw [fromCMvPolynomial_c1_eq_C (𝔽 := 𝔽) (c := c)]
+  simp [i0]
+
+theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+(q : CPoly.CMvPolynomial 1 𝔽) :
+  ∀ e : ℕ,
+    CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (pow_univariate (𝔽 := 𝔽) q e)
+      ≤ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
+  intro e
+  induction e with
+  | zero =>
+      have h0 :
+          CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
+              (pow_univariate (𝔽 := 𝔽) q 0) = 0 := by
+        simpa [pow_univariate] using
+          (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := (1 : 𝔽)))
+      -- goal is an inequality, but simp turns `≤ 0` into `= 0`
+      simp [h0]
+  | succ e ih =>
+      have hmul :=
+        degreeOf_mul_le_univariate (𝔽 := 𝔽) q (pow_univariate (𝔽 := 𝔽) q e)
+      have h1 :
+          CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
+              (Mul.mul q (pow_univariate (𝔽 := 𝔽) q e))
+            ≤
+            CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
+              e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
+        refine le_trans hmul ?_
+        exact Nat.add_le_add_left ih (CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q)
+      have harith :
+          CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
+              e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q
+            ≤
+            Nat.succ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
+        -- rewrite the RHS using `succ_mul`, then commute the sum on the LHS
+        -- to make it reflexive.
+        simp [Nat.succ_mul, Nat.add_comm]
+      have h2 := le_trans h1 harith
+      simpa [pow_univariate] using h2
+
 
 theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (r : Fin n → 𝔽) (i : Fin n)
