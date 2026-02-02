@@ -17,11 +17,12 @@ import Sumcheck.Lemmas.Challenges
 import Sumcheck.Lemmas.Eval2
 import Sumcheck.Lemmas.HonestProver
 import Mathlib
-import Sumcheck
 
 import Sumcheck.Src.HonestTranscript
 import Sumcheck.Src.Hypercube
 import Sumcheck.Lemmas.Hypercube
+import Sumcheck.Lemmas.Agreement
+import Sumcheck.Lemmas.Degree
 
 open scoped BigOperators
 
