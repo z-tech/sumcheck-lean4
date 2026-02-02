@@ -207,4 +207,4 @@ lemma residual_sum_with_openVars_def_with_hn
 
   -- Now unfold the definition on the hn' side.
   -- (This produces exactly the `Fin.cast hn'.symm` you want.)
-  simpa [residual_sum_with_openVars] using hswap.trans (by rfl)
+  simp [residual_sum_with_openVars]
