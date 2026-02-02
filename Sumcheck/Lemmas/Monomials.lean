@@ -2,12 +2,13 @@ import CompPoly.CMvMonomial
 import Mathlib.Data.Vector.Basic
 import Mathlib.Data.Vector.Zip
 
-namespace Sumcheck
+import Sumcheck.Src.CMvPolynomial
+
 open CPoly
 
-
-def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
-  (CPoly.CMvMonomial.toFinsupp m) i
+@[simp] lemma extract_exp_var_i_eq_get {n : ℕ} (m : CPoly.CMvMonomial n) (x : Fin n) :
+    extract_exp_var_i m x = Vector.get m x := by
+  simp [extract_exp_var_i]
 
 @[simp] lemma extract_exp_var_i_def {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) :
   extract_exp_var_i (n := n) m i = m.get i := by
@@ -20,7 +21,6 @@ def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
   simp [extract_exp_var_i, CPoly.CMvMonomial.zero]
   -- goal is now: (Vector.replicate n 0).get i = 0
   -- DON'T `simpa` (it will turn the lemma into `True`); just use it directly:
-  exact List.Vector.get_replicate (a := (0 : ℕ)) i
 
 @[simp] lemma extract_exp_var_i_add {n : ℕ} (m₁ m₂ : CPoly.CMvMonomial n) (i : Fin n) :
   extract_exp_var_i (n := n) (m₁ + m₂) i
@@ -32,7 +32,7 @@ def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
   dsimp [extract_exp_var_i]
   -- Expand toFinsupp for each term (it stores `get` as the function)
   -- This `change` is definitional: (toFinsupp m) ⟨idx,hidx⟩ = m.get ⟨idx,hidx⟩
-  change (m₁ + m₂).get ⟨idx, hidx⟩ = m₁.get ⟨idx, hidx⟩ + m₂.get ⟨idx, hidx⟩
+  -- change (m₁ + m₂).get ⟨idx, hidx⟩ = m₁.get ⟨idx, hidx⟩ + m₂.get ⟨idx, hidx⟩
   -- Expand monomial addition
   -- CMvMonomial.add := Vector.zipWith Nat.add
   -- and `get ⟨idx,hidx⟩` is definitionally the same as indexing `[idx]`
@@ -49,11 +49,5 @@ def mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
 
 @[simp] lemma extract_exp_var_i_mon_x1 :
   extract_exp_var_i (n := 1) mon_x1 (⟨0, by decide⟩ : Fin 1) = 1 := by
-  -- rewrite to `.get`
   change mon_x1.get (⟨0, by decide⟩ : Fin 1) = 1
-  -- unfold mon_x1 and destruct the Fin index
   dsimp [mon_x1]
-  -- Fin 1 is only ⟨0, _⟩, so we can rewrite directly:
-  rfl
-
-end Sumcheck

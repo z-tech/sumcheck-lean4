@@ -25,150 +25,10 @@ import Sumcheck.Lemmas.Agreement
 import Sumcheck.Lemmas.Degree
 import Sumcheck.Lemmas.List
 import Sumcheck.Lemmas.Fin
+import Sumcheck.Lemmas.CMvPolynomial
+import Sumcheck.Lemmas.Eval2
 
 open scoped BigOperators
-
-theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
-  [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  (p : CPoly.CMvPolynomial n 𝔽)
-  (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
-  (b : 𝔽) :
-  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-      (RingHom.id 𝔽) (fun _ : Fin 1 => b)
-      (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p)
-    =
-  CPoly.CMvPolynomial.eval
-      (fun i =>
-        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-            (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i))
-      p := by
-  classical
-
-  let pt : Fin n → 𝔽 :=
-    fun i =>
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-        (RingHom.id 𝔽) (fun _ : Fin 1 => b) (vs i)
-
-  let g : 𝔽 → (CPoly.CMvMonomial n × 𝔽) → 𝔽 :=
-    fun s mc => mc.2 * CPoly.MonoR.evalMonomial pt mc.1 + s
-
-  -- fold step used in eval₂Poly
-  let step : CPoly.CMvPolynomial 1 𝔽 → (CPoly.CMvMonomial n × 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
-    fun acc mc =>
-      @HAdd.hAdd _ _ _ instHAdd
-        (@HMul.hMul _ _ _ instHMul (c1 (𝔽 := 𝔽) mc.2) (subst_monomial vs mc.1))
-        acc
-
-  have hpoly :
-      CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p =
-        List.foldl step (c1 (𝔽 := 𝔽) 0) (p.1.toList) := by
-    -- unfold via lemma
-    simpa [step] using
-      (CPoly.eval₂Poly_eq_list_foldl (n := n) (𝔽 := 𝔽) (f := c1) (vs := vs) (p := p))
-
-  -- One step after applying eval₂ at x=b
-  have hstep :
-      ∀ (acc : CPoly.CMvPolynomial 1 𝔽) (mc : CPoly.CMvMonomial n × 𝔽),
-        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-            (RingHom.id 𝔽) (fun _ : Fin 1 => b)
-            (step acc mc)
-          =
-        g
-          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-              (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc)
-          mc := by
-    intro acc mc
-    -- rewrite eval₂(subst_monomial ...) using the honest prover lemma
-    have hs :
-        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-            (RingHom.id 𝔽) (fun _ : Fin 1 => b)
-            (subst_monomial vs mc.1)
-          =
-        CPoly.MonoR.evalMonomial pt mc.1 := by
-      simpa [pt] using
-        (Sumcheck.eval₂_subst_monomial (𝔽 := 𝔽) (n := n) (vs := vs) (m := mc.1) (b := b))
-
-    -- now it's pure ring-hom computation
-    -- simp uses eval₂-add/mul lemmas from Sumcheck.Lemmas.Eval2
-    simp [step, g, pt, hs, add_comm]
-
-  -- push eval₂ through the list fold
-  have hfold_general :
-      ∀ (l : List (CPoly.CMvMonomial n × 𝔽)) (acc : CPoly.CMvPolynomial 1 𝔽),
-        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-            (RingHom.id 𝔽) (fun _ : Fin 1 => b)
-            (List.foldl step acc l)
-          =
-        List.foldl g
-          (CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-              (RingHom.id 𝔽) (fun _ : Fin 1 => b) acc)
-          l := by
-    intro l acc
-    induction l generalizing acc with
-    | nil =>
-        simp
-    | cons mc tl ih =>
-        simp [List.foldl, ih, hstep]
-
-  have hinit :
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-          (RingHom.id 𝔽) (fun _ : Fin 1 => b) (c1 (𝔽 := 𝔽) 0)
-        =
-      (0 : 𝔽) := by
-    simp
-
-  have hfold :
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-          (RingHom.id 𝔽) (fun _ : Fin 1 => b)
-          (List.foldl step (c1 (𝔽 := 𝔽) 0) (p.1.toList))
-        =
-      List.foldl g 0 (p.1.toList) := by
-    simpa [hinit] using (hfold_general (l := p.1.toList) (acc := c1 (𝔽 := 𝔽) 0))
-
-  -- express eval pt p as the same fold
-  have heval : CPoly.CMvPolynomial.eval pt p = List.foldl g 0 (p.1.toList) := by
-    -- unfold eval into eval₂, then to ExtTreeMap.foldl, then to List.foldl
-    have :
-        CPoly.CMvPolynomial.eval pt p =
-          Std.ExtTreeMap.foldl
-            (fun s m c => (RingHom.id 𝔽) c * CPoly.MonoR.evalMonomial pt m + s)
-            0
-            p.1 := by
-      -- eval is definitional and eval₂ unfolds to foldl
-      simp [CPoly.CMvPolynomial.eval, CPoly.CMvPolynomial.eval₂]
-
-    -- rewrite ExtTreeMap.foldl to List.foldl over toList
-    have hf :=
-      (Std.ExtTreeMap.foldl_eq_foldl_toList
-        (t := p.1)
-        (f := fun s m c => (RingHom.id 𝔽) c * CPoly.MonoR.evalMonomial pt m + s)
-        (init := (0 : 𝔽)))
-
-    -- combine and normalize to our `g`
-    -- note: `foldl_eq_foldl_toList` uses pairs (m,c)
-    -- and `g` adds the term on the right, so we use commutativity to match
-    -- (this mirrors SoundnessAux)
-    have :
-        CPoly.CMvPolynomial.eval pt p =
-          List.foldl
-            (fun s (mc : CPoly.CMvMonomial n × 𝔽) =>
-              (RingHom.id 𝔽) mc.2 * CPoly.MonoR.evalMonomial pt mc.1 + s)
-            0
-            (p.1.toList) := by
-      -- hf : ExtTreeMap.foldl ... = List.foldl ... p.1.toList
-      -- use it to rewrite the RHS of the previous equality
-      -- (need to rewrite Std.ExtTreeMap.toList vs p.1.toList? rfl)
-      simpa [Std.ExtTreeMap.foldl_eq_foldl_toList] using (this.trans hf)
-
-    -- now rewrite the fold function to g
-    -- (RingHom.id) mc.2 = mc.2, and use mul/ add commutativity if necessary
-    -- g was defined as mc.2 * evalMonomial + s
-    simpa [g, add_comm, add_left_comm, add_assoc, mul_comm, mul_left_comm, mul_assoc] using this
-
-  -- finish
-  rw [hpoly]
-  rw [hfold]
-  simpa [pt] using heval.symm
 
 -- Helper: an “empty assignment” at the dependent type Fin (honest_num_open_vars i) → 𝔽
 -- WITHOUT doing `cases hopen`.
@@ -258,7 +118,7 @@ lemma honest_last_round
             (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
         p := by
     simpa using
-      (eval₂_eval₂Poly_c1 (𝔽 := 𝔽) (n := n) (p := p)
+      (CPoly.eval₂_eval₂Poly_c1 (𝔽 := 𝔽) (n := n) (p := p)
         (vs := honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0)
         (b := r i))
 
@@ -379,7 +239,7 @@ theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   classical
   unfold honest_round_poly
   -- unfold the honest prover polynomial and push eval₂ through the hypercube sum
-  simp [eval₂_eval₂Poly_c1, Sumcheck.eval₂_honest_combined_map_eq_addCasesFun]
+  simp [CPoly.eval₂_eval₂Poly_c1, Sumcheck.eval₂_honest_combined_map_eq_addCasesFun]
 
 
 theorem nat_sub_add_two (n k : ℕ) (hk : k.succ < n) :

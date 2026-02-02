@@ -6,3 +6,4 @@ import Sumcheck.Lemmas.Eval2
 import Sumcheck.Lemmas.HonestProver
 import Sumcheck.Lemmas.List
 import Sumcheck.Lemmas.ExtTreeMap
+import Sumcheck.Lemmas.CMvPolynomial

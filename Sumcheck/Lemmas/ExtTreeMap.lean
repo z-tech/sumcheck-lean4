@@ -1,6 +1,6 @@
 import ExtTreeMapLemmas.ExtTreeMap
 
-@[simp] lemma Std.ExtTreeMap.foldl_empty
+lemma Std.ExtTreeMap.foldl_empty
   {α : Type u} {β : Type v} {cmp : α → α → Ordering} {δ : Type w}
   [Std.TransCmp cmp]
   (f : δ → α → β → δ) (init : δ) :

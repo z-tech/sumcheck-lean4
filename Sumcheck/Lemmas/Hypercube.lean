@@ -4,6 +4,20 @@ import CompPoly.MvPolyEquiv
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.CMvPolynomial
 
+lemma sumcheck_CMvMonomial_zero_get
+  {n : ℕ} (x : Fin n) :
+  (CPoly.CMvMonomial.zero (n := n)).get x = 0 := by
+  -- CMvMonomial.zero = Vector.replicate n 0
+  simp [CPoly.CMvMonomial.zero]
+
+lemma sumcheck_evalMonomial_zero
+  {S : Type} {n : ℕ} [CommSemiring S]
+  (vs : Fin n → S) :
+  CPoly.MonoR.evalMonomial (n := n) (R := S) vs (CPoly.CMvMonomial.zero (n := n)) = (1 : S) := by
+  classical
+  -- evalMonomial = ∏ i, vs i ^ m.get i ; and m.get i = 0 for the zero monomial.
+  simp [CPoly.MonoR.evalMonomial, sumcheck_CMvMonomial_zero_get]
+
 @[simp] lemma sum_over_hypercube_recursive_succ
   {𝔽 β : Type _}
   (b0 b1 : 𝔽)

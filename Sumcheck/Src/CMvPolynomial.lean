@@ -83,7 +83,7 @@ lemma ind_degree_k_le_max_ind_degree
       (by simp)
 
 def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
-  (CPoly.CMvMonomial.toFinsupp m) i
+  m.get i
 
 def pow_univariate {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (p : CPoly.CMvPolynomial 1 𝔽) : ℕ → CPoly.CMvPolynomial 1 𝔽
