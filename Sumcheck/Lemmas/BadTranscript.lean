@@ -57,7 +57,7 @@ lemma badTranscript_implies_firstBadRound
     simpa [i] using hle
 
   have hj_lt : j' < i := by
-    exact Fin.lt_iff_val_lt_val.mpr (by simpa [j'] using j.isLt)
+    exact Fin.lt_iff_val_lt_val.mpr (by simp [j'])
 
   exact (not_lt_of_ge hi_le) hj_lt
 

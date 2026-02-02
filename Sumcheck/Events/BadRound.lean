@@ -51,3 +51,12 @@ def LastBadRound
     ∧
     ∀ j : Fin n, i < j →
       (AdversaryTranscript claim p adv r).round_polys j = honest_round_poly p r j
+
+def RoundDisagreeButAgreeAtChallenge
+{𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+(claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
+(r : Fin n → 𝔽) (i : Fin n) : Prop :=
+  let t : Transcript 𝔽 n := AdversaryTranscript claim p adv r
+  t.round_polys i ≠ honest_round_poly (p := p) (ch := r) i
+    ∧ next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
+        = next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i)

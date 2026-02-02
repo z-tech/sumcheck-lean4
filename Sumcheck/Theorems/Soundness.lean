@@ -28,7 +28,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
     intro r hAB
     rcases
       accepts_and_bad_implies_exists_round_disagree_but_agree
-        (claim := claim) (p := claim_p) (adv := adv) (r := r) h_false_claim hAB
+        (claim := claim) (p := claim_p) (adv := adv) (r := r) hAB
       with ⟨i, hi⟩
     exact ⟨i, ⟨hAB, hi⟩⟩
 
