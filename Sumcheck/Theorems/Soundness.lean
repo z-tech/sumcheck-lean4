@@ -215,64 +215,12 @@ lemma eval₂_sum_over_hypercube_recursive
       (m := m)
       (F := F))
 
-lemma sum_over_hypercube_recursive_succ_cases
-  {𝔽 β : Type _}
-  (b0 b1 : 𝔽)
-  (add : β → β → β)
-  {m : ℕ}
-  (F : (Fin (Nat.succ m) → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := Nat.succ m) F
-    =
-    add
-      (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
-        (fun x => F (fun k : Fin (Nat.succ m) => Fin.cases b0 x k)))
-      (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
-        (fun x => F (fun k : Fin (Nat.succ m) => Fin.cases b1 x k))) := by
-  -- start from your existing lemma (the Fin.cons form)
-  have h :=
-    sum_over_hypercube_recursive_succ
-      (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (F := F)
-
-  -- IMPORTANT: use dsimp, not simp/simpa, to avoid turning the statement into True
-  dsimp [Fin.cons] at h
-
-  exact h
-
 @[simp] lemma Fin.cons_eq_cases_const
   {α : Type _} {n : ℕ} (a : α) (x : Fin n → α) :
   (fun i : Fin (n + 1) => (Fin.cons (α := fun _ => α) a x i))
     =
   (fun i : Fin (n + 1) => Fin.cases a x i) := by
   rfl
-
-lemma sum_over_hypercube_recursive_congr_add
-  {𝔽 β : Type _} [Field 𝔽]
-  {m : ℕ} (b0 b1 : 𝔽)
-  {add₁ add₂ : β → β → β}
-  {F : (Fin m → 𝔽) → β}
-  (hadd : add₁ = add₂) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add₁ (m := m) F
-    =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add₂ (m := m) F := by
-  subst hadd
-  rfl
-
-lemma eval₂_honest_combined_map_round0_eq_cases
-  {𝔽 : Type _} {n' : ℕ}
-  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (r : Fin (Nat.succ n') → 𝔽) (a : 𝔽) (b : Fin n' → 𝔽) :
-  (fun j : Fin (Nat.succ n') =>
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-        (RingHom.id 𝔽) (fun _ : Fin 1 => a)
-        (honest_combined_map (𝔽 := 𝔽) (n := Nat.succ n')
-          (⟨0, Nat.succ_pos n'⟩) (challenge_subset r ⟨0, Nat.succ_pos n'⟩) b j))
-    =
-  (fun j : Fin (Nat.succ n') => Fin.cases a b j) := by
-  classical
-  have h :=
-    eval₂_honest_combined_map_eq_addCasesFun (𝔽 := 𝔽) (n := Nat.succ n')
-      r (⟨0, Nat.succ_pos n'⟩) a b
-  simpa [honest_num_open_vars, honest_split_eq, addCasesFun_Fin0_eq_cons] using h
 
 lemma honest_round0_endpoints_eq_true_sum
   {𝔽 : Type _} {n' : ℕ}

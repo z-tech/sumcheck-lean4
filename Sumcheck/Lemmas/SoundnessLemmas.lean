@@ -25,7 +25,6 @@ import Std.Data.ExtTreeMap
 import Std.Data.ExtTreeMap.Lemmas
 import Sumcheck.Lemmas.BadTranscript
 import Sumcheck.Lemmas.Accepts
-import Sumcheck.Lemmas.Challenges
 import Sumcheck.Lemmas.HonestProver
 import Mathlib
 

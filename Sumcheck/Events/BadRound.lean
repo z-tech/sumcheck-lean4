@@ -11,16 +11,6 @@ def honest_round_poly
   (i : Fin n) : CPoly.CMvPolynomial 1 𝔽 :=
   honest_prover_message_at (p := p) (i := i) (challenges := challenge_subset ch i)
 
-def honest_round_fun
-  {𝔽 : Type _} {n : ℕ}
-  [CommRing 𝔽] [DecidableEq 𝔽]
-  (p : CPoly.CMvPolynomial n 𝔽)
-  (r : Fin n → 𝔽)
-  (i : Fin n) : 𝔽 → 𝔽 :=
-fun a =>
-  round_sum (num_challenges := i.val) (num_vars := n)
-    (challenge_subset r i) a p (Nat.succ_le_of_lt i.isLt)
-
 def BadRound
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (round_poly: CPoly.CMvPolynomial 1 𝔽)
@@ -28,20 +18,6 @@ def BadRound
   (challenges : Fin n → 𝔽)
   (round_num : Fin n) : Prop :=
   round_poly ≠ honest_round_poly p challenges round_num
-
-def FirstBadRound
-  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (claim : 𝔽)
-  (p : CPoly.CMvPolynomial n 𝔽)
-  (adversary : Adversary 𝔽 n)
-  (r : Fin n → 𝔽) : Prop :=
-  ∃ i : Fin n,
-    (AdversaryTranscript claim p adversary r).round_polys i
-      ≠ honest_round_poly (p := p) (ch := r) i
-    ∧
-    ∀ j : Fin i.val,
-      (AdversaryTranscript claim p adversary r).round_polys ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
-        = honest_round_poly p r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
 
 def LastBadRound
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]

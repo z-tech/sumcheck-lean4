@@ -106,33 +106,6 @@ lemma acceptsEvent_round_facts
   refine ⟨hsplit.1, ?_⟩
   exact decide_eq_true_eq.mp hsplit.2
 
-lemma acceptsEvent_claims_eq_derive_claims
-  {𝔽 : Type _} {n : ℕ}
-  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (p : CPoly.CMvPolynomial n 𝔽)
-  (t : Transcript 𝔽 n) :
-  AcceptsEvent p t →
-    t.claims =
-      derive_claims (𝔽 := 𝔽) (n := n)
-        (t.claims ⟨0, Nat.succ_pos n⟩)
-        t.round_polys t.challenges := by
-  intro hAcc
-  funext k
-  cases' k using Fin.cases with k
-  · -- k = 0
-    -- Force the index to be the explicit Fin.mk form so the match reduces.
-    change t.claims ⟨0, Nat.succ_pos n⟩ =
-      derive_claims (𝔽 := 𝔽) (n := n)
-        (t.claims ⟨0, Nat.succ_pos n⟩)
-        t.round_polys t.challenges ⟨0, Nat.succ_pos n⟩
-    simp [derive_claims]
-  · -- k = succ k
-    -- In this branch, `k : Fin n` already (that's how `Fin.cases` works).
-    have hstep :=
-      (acceptsEvent_round_facts (p := p) (t := t) (i := k) hAcc).2
-    -- hstep : t.claims k.succ = next_claim (t.challenges k) (t.round_polys k)
-    simpa [derive_claims] using hstep
-
 lemma acceptsEvent_endpoints_sum_eq_claim
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
