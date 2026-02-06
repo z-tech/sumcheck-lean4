@@ -149,3 +149,19 @@ lemma fromCMvPolynomial_x0_eq_X {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] 
       -- unfold the insert-lookup formula and simplify
       simp [t, Std.compare_eq_iff_eq, hne]
     simp [hlookup, hs]
+
+-- ============================================================================
+-- Lemmas moved from Src/CMvPolynomial.lean to enforce Src = defs only
+-- ============================================================================
+
+lemma ind_degree_k_le_max_ind_degree
+  {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) (k : Fin n) :
+  ind_degree_k (𝔽 := 𝔽) (n := n) p k ≤ max_ind_degree (𝔽 := 𝔽) (n := n) p := by
+  classical
+  simp [ind_degree_k, max_ind_degree]
+  exact
+    Finset.le_sup
+      (s := (Finset.univ : Finset (Fin n)))
+      (f := fun i => CPoly.CMvPolynomial.degreeOf i p)
+      (by simp)

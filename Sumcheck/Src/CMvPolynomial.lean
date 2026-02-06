@@ -70,18 +70,6 @@ def ind_degree_k
   (k : Fin n) : ℕ :=
   CPoly.CMvPolynomial.degreeOf k p
 
-lemma ind_degree_k_le_max_ind_degree
-  {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
-  (p : CPoly.CMvPolynomial n 𝔽) (k : Fin n) :
-  ind_degree_k (𝔽 := 𝔽) (n := n) p k ≤ max_ind_degree (𝔽 := 𝔽) (n := n) p := by
-  classical
-  simp [ind_degree_k, max_ind_degree]
-  exact
-    Finset.le_sup
-      (s := (Finset.univ : Finset (Fin n)))
-      (f := fun i => CPoly.CMvPolynomial.degreeOf i p)
-      (by simp)
-
 def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
   m.get i
 

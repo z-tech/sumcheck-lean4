@@ -8,6 +8,7 @@ import Sumcheck.Events.BadRound
 
 import Sumcheck.Lemmas.Eval2
 import Sumcheck.Lemmas.Monomials
+import Sumcheck.Lemmas.HonestProverCore  -- Re-export core lemmas
 
 noncomputable def empty_open_assignment
   {𝔽 : Type _} {n : ℕ} [Field 𝔽]
@@ -124,3 +125,37 @@ lemma eval₂_honest_combined_map_eq_addCasesFun
   -- then apply your lemma
   simpa [honest_combined_map_def, addCasesFun] using
     (eval₂_addCases_honest_right_map (𝔽 := 𝔽) (r := r) (i := i) (a := a) (b := b) (j := j))
+
+-- ============================================================================
+-- Lemmas that CAN be in Lemmas/ (not used by Lemmas/Degree.lean, no cycle)
+-- ============================================================================
+
+lemma honest_right_map_succ
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ} (i : Fin n)
+  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+  (j : ℕ) (hj : j + 1 < honest_num_open_vars (n := n) i + 1) :
+  honest_right_map (𝔽 := 𝔽) (n := n) i b ⟨j + 1, hj⟩ =
+    c1 (b ⟨j, Nat.lt_of_succ_lt_succ hj⟩) := by
+  simp [honest_right_map]
+
+@[simp] lemma honest_prover_message_at_def
+  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  {n : ℕ}
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (i : Fin n)
+  (challenges : Fin i.val → 𝔽) :
+  honest_prover_message_at (𝔽 := 𝔽) (n := n) p i challenges
+    =
+  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
+    (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽))
+    (add := fun a b =>
+      @HAdd.hAdd
+        (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
+        instHAdd a b)
+    (m := honest_num_open_vars (n := n) i)
+    (F := fun b =>
+      CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p) := by
+  classical
+  -- your definition is literally `by classical exact ...`
+  simp [honest_prover_message_at]

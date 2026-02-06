@@ -7,6 +7,7 @@ import Sumcheck.Src.HonestTranscript
 
 import Sumcheck.Lemmas.Hypercube
 import Sumcheck.Lemmas.CMvPolynomial
+import Sumcheck.Lemmas.HonestProverCore
 
 noncomputable def deg1
   {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
