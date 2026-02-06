@@ -258,7 +258,7 @@ lemma sum_over_hypercube_recursive_congr_add
 
 lemma eval₂_honest_combined_map_round0_eq_cases
   {𝔽 : Type _} {n' : ℕ}
-  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (r : Fin (Nat.succ n') → 𝔽) (a : 𝔽) (b : Fin n' → 𝔽) :
   (fun j : Fin (Nat.succ n') =>
       CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
@@ -275,7 +275,7 @@ lemma eval₂_honest_combined_map_round0_eq_cases
 
 lemma honest_round0_endpoints_eq_true_sum
   {𝔽 : Type _} {n' : ℕ}
-  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial (Nat.succ n') 𝔽)
   (r : Fin (Nat.succ n') → 𝔽) :
   let i0 : Fin (Nat.succ n') := ⟨0, Nat.succ_pos n'⟩
@@ -286,11 +286,92 @@ lemma honest_round0_endpoints_eq_true_sum
       (honest_round_poly (p := p) (ch := r) i0)
     =
     true_sum (p := p) := by
-  sorry
+  intro i0
+
+  -- For round 0, honest_num_open_vars = n'
+  have hopen : honest_num_open_vars (n := Nat.succ n') i0 = n' := by
+    simp [honest_num_open_vars, i0]
+
+  -- Use eval₂_honest_round_poly_eq_sum_eval to rewrite both eval₂ calls
+  have h0 := eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n')
+    (p := p) (r := r) (i := i0) (a := (0 : 𝔽))
+  have h1 := eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n')
+    (p := p) (r := r) (i := i0) (a := (1 : 𝔽))
+
+  -- Rewrite both terms in the sum
+  rw [h0, h1]
+
+  -- Unfold true_sum to residual_sum form
+  simp only [true_sum, residual_sum]
+
+  -- The goal is now:
+  -- sum_over_hypercube_recursive ... (F1) + sum_over_hypercube_recursive ... (F2)
+  --   = sum_over_hypercube_recursive ... (F')
+  -- Where F1, F2 come from h0, h1 and F' from residual_sum
+
+  -- Both sides use sum_over_hypercube_recursive with m = n'
+  -- We need to show they're equal via sum_over_hypercube_recursive_succ
+
+  -- The key is that for i0.val = 0:
+  -- - honest_num_open_vars i0 = n'
+  -- - The addCasesFun has Fin 0 on left (empty)
+
+  -- Show the inner evaluation functions are equal
+  have hinner : ∀ (a : 𝔽) (x : Fin n' → 𝔽),
+      (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
+        (fun t => Fin.cases a x t)
+        (Fin.cast (honest_split_eq (n := Nat.succ n') i0).symm k))
+      = (fun k => addCasesFun (fun t => t.elim0)
+        (Fin.cons a x)
+        (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) := by
+    intro a x
+    funext k
+    simp only [addCasesFun, Fin.addCases, i0, honest_num_open_vars]
+    cases (Fin.cast _ k) using Fin.addCases with
+    | left t => exact Fin.elim0 t
+    | right t => simp [Fin.cons]
+
+  -- Use sum_over_hypercube_recursive_congr on each sum
+  have hsum0 :
+      sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
+            (fun t => Fin.cases (0 : 𝔽) x t)
+            (Fin.cast (honest_split_eq (n := Nat.succ n') i0).symm k)) p)
+      = sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => t.elim0) (Fin.cons 0 x)
+            (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) p) := by
+    exact sum_over_hypercube_recursive_congr _ _ _ (fun x => congr_arg (CPoly.CMvPolynomial.eval · p) (hinner 0 x))
+
+  have hsum1 :
+      sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
+            (fun t => Fin.cases (1 : 𝔽) x t)
+            (Fin.cast (honest_split_eq (n := Nat.succ n') i0).symm k)) p)
+      = sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => t.elim0) (Fin.cons 1 x)
+            (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) p) := by
+    exact sum_over_hypercube_recursive_congr _ _ _ (fun x => congr_arg (CPoly.CMvPolynomial.eval · p) (hinner 1 x))
+
+  -- Apply the hsum0 and hsum1 lemmas directly
+  have hlhs := congr_arg₂ (· + ·) hsum0 hsum1
+
+  -- Apply sum_over_hypercube_recursive_succ in reverse on RHS
+  have hrhs := sum_over_hypercube_recursive_succ (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+    (F := fun x => CPoly.CMvPolynomial.eval
+      (fun k => addCasesFun (fun t => t.elim0) x (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) p)
+
+  -- Combine: LHS = (from hsum0/hsum1) = (from hrhs) = RHS
+  calc _ = _ + _ := by rfl
+       _ = _ := hlhs
+       _ = _ := hrhs.symm
 
 lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
   {𝔽 : Type _} {n : ℕ}
-  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n)

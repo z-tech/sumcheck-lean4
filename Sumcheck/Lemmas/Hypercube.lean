@@ -31,7 +31,9 @@ lemma sumcheck_evalMonomial_zero
         (fun x => F (Fin.cons b0 x)))
       (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
         (fun x => F (Fin.cons b1 x))) := by
-  simp [sum_over_hypercube_recursive]
+  conv_lhs => unfold sum_over_hypercube_recursive
+  simp only [Fin_cases_eq_cons]
+  rfl
 
 lemma sum_over_hypercube_recursive_deg_le
   {𝔽 β : Type _}

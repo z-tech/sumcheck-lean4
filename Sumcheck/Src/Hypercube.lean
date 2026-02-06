@@ -5,6 +5,14 @@ import Mathlib.Data.Fin.VecNotation
 
 import Sumcheck.Src.CMvPolynomial
 
+-- Bridge lemma: Fin.cases and Fin.cons are extensionally equal
+lemma Fin_cases_eq_cons {α : Type _} {n : ℕ} (a : α) (f : Fin n → α) :
+    (fun i => Fin.cases a f i) = Fin.cons a f := by
+  funext i
+  cases i using Fin.cases with
+  | zero => simp [Fin.cons]
+  | succ j => simp [Fin.cons]
+
 -- glue together the substitution functions left and right
 def append_variable_assignments
   {𝔽 : Type _} [CommSemiring 𝔽]
@@ -29,7 +37,7 @@ by
       exact F (fun i => nomatch i)
   | succ m ih =>
       let extend (b : 𝔽) (x : Fin m → 𝔽) : Fin (m+1) → 𝔽 :=
-        Fin.cons b x
+        fun i => Fin.cases b x i
       exact add (ih (fun x => F (extend b0 x)))
                 (ih (fun x => F (extend b1 x)))
 
