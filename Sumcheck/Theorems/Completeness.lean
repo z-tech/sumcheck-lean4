@@ -1,19 +1,11 @@
-import Sumcheck.Events.Accepts
 import Sumcheck.Probability.Challenges
-
-import Sumcheck.Src.HonestTranscript
-import Sumcheck.Src.Hypercube
-import Sumcheck.Src.Verifier
-import Sumcheck.Events.Accepts
-
-import Sumcheck.Lemmas.Accepts
-import Sumcheck.Lemmas.Hypercube
-
 import Sumcheck.Lemmas.HonestRoundProofs
+import Sumcheck.Lemmas.Degree
+import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.SoundnessLemmas
-import Sumcheck.Theorems.Soundness
 
-theorem completeness
+
+theorem perfect_completeness
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) :
@@ -23,8 +15,7 @@ theorem completeness
         (generate_honest_transcript (𝔽 := 𝔽) (n := n) p (true_sum p) r))
   = 1 := by
   classical
-  -- Perfect completeness: the honest transcript is accepted for every challenge tuple.
-  -- Since every element satisfies E, the probability is 1.
+  -- the honest transcript is accepted for every challenge tuple.
 
   -- First, prove every honest transcript is accepted
   have hE : ∀ r : Fin n → 𝔽,

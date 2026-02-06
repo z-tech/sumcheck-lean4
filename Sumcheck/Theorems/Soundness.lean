@@ -1,11 +1,9 @@
-import Sumcheck.Lemmas.BadTranscript
-import Sumcheck.Lemmas.Accepts
-import Sumcheck.Lemmas.Agreement
-import Sumcheck.Lemmas.Hypercube
-import Sumcheck.Lemmas.HonestRoundProofs
 import Sumcheck.Lemmas.SoundnessLemmas
 
-theorem soundness_accept_bad_transcript {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+
+-- Pr[accept] when at least one round poly in the transcript is not the honest one
+-- If you'd rather a more textbook looking statement scroll down...
+theorem strong_soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (claim_p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n) :
@@ -60,6 +58,7 @@ theorem soundness_accept_bad_transcript {𝔽 : Type _} {n : ℕ} [Field 𝔽] [
 
   exact le_trans (le_trans hmono hunion) hround
 
+-- this is sufficient, but weaker than the above statement
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (claim_p : CPoly.CMvPolynomial n 𝔽)
@@ -79,9 +78,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
     · -- acceptance part
       -- (this should simp if AcceptsOnChallenges is defined as AcceptsEvent on AdversaryTranscript)
       simpa [AcceptsOnChallenges, AcceptsAndBadTranscriptOnChallenges] using hAcc
-    · -- badness part: THIS is the one helper lemma you need
-      -- It should say: if the claim is dishonest and the verifier accepts, then some round_poly differs
-      -- from the honest one, i.e. BadTranscriptEvent holds.
+    · -- badness part
       exact
         accepts_on_challenges_dishonest_implies_bad
           (claim := claim) (p := claim_p) (adv := adv) (r := r) h hAcc
@@ -99,6 +96,6 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
       prob_over_challenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsAndBadTranscriptOnChallenges claim claim_p adv r)
         ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) :=
-    soundness_accept_bad_transcript (𝔽 := 𝔽) (n := n) (claim := claim) (claim_p := claim_p) (adv := adv)
+    strong_soundness (𝔽 := 𝔽) (n := n) (claim := claim) (claim_p := claim_p) (adv := adv)
 
   exact le_trans hmono hsound

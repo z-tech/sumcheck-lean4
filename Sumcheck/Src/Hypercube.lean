@@ -38,8 +38,6 @@ def addCasesFun {α : Type} {m n : ℕ}
   (f : Fin m → α) (g : Fin n → α) : Fin (m + n) → α :=
 fun i => Fin.addCases (m := m) (n := n) (motive := fun _ => α) f g i
 
-
-
 def residual_sum
   {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
   {k num_vars : ℕ}
@@ -71,8 +69,6 @@ def residual_sum_with_openVars
     (fun x =>
       let point : Fin n → 𝔽 := fun i => addCasesFun ch x (Fin.cast hn.symm i)
       CPoly.CMvPolynomial.eval point p)
-
-
 
 def round_sum
   {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
