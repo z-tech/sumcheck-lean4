@@ -2,7 +2,7 @@ import CompPoly.CMvPolynomial
 import CompPoly.MvPolyEquiv
 
 import Sumcheck.Src.CMvPolynomial
-import Sumcheck.Src.HonestProver
+import Sumcheck.Src.Prover
 import Sumcheck.Src.Transcript
 
 import Sumcheck.Lemmas.Hypercube
@@ -110,7 +110,7 @@ lemma degree_honest_prover_message_at_le_of_per_b
   (challenges : Fin i.val → 𝔽)
   (d : ℕ)
   (hF :
-    ∀ b : Fin (honest_num_open_vars (n := n) i) → 𝔽,
+    ∀ b : Fin (num_open_vars (n := n) i) → 𝔽,
       CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
         (CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
       ≤ d) :
@@ -150,7 +150,7 @@ lemma degree_honest_prover_message_at_le_of_per_b
       (d := d)
       (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽))
       (add := add1)
-      (m := honest_num_open_vars (n := n) i)
+      (m := num_open_vars (n := n) i)
       (F := fun b =>
         CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
       (hadd := hadd)
@@ -352,7 +352,7 @@ theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [L
 
 theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (r : Fin n → 𝔽) (i : Fin n)
-(b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+(b : Fin (num_open_vars (n := n) i) → 𝔽)
 (m : CPoly.CMvMonomial n) :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
       (subst_monomial (n := n) (𝔽 := 𝔽)
@@ -413,7 +413,7 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
         (challenges := challenge_subset r i) (b := b) (j := j))
     have hcast :
         vs j =
-          Fin.addCases (m := i.val) (n := honest_num_open_vars (n := n) i + 1)
+          Fin.addCases (m := i.val) (n := num_open_vars (n := n) i + 1)
             (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
             (fun t : Fin i.val => c1 (𝔽 := 𝔽) (challenge_subset r i t))
             (honest_right_map (𝔽 := 𝔽) (n := n) i b)

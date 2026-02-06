@@ -15,14 +15,14 @@ theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
     =
   sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽)
     (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽)) (add := (· + ·))
-    (m := honest_num_open_vars (n := n) i)
+    (m := num_open_vars (n := n) i)
     (fun x =>
       CPoly.CMvPolynomial.eval
         (fun k : Fin n =>
           addCasesFun
             (fun t : Fin i.val => r ⟨t.val, Nat.lt_trans t.isLt i.isLt⟩)
-            (fun t : Fin (honest_num_open_vars (n := n) i + 1) => Fin.cases a x t)
-            (Fin.cast (honest_split_eq_cast (n := n) i (honest_num_open_vars (n := n) i) rfl).symm k))
+            (fun t : Fin (num_open_vars (n := n) i + 1) => Fin.cases a x t)
+            (Fin.cast (honest_split_eq_cast (n := n) i (num_open_vars (n := n) i) rfl).symm k))
         p) := by
   classical
   unfold honest_round_poly
@@ -30,11 +30,11 @@ theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   simp [CPoly.eval₂_eval₂Poly_c1, eval₂_honest_combined_map_eq_addCasesFun]
 
 
-theorem honest_num_open_vars_succ {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) :
-    honest_num_open_vars (n := n) i
-      = honest_num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 := by
+theorem num_open_vars_succ {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) :
+    num_open_vars (n := n) i
+      = num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 := by
   have hNat : n - (i.val + 1) = 1 + (n - (i.val + 2)) := nat_sub_add_two n i.val hlt
-  simpa [honest_num_open_vars, Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hNat
+  simpa [num_open_vars, Nat.succ_eq_add_one, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using hNat
 
 theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
@@ -59,11 +59,11 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
     eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := n) (p := p) (r := r) (i := i) (a := r i)
   rw [h0, h1, hr]
 
-  set openI : ℕ := honest_num_open_vars (n := n) i
-  set openJ : ℕ := honest_num_open_vars (n := n) j
+  set openI : ℕ := num_open_vars (n := n) i
+  set openJ : ℕ := num_open_vars (n := n) j
 
   have hm : openI = openJ + 1 := by
-    simpa [openI, openJ, hj] using (honest_num_open_vars_succ (n := n) i hlt)
+    simpa [openI, openJ, hj] using (num_open_vars_succ (n := n) i hlt)
 
   have hm1 : openJ + 1 + 1 = openI + 1 := by
     simp [hm, Nat.add_assoc]
@@ -155,7 +155,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
               have hi :
                   Fin.cast (honest_split_eq (n := n) i).symm k
                     =
-                  Fin.natAdd i.val (0 : Fin (honest_num_open_vars (n := n) i + 1)) := by
+                  Fin.natAdd i.val (0 : Fin (num_open_vars (n := n) i + 1)) := by
                 apply cast_split_eq_succ_last (n := n) i hlt k
                 simpa [hj] using hk
               simp [addCasesFun, hi, openI, openJ]
@@ -163,7 +163,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
               have hi :
                   Fin.cast (honest_split_eq (n := n) i).symm k
                     =
-                  Fin.castAdd (honest_num_open_vars (n := n) i + 1) t0 := by
+                  Fin.castAdd (num_open_vars (n := n) i + 1) t0 := by
                 apply cast_split_eq_succ_castSucc (n := n) i hlt k t0
                 simpa [hj] using hk
               simp [addCasesFun, hi, openI, openJ]
@@ -221,7 +221,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
               have hi :
                   Fin.cast (honest_split_eq (n := n) i).symm k
                     =
-                  Fin.natAdd i.val (0 : Fin (honest_num_open_vars (n := n) i + 1)) := by
+                  Fin.natAdd i.val (0 : Fin (num_open_vars (n := n) i + 1)) := by
                 apply cast_split_eq_succ_last (n := n) i hlt k
                 simpa [hj] using hk
               simp [addCasesFun, hi, openI, openJ]
@@ -229,7 +229,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
               have hi :
                   Fin.cast (honest_split_eq (n := n) i).symm k
                     =
-                  Fin.castAdd (honest_num_open_vars (n := n) i + 1) t0 := by
+                  Fin.castAdd (num_open_vars (n := n) i + 1) t0 := by
                 apply cast_split_eq_succ_castSucc (n := n) i hlt k t0
                 simpa [hj] using hk
               simp [addCasesFun, hi, openI, openJ]
@@ -264,11 +264,11 @@ lemma honest_last_round
   have hi : i.val + 1 = n := by
     simpa [Nat.succ_eq_add_one] using hlast
 
-  have hopen : honest_num_open_vars (n := n) i = 0 := by
-    simp [honest_num_open_vars, hi]
+  have hopen : num_open_vars (n := n) i = 0 := by
+    simp [num_open_vars, hi]
 
   -- define b0 at the dependent type via simp [hopen]
-  let b0 : Fin (honest_num_open_vars (n := n) i) → 𝔽 :=
+  let b0 : Fin (num_open_vars (n := n) i) → 𝔽 :=
     empty_open_assignment (𝔽 := 𝔽) (n := n) i hopen
 
   -- last round => honest_round_poly is just F applied to the empty assignment
@@ -283,7 +283,7 @@ lemma honest_last_round
 
     -- name the function being summed
     let F :
-        (Fin (honest_num_open_vars (n := n) i) → 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
+        (Fin (num_open_vars (n := n) i) → 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
       fun b =>
         CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
           (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) p
@@ -298,7 +298,7 @@ lemma honest_last_round
         (add := fun a b =>
           @HAdd.hAdd (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
             (CPoly.CMvPolynomial 1 𝔽) instHAdd a b)
-        (m := honest_num_open_vars (n := n) i) (F := F) hopen
+        (m := num_open_vars (n := n) i) (F := F) hopen
 
     -- now `hcollapse` is exactly: sum_over... F = F (ndrec empty)
     -- and your `b0` is exactly that transported empty function by definition.
@@ -372,7 +372,7 @@ lemma honest_last_round
       -- cast the left index back to Fin n
       let j' : Fin n :=
         Fin.cast (honest_split_eq (n := n) i)
-          (Fin.castAdd (honest_num_open_vars (n := n) i + 1) t)
+          (Fin.castAdd (num_open_vars (n := n) i + 1) t)
 
       have hj' : j' = j := by
         ext
@@ -448,8 +448,8 @@ lemma honest_round0_endpoints_eq_honest_claim
     honest_claim (p := p) := by
   intro i0
 
-  have hopen : honest_num_open_vars (n := Nat.succ n') i0 = n' := by
-    simp [honest_num_open_vars, i0]
+  have hopen : num_open_vars (n := Nat.succ n') i0 = n' := by
+    simp [num_open_vars, i0]
 
   have h0 := eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n')
     (p := p) (r := r) (i := i0) (a := (0 : 𝔽))
@@ -468,7 +468,7 @@ lemma honest_round0_endpoints_eq_honest_claim
         (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) := by
     intro a x
     funext k
-    simp only [addCasesFun, Fin.addCases, i0, honest_num_open_vars]
+    simp only [addCasesFun, Fin.addCases, i0, num_open_vars]
     cases (Fin.cast _ k) using Fin.addCases with
     | left t => exact Fin.elim0 t
     | right t => simp [Fin.cons]

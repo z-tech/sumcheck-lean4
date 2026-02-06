@@ -1,5 +1,5 @@
 import CompPoly.CMvPolynomial
-import Sumcheck.Src.HonestProver
+import Sumcheck.Src.Prover
 
 -- The transcript of a sumcheck protocol interaction
 structure Transcript (𝔽 : Type _) (n : ℕ) [CommRing 𝔽] where
@@ -11,7 +11,7 @@ structure Transcript (𝔽 : Type _) (n : ℕ) [CommRing 𝔽] where
 def challenge_subset {𝔽} {n} (ch : Fin n → 𝔽) (i : Fin n) : Fin i.val → 𝔽 :=
   fun j => ch ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
 
--- Evaluate the round polynomial at the challenge to get the next claim
+-- Attention: when round_p is dishonest, this is not necessarily the genuine next claim
 @[simp] def next_claim {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (round_challenge : 𝔽)
   (round_p : CPoly.CMvPolynomial 1 𝔽) : 𝔽 :=

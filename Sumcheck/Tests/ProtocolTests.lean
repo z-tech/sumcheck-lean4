@@ -1,7 +1,7 @@
 import Mathlib.Data.ZMod.Basic
 
 import Sumcheck.Counting.Polynomials
-import Sumcheck.Src.HonestProver
+import Sumcheck.Src.Prover
 import Sumcheck.Src.Verifier
 
 namespace __ProtocolTests__

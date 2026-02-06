@@ -15,8 +15,6 @@ import Sumcheck.Src.CMvPolynomial
     CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ round_p ≤ max_degree
   decide round_identity_ok && decide deg_bound_ok
 
-
--- Full transcript verification: checks all rounds and final evaluation
 def is_verifier_accepts_transcript
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]

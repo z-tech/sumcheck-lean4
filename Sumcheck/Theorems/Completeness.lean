@@ -4,7 +4,7 @@ import Sumcheck.Lemmas.Degree
 import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.SoundnessLemmas
 
--- when all round polys are honest, the verifier always accepts the transcript
+-- Prob verifier accepts when all round polys are honest (and claim is honest) is one
 theorem perfect_completeness
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]

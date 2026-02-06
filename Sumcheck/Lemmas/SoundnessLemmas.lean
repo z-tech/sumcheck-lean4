@@ -44,7 +44,7 @@ import Sumcheck.Lemmas.BadTranscriptAnalysis
 
 theorem degree_eval2Poly_honest_combined_map_le_ind_degree_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n)
-(b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
+(b : Fin (num_open_vars (n := n) i) → 𝔽) :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
       (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
         (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) p)

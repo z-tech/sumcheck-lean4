@@ -1,5 +1,5 @@
 import Sumcheck.Src.CMvPolynomial
-import Sumcheck.Src.HonestProver
+import Sumcheck.Src.Prover
 import Sumcheck.Src.Transcript
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.Verifier
@@ -12,16 +12,16 @@ import Sumcheck.Lemmas.HonestProverCore  -- Re-export core lemmas
 
 noncomputable def empty_open_assignment
   {𝔽 : Type _} {n : ℕ} [Field 𝔽]
-  (i : Fin n) (hopen : honest_num_open_vars (n := n) i = 0) :
-  Fin (honest_num_open_vars (n := n) i) → 𝔽 :=
+  (i : Fin n) (hopen : num_open_vars (n := n) i = 0) :
+  Fin (num_open_vars (n := n) i) → 𝔽 :=
 by
-  -- build it at Fin 0, then transport along hopen.symm : 0 = honest_num_open_vars i
+  -- build it at Fin 0, then transport along hopen.symm : 0 = num_open_vars i
   refine Eq.ndrec (motive := fun m => Fin m → 𝔽) (fun x : Fin 0 => nomatch x) hopen.symm
 
 lemma honest_right_map_zero
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
+  (b : Fin (num_open_vars (n := n) i) → 𝔽) :
   honest_right_map (𝔽 := 𝔽) (n := n) i b 0 = x0 (𝔽 := 𝔽) := by
   classical
   -- unfold and reduce the match on 0
@@ -32,8 +32,8 @@ lemma eval₂_honest_right_map_succ
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
   (a : 𝔽)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
-  (t : Fin (honest_num_open_vars (n := n) i)) :
+  (b : Fin (num_open_vars (n := n) i) → 𝔽)
+  (t : Fin (num_open_vars (n := n) i)) :
   CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
       (RingHom.id 𝔽) (fun _ : Fin 1 => a)
       (honest_right_map (𝔽 := 𝔽) (n := n) i b t.succ)
@@ -49,8 +49,8 @@ lemma eval₂_honest_right_map
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
   (a : 𝔽)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
-  (t : Fin (honest_num_open_vars (n := n) i + 1)) :
+  (b : Fin (num_open_vars (n := n) i) → 𝔽)
+  (t : Fin (num_open_vars (n := n) i + 1)) :
   CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
       (RingHom.id 𝔽) (fun _ : Fin 1 => a)
       (honest_right_map (𝔽 := 𝔽) (n := n) i b t)
@@ -75,7 +75,7 @@ lemma eval₂_addCases_honest_right_map
   (r : Fin n → 𝔽)
   (i : Fin n)
   (a : 𝔽)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
+  (b : Fin (num_open_vars (n := n) i) → 𝔽)
   (j : Fin n) :
   CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
       (RingHom.id 𝔽) (fun _ : Fin 1 => a)
@@ -87,7 +87,7 @@ lemma eval₂_addCases_honest_right_map
     =
   Fin.addCases
     (fun t : Fin i.val => r ⟨t.val, Nat.lt_trans t.isLt i.isLt⟩)
-    (fun t : Fin (honest_num_open_vars (n := n) i + 1) => Fin.cases a b t)
+    (fun t : Fin (num_open_vars (n := n) i + 1) => Fin.cases a b t)
     (Fin.cast (honest_split_eq (n := n) i).symm j) := by
   classical
   -- Case split on which side `Fin.addCases` takes.
@@ -108,7 +108,7 @@ lemma eval₂_honest_combined_map_eq_addCasesFun
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (r : Fin n → 𝔽) (i : Fin n) (a : 𝔽)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽) :
+  (b : Fin (num_open_vars (n := n) i) → 𝔽) :
   (fun j : Fin n =>
       CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
         (RingHom.id 𝔽) (fun _ : Fin 1 => a)
@@ -117,7 +117,7 @@ lemma eval₂_honest_combined_map_eq_addCasesFun
   (fun j : Fin n =>
       addCasesFun (α := 𝔽)
         (fun t : Fin i.val => r ⟨t.val, Nat.lt_trans t.isLt i.isLt⟩)
-        (fun t : Fin (honest_num_open_vars (n := n) i + 1) => Fin.cases a b t)
+        (fun t : Fin (num_open_vars (n := n) i + 1) => Fin.cases a b t)
         (Fin.cast (honest_split_eq (n := n) i).symm j)) := by
   classical
   funext j
@@ -133,8 +133,8 @@ lemma eval₂_honest_combined_map_eq_addCasesFun
 lemma honest_right_map_succ
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
-  (b : Fin (honest_num_open_vars (n := n) i) → 𝔽)
-  (j : ℕ) (hj : j + 1 < honest_num_open_vars (n := n) i + 1) :
+  (b : Fin (num_open_vars (n := n) i) → 𝔽)
+  (j : ℕ) (hj : j + 1 < num_open_vars (n := n) i + 1) :
   honest_right_map (𝔽 := 𝔽) (n := n) i b ⟨j + 1, hj⟩ =
     c1 (b ⟨j, Nat.lt_of_succ_lt_succ hj⟩) := by
   simp [honest_right_map]
@@ -153,7 +153,7 @@ lemma honest_right_map_succ
       @HAdd.hAdd
         (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
         instHAdd a b)
-    (m := honest_num_open_vars (n := n) i)
+    (m := num_open_vars (n := n) i)
     (F := fun b =>
       CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p) := by
   classical

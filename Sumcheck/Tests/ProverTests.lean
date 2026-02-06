@@ -1,6 +1,6 @@
 import CompPoly.CMvPolynomial
 
-import Sumcheck.Src.HonestProver
+import Sumcheck.Src.Prover
 
 namespace __ProverTests__
 
