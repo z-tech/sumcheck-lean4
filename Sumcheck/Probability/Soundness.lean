@@ -8,4 +8,4 @@ noncomputable def prob_soundness
   (claim : 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n) : ℚ :=
-  prob_over_challenges (E := AcceptsAndBadOnChallenges claim p adv)
+  prob_over_challenges (E := AcceptsAndBadTranscriptOnChallenges claim p adv)

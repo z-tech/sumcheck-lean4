@@ -13,7 +13,16 @@ def AcceptsEvent
   (t : Transcript 𝔽 n) : Prop :=
   is_verifier_accepts_transcript (𝔽 := 𝔽) (n := n) p t = true
 
-def AcceptsAndBadOnChallenges
+def AcceptsOnChallenges
+  {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (claim : 𝔽)
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (adv : Adversary 𝔽 n) :
+  (Fin n → 𝔽) → Prop :=
+fun r =>
+  AcceptsEvent p (AdversaryTranscript claim p adv r)
+
+def AcceptsAndBadTranscriptOnChallenges
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)

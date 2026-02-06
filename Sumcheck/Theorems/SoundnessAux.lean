@@ -455,7 +455,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
   (r : Fin n → 𝔽) :
-  AcceptsAndBadOnChallenges claim p adv r →
+  AcceptsAndBadTranscriptOnChallenges claim p adv r →
     ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i := by
   classical
   intro h
@@ -903,7 +903,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
 (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n) (i : Fin n) :
   prob_over_challenges (𝔽 := 𝔽) (n := n)
     (fun r =>
-      AcceptsAndBadOnChallenges claim p adv r ∧
+      AcceptsAndBadTranscriptOnChallenges claim p adv r ∧
       RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i)
     ≤ (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
   classical
@@ -913,7 +913,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
   | succ n' =>
       classical
       let E : (Fin (n' + 1) → 𝔽) → Prop := fun r =>
-        AcceptsAndBadOnChallenges claim p adv r ∧
+        AcceptsAndBadTranscriptOnChallenges claim p adv r ∧
         RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i
       letI : DecidablePred E := Classical.decPred _
 
@@ -1239,7 +1239,7 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
   (∑ i : Fin n,
       prob_over_challenges (𝔽 := 𝔽) (n := n)
         (fun r =>
-          AcceptsAndBadOnChallenges claim p adv r ∧
+          AcceptsAndBadTranscriptOnChallenges claim p adv r ∧
           RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
     ≤ n * (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
   classical
@@ -1248,7 +1248,7 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
       (∑ i : Fin n,
           prob_over_challenges (𝔽 := 𝔽) (n := n)
             (fun r =>
-              AcceptsAndBadOnChallenges claim p adv r ∧
+              AcceptsAndBadTranscriptOnChallenges claim p adv r ∧
               RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
         ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := by
     -- `Fintype.sum_mono` works in any ordered additive commutative monoid.
@@ -1264,7 +1264,7 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
     (∑ i : Fin n,
         prob_over_challenges (𝔽 := 𝔽) (n := n)
           (fun r =>
-            AcceptsAndBadOnChallenges claim p adv r ∧
+            AcceptsAndBadTranscriptOnChallenges claim p adv r ∧
             RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i))
         ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := hsum
     _ = (n : ℚ) * ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := by
