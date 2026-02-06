@@ -1,9 +1,7 @@
 import Sumcheck.Lemmas.SoundnessLemmas
 
-
--- Pr[accept] when at least one round poly in the transcript is not the honest one
--- If you'd rather a more textbook looking statement scroll down...
-theorem strong_soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+-- Prob verifier accepts transcript when at least one round poly differs from honest one
+theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (claim_p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n) :
@@ -58,8 +56,8 @@ theorem strong_soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [
 
   exact le_trans (le_trans hmono hunion) hround
 
--- this is sufficient, but weaker than the above statement
-theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+-- Prob verifier accepts transcript when claim is not honest claim
+theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (claim_p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n)
@@ -96,6 +94,6 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
       prob_over_challenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsAndBadTranscriptOnChallenges claim claim_p adv r)
         ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) :=
-    strong_soundness (𝔽 := 𝔽) (n := n) (claim := claim) (claim_p := claim_p) (adv := adv)
+    soundness (𝔽 := 𝔽) (n := n) (claim := claim) (claim_p := claim_p) (adv := adv)
 
   exact le_trans hmono hsound
