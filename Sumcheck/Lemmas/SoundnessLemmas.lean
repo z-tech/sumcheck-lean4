@@ -1,3 +1,15 @@
+/-
+  SoundnessLemmas.lean
+
+  Auxiliary lemmas for the soundness proof, including:
+  - accepts_and_bad_implies_exists_round_disagree_but_agree
+  - degree_eval2Poly_honest_combined_map_le_ind_degree_k
+  - honest_round_poly_degree_le_ind_degree_k
+  - prob_over_challenges_fiber_le
+  - prob_single_round_accepts_and_disagree_le
+  - sum_accepts_and_round_disagree_but_agree_bound
+-/
+
 import Mathlib.Data.Rat.Init
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Finset.Card
@@ -19,7 +31,6 @@ import Mathlib
 
 import Sumcheck.Src.HonestTranscript
 import Sumcheck.Src.Hypercube
-import Sumcheck.Lemmas.HonestProver
 import Sumcheck.Lemmas.Hypercube
 import Sumcheck.Lemmas.Agreement
 import Sumcheck.Lemmas.Degree
@@ -29,13 +40,6 @@ import Sumcheck.Lemmas.CMvPolynomial
 import Sumcheck.Lemmas.Eval2
 import Sumcheck.Lemmas.Nat
 import Sumcheck.Lemmas.HonestRoundProofs
-
--- The following lemmas have been moved to Sumcheck.Lemmas.HonestRoundProofs:
--- - honest_last_round
--- - eval₂_honest_round_poly_eq_sum_eval
--- - honest_num_open_vars_succ
--- - honest_step_round
-
 lemma accepts_and_bad_implies_exists_round_disagree_but_agree
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)

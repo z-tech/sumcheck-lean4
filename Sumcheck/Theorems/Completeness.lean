@@ -9,7 +9,7 @@ import Sumcheck.Events.Accepts
 import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Hypercube
 
-import Sumcheck.Theorems.SoundnessAux
+import Sumcheck.Lemmas.HonestRoundProofs
 
 lemma honestTranscript_roundPoly_eq_honestRoundPoly
   {𝔽 : Type _} {n : ℕ}

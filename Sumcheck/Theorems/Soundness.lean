@@ -2,7 +2,8 @@ import Sumcheck.Lemmas.BadTranscript
 import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.Agreement
 import Sumcheck.Lemmas.Hypercube
-import Sumcheck.Theorems.SoundnessAux
+import Sumcheck.Lemmas.HonestRoundProofs
+import Sumcheck.Lemmas.SoundnessLemmas
 
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
