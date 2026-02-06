@@ -15,10 +15,6 @@ import Sumcheck.Src.CMvPolynomial
     CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ round_p ≤ max_degree
   decide round_identity_ok && decide deg_bound_ok
 
-@[simp] def next_claim {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
-  (round_challenge : 𝔽)
-  (round_p : CPoly.CMvPolynomial 1 𝔽) : 𝔽 :=
-  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => round_challenge) round_p
 
 -- Full transcript verification: checks all rounds and final evaluation
 def is_verifier_accepts_transcript

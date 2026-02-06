@@ -3,7 +3,7 @@ import CompPoly.MvPolyEquiv
 
 import Sumcheck.Src.CMvPolynomial
 import Sumcheck.Src.HonestProver
-import Sumcheck.Src.HonestTranscript
+import Sumcheck.Src.Transcript
 
 import Sumcheck.Lemmas.Hypercube
 import Sumcheck.Lemmas.CMvPolynomial

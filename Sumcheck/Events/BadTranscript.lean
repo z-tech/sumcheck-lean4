@@ -4,7 +4,7 @@ import Sumcheck.Events.BadRound
 
 import Sumcheck.Src.Transcript
 import Sumcheck.Src.HonestProver
-import Sumcheck.Src.HonestTranscript
+import Sumcheck.Src.Transcript
 
 def BadTranscriptEvent
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]

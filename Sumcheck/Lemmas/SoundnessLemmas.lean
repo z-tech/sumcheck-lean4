@@ -28,7 +28,7 @@ import Sumcheck.Lemmas.Accepts
 import Sumcheck.Lemmas.HonestProver
 import Mathlib
 
-import Sumcheck.Src.HonestTranscript
+import Sumcheck.Src.Transcript
 import Sumcheck.Src.Hypercube
 import Sumcheck.Lemmas.Hypercube
 import Sumcheck.Lemmas.Agreement

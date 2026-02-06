@@ -1,4 +1,4 @@
-import Sumcheck.Src.HonestTranscript
+import Sumcheck.Src.Transcript
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.Verifier
 import Sumcheck.Lemmas.HonestProver

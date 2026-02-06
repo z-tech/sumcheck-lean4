@@ -4,7 +4,7 @@ import Sumcheck.Events.BadRound
 import Sumcheck.Src.Verifier
 
 import Sumcheck.Events.Accepts
-import Sumcheck.Src.HonestTranscript
+import Sumcheck.Src.Transcript
 
 set_option maxHeartbeats 10000000
 
