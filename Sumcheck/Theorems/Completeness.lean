@@ -12,14 +12,14 @@ theorem perfect_completeness
   prob_over_challenges (𝔽 := 𝔽) (n := n)
     (fun r =>
       AcceptsEvent (𝔽 := 𝔽) (n := n) p
-        (generate_honest_transcript (𝔽 := 𝔽) (n := n) p (true_sum p) r))
+        (generate_honest_transcript (𝔽 := 𝔽) (n := n) p (honest_claim p) r))
   = 1 := by
   classical
   -- the honest transcript is accepted for every challenge tuple.
 
   -- First, prove every honest transcript is accepted
   have hE : ∀ r : Fin n → 𝔽,
-      AcceptsEvent p (generate_honest_transcript p (true_sum p) r) := by
+      AcceptsEvent p (generate_honest_transcript p (honest_claim p) r) := by
     intro r
     simp only [AcceptsEvent, is_verifier_accepts_transcript, Bool.and_eq_true]
     constructor
@@ -35,21 +35,21 @@ theorem perfect_completeness
           exact honest_transcript_sum_identity p r i
         · -- Degree bound: honest_round_poly degree ≤ ind_degree_k
           -- The honest polynomial has degree at most the individual degree
-          have hpoly : (generate_honest_transcript p (true_sum p) r).round_polys i =
+          have hpoly : (generate_honest_transcript p (honest_claim p) r).round_polys i =
             honest_round_poly p r i := by
             simp [generate_honest_transcript, honest_round_poly, honest_prover_message]
           rw [hpoly]
           exact honest_round_poly_degree_le_ind_degree_k p r i
       · -- Claims consistency: claims i.succ = next_claim (challenges i) (round_polys i)
-        -- For i : Fin n, i.succ = ⟨i.val + 1, ...⟩ which matches the succ case of derive_claims
+        -- For i : Fin n, i.succ = ⟨i.val + 1, ...⟩ which matches the succ case of generate_honest_claims
         have hsuc : i.succ = ⟨i.val.succ, Nat.succ_lt_succ i.isLt⟩ := Fin.ext rfl
-        simp only [generate_honest_transcript, derive_claims, next_claim, hsuc]
+        simp only [generate_honest_transcript, generate_honest_claims, next_claim, hsuc]
     · -- final_ok: final claim equals polynomial evaluation
       simp only [decide_eq_true_eq]
       -- Use the helper lemma that handles dependent types via induction
       exact honest_transcript_final_eq_eval n p r
   have hfilter :
-      (Finset.univ.filter (fun r => AcceptsEvent p (generate_honest_transcript p (true_sum p) r)) : Finset (Fin n → 𝔽))
+      (Finset.univ.filter (fun r => AcceptsEvent p (generate_honest_transcript p (honest_claim p) r)) : Finset (Fin n → 𝔽))
         = Finset.univ := by
     ext r
     simp [hE r]

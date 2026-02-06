@@ -13,5 +13,5 @@ def AdversaryTranscript
 by
   let round_polys : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
     fun i => adversary p claim i (challenge_subset r i)
-  let claims : Fin (n + 1) → 𝔽 := derive_claims claim round_polys r
+  let claims : Fin (n + 1) → 𝔽 := generate_honest_claims claim round_polys r
   exact { round_polys := round_polys, challenges := r, claims := claims }

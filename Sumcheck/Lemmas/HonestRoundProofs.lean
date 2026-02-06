@@ -430,10 +430,10 @@ lemma honest_last_round
           simp [hpt]
 
 -- ============================================================================
--- honest_round0_endpoints_eq_true_sum: moved here from SoundnessLemmas to avoid circular import
+-- honest_round0_endpoints_eq_honest_claim: moved here from SoundnessLemmas to avoid circular import
 -- ============================================================================
 
-lemma honest_round0_endpoints_eq_true_sum
+lemma honest_round0_endpoints_eq_honest_claim
   {𝔽 : Type _} {n' : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial (Nat.succ n') 𝔽)
@@ -445,7 +445,7 @@ lemma honest_round0_endpoints_eq_true_sum
     CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
       (honest_round_poly (p := p) (ch := r) i0)
     =
-    true_sum (p := p) := by
+    honest_claim (p := p) := by
   intro i0
 
   have hopen : honest_num_open_vars (n := Nat.succ n') i0 = n' := by
@@ -457,7 +457,7 @@ lemma honest_round0_endpoints_eq_true_sum
     (p := p) (r := r) (i := i0) (a := (1 : 𝔽))
 
   rw [h0, h1]
-  simp only [true_sum, residual_sum]
+  simp only [honest_claim, residual_sum]
 
   have hinner : ∀ (a : 𝔽) (x : Fin n' → 𝔽),
       (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
@@ -516,7 +516,7 @@ lemma honestTranscript_roundPoly_eq_honestRoundPoly
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n) :
-  (generate_honest_transcript (𝔽 := 𝔽) (n := n) p (true_sum p) r).round_polys i
+  (generate_honest_transcript (𝔽 := 𝔽) (n := n) p (honest_claim p) r).round_polys i
     =
   honest_round_poly (p := p) (ch := r) i := by
   classical
@@ -550,13 +550,13 @@ lemma honest_transcript_sum_identity
   (r : Fin n → 𝔽)
   (i : Fin n) :
   CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => (0 : 𝔽))
-    ((generate_honest_transcript p (true_sum p) r).round_polys i) +
+    ((generate_honest_transcript p (honest_claim p) r).round_polys i) +
   CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => (1 : 𝔽))
-    ((generate_honest_transcript p (true_sum p) r).round_polys i) =
-  (generate_honest_transcript p (true_sum p) r).claims (Fin.castSucc i) := by
+    ((generate_honest_transcript p (honest_claim p) r).round_polys i) =
+  (generate_honest_transcript p (honest_claim p) r).claims (Fin.castSucc i) := by
   classical
 
-  have hrp : (generate_honest_transcript p (true_sum p) r).round_polys i =
+  have hrp : (generate_honest_transcript p (honest_claim p) r).round_polys i =
     honest_round_poly p r i := by
     exact honestTranscript_roundPoly_eq_honestRoundPoly p r i
   rw [hrp]
@@ -564,7 +564,7 @@ lemma honest_transcript_sum_identity
   cases' h : i.val with k
   · have hcast : Fin.castSucc i = ⟨0, Nat.succ_pos n⟩ := by
       ext; simp [h]
-    simp only [generate_honest_transcript, derive_claims, hcast]
+    simp only [generate_honest_transcript, generate_honest_claims, hcast]
     have hn_pos : 0 < n := i.pos
     obtain ⟨n', hn'⟩ : ∃ n' : ℕ, n = Nat.succ n' := Nat.exists_eq_succ_of_ne_zero (Nat.pos_iff_ne_zero.mp hn_pos)
     subst hn'
@@ -572,14 +572,14 @@ lemma honest_transcript_sum_identity
       ext
       exact h
     subst hi_eq
-    exact honest_round0_endpoints_eq_true_sum p r
+    exact honest_round0_endpoints_eq_honest_claim p r
 
   · have hi_val : i.val = k + 1 := by simp [h]
     have hk_lt : k < n := by omega
     have hk1_lt : k + 1 < n := by omega
     let prev : Fin n := ⟨k, hk_lt⟩
     have hstep := honest_step_round (𝔽 := 𝔽) (n := n) (p := p) (r := r) (i := prev) hk1_lt
-    simp only [generate_honest_transcript, derive_claims]
+    simp only [generate_honest_transcript, generate_honest_claims]
     have hi_eq : i = ⟨k + 1, hk1_lt⟩ := Fin.ext hi_val
     subst hi_eq
     simp only [prev, honest_round_poly, honest_prover_message] at hstep ⊢
@@ -590,20 +590,20 @@ lemma honest_transcript_final_eq_eval
   {𝔽 : Type _}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
   ∀ (n : ℕ) (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽),
-  (generate_honest_transcript p (true_sum p) r).claims (Fin.last n) =
-    CPoly.CMvPolynomial.eval (generate_honest_transcript p (true_sum p) r).challenges p := by
+  (generate_honest_transcript p (honest_claim p) r).claims (Fin.last n) =
+    CPoly.CMvPolynomial.eval (generate_honest_transcript p (honest_claim p) r).challenges p := by
   intro n
   induction n with
   | zero =>
     intro p r
-    simp [generate_honest_transcript, derive_claims, Fin.last,
-          true_sum, residual_sum, sum_over_hypercube_recursive_zero]
+    simp [generate_honest_transcript, generate_honest_claims, Fin.last,
+          honest_claim, residual_sum, sum_over_hypercube_recursive_zero]
     congr 1
     funext i
     exact Fin.elim0 i
   | succ n' ih =>
     intro p r
-    simp only [generate_honest_transcript, derive_claims, Fin.last]
+    simp only [generate_honest_transcript, generate_honest_claims, Fin.last]
     let iLast : Fin (n' + 1) := ⟨n', Nat.lt_succ_self n'⟩
     have hLast : iLast.val.succ = n' + 1 := by simp [iLast]
     have hrp : honest_prover_message p (challenge_subset r iLast) (Nat.succ_le_of_lt iLast.isLt) =

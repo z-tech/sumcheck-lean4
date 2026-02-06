@@ -1,7 +1,7 @@
 import Sumcheck.Src.CMvPolynomial
 import Sumcheck.Src.Hypercube
 
-/-- Number of hypercube variables still "open" after fixing variables ≤ i. -/
+-- number of open vars
 def honest_num_open_vars {n : ℕ} (i : Fin n) : ℕ :=
   n - (i.val + 1)
 

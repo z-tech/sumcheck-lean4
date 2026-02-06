@@ -61,7 +61,7 @@ theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
   (claim : 𝔽)
   (claim_p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n)
-  (h : claim ≠ true_sum (p := claim_p)) :
+  (h : claim ≠ honest_claim (p := claim_p)) :
   prob_over_challenges (E := AcceptsOnChallenges claim claim_p adv)
     ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) := by
   classical

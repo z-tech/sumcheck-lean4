@@ -72,12 +72,12 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
       -- note: we want the result in the same orientation as the goal; use `Eq.symm` if simp flips it.
       have := hfinal'.symm
       -- unfolding t / AdversaryTranscript puts t.challenges = r and t.claims (i.succ) = next_claim ...
-      -- hsuc kills the `match` in derive_claims at i.succ
+      -- hsuc kills the `match` in generate_honest_claims at i.succ
       -- `simp` may produce `eval r p = ...`; `simpa` below normalizes it to `... = eval r p`
       have htmp :
           CPoly.CMvPolynomial.eval r p =
             next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i) := by
-        simpa [t, AdversaryTranscript, derive_claims, next_claim, hsuc] using this
+        simpa [t, AdversaryTranscript, generate_honest_claims, next_claim, hsuc] using this
       simpa [eq_comm] using htmp
 
     -- TODO (honest consistency for the last round):
@@ -133,7 +133,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
         t.claims (i.succ)
           =
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i) := by
-      simp [t, AdversaryTranscript, derive_claims, next_claim, hsuc]
+      simp [t, AdversaryTranscript, generate_honest_claims, next_claim, hsuc]
 
     have hclaim_j :
         t.claims (Fin.castSucc j)

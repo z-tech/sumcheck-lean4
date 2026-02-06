@@ -85,7 +85,8 @@ by
     (p := p)
     (hk := hcard)
 
-def true_sum
+-- The claim the honest prover makes: the sum of p over the hypercube {0,1}^n
+def honest_claim
   {n : ℕ} {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) : 𝔽 :=
 by

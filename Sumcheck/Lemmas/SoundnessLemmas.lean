@@ -730,25 +730,25 @@ lemma all_rounds_honest_of_not_bad
   (AdversaryTranscript claim p adv r).challenges = r := by
   rfl
 
-@[simp] lemma derive_claims_zero
+@[simp] lemma generate_honest_claims_zero
   {𝔽} {n : ℕ} [CommRing 𝔽] [DecidableEq 𝔽]
   (initial_claim : 𝔽)
   (round_polys : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (challenges : Fin n → 𝔽) :
-  derive_claims (n := n) initial_claim round_polys challenges (0 : Fin (n+1))
+  generate_honest_claims (n := n) initial_claim round_polys challenges (0 : Fin (n+1))
     = initial_claim := by
   -- `0 : Fin (n+1)` is definitional equal to `⟨0, Nat.succ_pos n⟩`
-  -- so this becomes the definitional equation of derive_claims
+  -- so this becomes the definitional equation of generate_honest_claims
   rfl
 
-@[simp] lemma derive_claims_adv_zero
+@[simp] lemma generate_honest_claims_adv_zero
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n)
   (r : Fin n → 𝔽) :
-  derive_claims claim (fun i => adv p claim i (challenge_subset r i)) r (0 : Fin (n+1))
+  generate_honest_claims claim (fun i => adv p claim i (challenge_subset r i)) r (0 : Fin (n+1))
     = claim := by
   simp
 
@@ -760,7 +760,7 @@ lemma all_rounds_honest_of_not_bad
   (adv : Adversary 𝔽 n)
   (r : Fin n → 𝔽) :
   (AdversaryTranscript claim p adv r).claims ⟨0, Nat.succ_pos n⟩ = claim := by
-  -- unfold AdversaryTranscript; claims is derive_claims; then use the helper above
+  -- unfold AdversaryTranscript; claims is generate_honest_claims; then use the helper above
   simp [AdversaryTranscript]
 
 
@@ -771,7 +771,7 @@ lemma all_rounds_honest_of_not_bad
   (adv : Adversary 𝔽 (Nat.succ n')) (r : Fin (Nat.succ n') → 𝔽) :
   (AdversaryTranscript claim p adv r).claims (Fin.castSucc (⟨0, Nat.succ_pos n'⟩))
     = claim := by
-  -- rewrite castSucc-zero to 0, then use derive_claims_zero via AdversaryTranscript
+  -- rewrite castSucc-zero to 0, then use generate_honest_claims_zero via AdversaryTranscript
   simp [AdversaryTranscript]
 
 @[simp] lemma Fin.addCases_left_Fin0
@@ -870,7 +870,7 @@ lemma eval₂_sum_over_hypercube_recursive
   (fun i : Fin (n + 1) => Fin.cases a x i) := by
   rfl
 
-lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
+lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (claim : 𝔽)
@@ -882,7 +882,7 @@ lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
       (AdversaryTranscript claim p adv r).round_polys i
         = honest_round_poly (p := p) (ch := (AdversaryTranscript claim p adv r).challenges) i)
   (hAcc : AcceptsEvent p (AdversaryTranscript claim p adv r)) :
-  claim = true_sum (p := p) := by
+  claim = honest_claim (p := p) := by
   classical
   let t : Transcript 𝔽 n := AdversaryTranscript claim p adv r
 
@@ -910,10 +910,10 @@ lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
         simpa [t] using
           (AdversaryTranscript_claims_at_zero (claim := claim) (p := p) (adv := adv) (r := r))
 
-      -- true_sum for n=0 is eval on the empty assignment
+      -- honest_claim for n=0 is eval on the empty assignment
       have htrue0 :
-          true_sum (p := p) = CPoly.CMvPolynomial.eval (fun i : Fin 0 => i.elim0) p := by
-        simp [true_sum, residual_sum, sum_over_hypercube_recursive_zero]
+          honest_claim (p := p) = CPoly.CMvPolynomial.eval (fun i : Fin 0 => i.elim0) p := by
+        simp [honest_claim, residual_sum, sum_over_hypercube_recursive_zero]
 
       -- challenges are the empty function
       have hchal0 : t.challenges = (fun i : Fin 0 => i.elim0) := by
@@ -929,7 +929,7 @@ lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
             -- use hEq
             exact this.trans (hEq.trans (by rfl))
           simpa [hchal0] using this
-        _ = true_sum (p := p) := by
+        _ = honest_claim (p := p) := by
           simp [htrue0]
 
   | succ n' =>
@@ -984,7 +984,7 @@ lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
           (AdversaryTranscript_claims_castSucc_zero
             (claim := claim) (p := p) (adv := adv) (r := r))
 
-      -- endpoints of honest round 0 equal true_sum (you said you had this as htrue already)
+      -- endpoints of honest round 0 equal honest_claim (you said you had this as htrue already)
       have htrue :
           CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽))
               (honest_round_poly (p := p) (ch := t.challenges) i0)
@@ -992,12 +992,12 @@ lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
           CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
               (honest_round_poly (p := p) (ch := t.challenges) i0)
           =
-          true_sum (p := p) := by
+          honest_claim (p := p) := by
         -- easiest is to reuse your proven helper if you have it,
         -- otherwise the same proof as before:
-        simpa [t, i0] using honest_round0_endpoints_eq_true_sum (p := p) (r := r)
+        simpa [t, i0] using honest_round0_endpoints_eq_honest_claim (p := p) (r := r)
 
-      -- Finish: claim = (endpoint sum of t.round_polys 0) = true_sum
+      -- Finish: claim = (endpoint sum of t.round_polys 0) = honest_claim
       calc
         claim = t.claims i0.castSucc := by simp [hclaim0]
         _ = CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽)) (t.round_polys i0)
@@ -1012,7 +1012,7 @@ lemma claim_eq_true_sum_of_accepts_and_all_rounds_honest
               (honest_round_poly (p := p) (ch := t.challenges) i0) := by
               -- rewrite the round poly using hi0
               simp [hi0]
-        _ = true_sum (p := p) := htrue
+        _ = honest_claim (p := p) := htrue
 
 lemma accepts_on_challenges_dishonest_implies_bad
   {𝔽 : Type _} {n : ℕ}
@@ -1021,7 +1021,7 @@ lemma accepts_on_challenges_dishonest_implies_bad
   (p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n)
   (r : Fin n → 𝔽)
-  (hDish : claim ≠ true_sum (p := p))
+  (hDish : claim ≠ honest_claim (p := p))
   (hAcc : AcceptsEvent p (AdversaryTranscript claim p adv r)) :
   BadTranscriptEvent p (AdversaryTranscript claim p adv r) := by
   classical
@@ -1050,8 +1050,8 @@ lemma accepts_on_challenges_dishonest_implies_bad
     -- t is definitional equal to the adversary transcript
     simpa [t] using hall i
 
-  have hEq : claim = true_sum (p := p) :=
-    claim_eq_true_sum_of_accepts_and_all_rounds_honest
+  have hEq : claim = honest_claim (p := p) :=
+    claim_eq_honest_claim_of_accepts_and_all_rounds_honest
       (claim := claim) (p := p) (adv := adv) (r := r)
       (hall := hall') (hAcc := hAcc)
 
