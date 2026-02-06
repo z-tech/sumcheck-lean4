@@ -4,6 +4,33 @@ import CompPoly.MvPolyEquiv
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.CMvPolynomial
 
+-- ============================================================================
+-- Lemmas moved from Src/Hypercube.lean to enforce Src = defs only
+-- ============================================================================
+
+-- Bridge lemma: Fin.cases and Fin.cons are extensionally equal
+lemma Fin_cases_eq_cons {α : Type _} {n : ℕ} (a : α) (f : Fin n → α) :
+    (fun i => Fin.cases a f i) = Fin.cons a f := by
+  funext i
+  cases i using Fin.cases with
+  | zero => simp [Fin.cons]
+  | succ j => simp [Fin.cons]
+
+@[simp] lemma addCasesFun_apply {α} {m n} (f : Fin m → α) (g : Fin n → α) (i : Fin (m+n)) :
+  addCasesFun f g i = Fin.addCases (m:=m) (n:=n) (motive := fun _ => α) f g i := rfl
+
+lemma residual_sum_eq_with_openVars_def
+  {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
+  {k n : ℕ} (ch : Fin k → 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (hk : k ≤ n) :
+  residual_sum (𝔽 := 𝔽) (k := k) (num_vars := n) ch p hk
+    =
+  residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
+    (openVars := n - k) (hn := by simpa using Nat.add_sub_of_le hk) ch p := by
+  classical
+  unfold residual_sum residual_sum_with_openVars
+  simp (config := { zeta := true })
+
+
 lemma sumcheck_CMvMonomial_zero_get
   {n : ℕ} (x : Fin n) :
   (CPoly.CMvMonomial.zero (n := n)).get x = 0 := by

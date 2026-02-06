@@ -1,21 +1,22 @@
-/-
-  HonestProverCore.lean
-
-  Core lemmas about honest prover data structures.
-  This module exists to break a circular import:
-    HonestProver → Eval2 → Fin → Degree → HonestProver
-
-  By having Degree.lean import this module instead of the full Lemmas/HonestProver,
-  we avoid the cycle.
--/
-
 import Sumcheck.Src.CMvPolynomial
 import Sumcheck.Src.HonestProver
 import Sumcheck.Src.Hypercube
 
--- ============================================================================
--- Lemmas about honest_combined_map used by Lemmas/Degree.lean
--- ============================================================================
+-- arithmetic identity needed to append assignments: i.val + (open + 1) = n.
+lemma honest_split_eq {n : ℕ} (i : Fin n) :
+    i.val + (honest_num_open_vars (n := n) i + 1) = n := by
+  classical
+  set m : ℕ := honest_num_open_vars (n := n) i with hm
+  have hle : i.val + 1 ≤ n := Nat.succ_le_of_lt i.isLt
+  have h1 : (i.val + 1) + m = n := by
+    simpa [m, honest_num_open_vars] using (Nat.add_sub_of_le hle)
+  calc
+    i.val + (m + 1)
+        = i.val + m + 1 := by simp [Nat.add_assoc]
+    _   = i.val + 1 + m := by
+            simpa [Nat.add_assoc] using (Nat.add_right_comm i.val m 1)
+    _   = (i.val + 1) + m := by simp [Nat.add_assoc]
+    _   = n := h1
 
 lemma honest_combined_map_def
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]

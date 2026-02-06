@@ -1,13 +1,3 @@
-/-
-  HonestRoundProofs.lean
-
-  Proofs about honest round polynomials, including:
-  - eval₂_honest_round_poly_eq_sum_eval
-  - honest_num_open_vars_succ
-  - honest_step_round
-  - honest_last_round
--/
-
 import Sumcheck.Src.HonestTranscript
 import Sumcheck.Src.Hypercube
 import Sumcheck.Src.Verifier
@@ -438,3 +428,186 @@ lemma honest_last_round
     _ =
       CPoly.CMvPolynomial.eval r p := by
           simp [hpt]
+
+-- ============================================================================
+-- honest_round0_endpoints_eq_true_sum: moved here from SoundnessLemmas to avoid circular import
+-- ============================================================================
+
+lemma honest_round0_endpoints_eq_true_sum
+  {𝔽 : Type _} {n' : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial (Nat.succ n') 𝔽)
+  (r : Fin (Nat.succ n') → 𝔽) :
+  let i0 : Fin (Nat.succ n') := ⟨0, Nat.succ_pos n'⟩
+  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽))
+      (honest_round_poly (p := p) (ch := r) i0)
+    +
+    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
+      (honest_round_poly (p := p) (ch := r) i0)
+    =
+    true_sum (p := p) := by
+  intro i0
+
+  have hopen : honest_num_open_vars (n := Nat.succ n') i0 = n' := by
+    simp [honest_num_open_vars, i0]
+
+  have h0 := eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n')
+    (p := p) (r := r) (i := i0) (a := (0 : 𝔽))
+  have h1 := eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n')
+    (p := p) (r := r) (i := i0) (a := (1 : 𝔽))
+
+  rw [h0, h1]
+  simp only [true_sum, residual_sum]
+
+  have hinner : ∀ (a : 𝔽) (x : Fin n' → 𝔽),
+      (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
+        (fun t => Fin.cases a x t)
+        (Fin.cast (honest_split_eq (n := Nat.succ n') i0).symm k))
+      = (fun k => addCasesFun (fun t => t.elim0)
+        (Fin.cons a x)
+        (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) := by
+    intro a x
+    funext k
+    simp only [addCasesFun, Fin.addCases, i0, honest_num_open_vars]
+    cases (Fin.cast _ k) using Fin.addCases with
+    | left t => exact Fin.elim0 t
+    | right t => simp [Fin.cons]
+
+  have hsum0 :
+      sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
+            (fun t => Fin.cases (0 : 𝔽) x t)
+            (Fin.cast (honest_split_eq (n := Nat.succ n') i0).symm k)) p)
+      = sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => t.elim0) (Fin.cons 0 x)
+            (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) p) := by
+    exact sum_over_hypercube_recursive_congr _ _ _ (fun x => congr_arg (CPoly.CMvPolynomial.eval · p) (hinner 0 x))
+
+  have hsum1 :
+      sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => r ⟨t.val, Nat.lt_trans t.isLt i0.isLt⟩)
+            (fun t => Fin.cases (1 : 𝔽) x t)
+            (Fin.cast (honest_split_eq (n := Nat.succ n') i0).symm k)) p)
+      = sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+        (fun x => CPoly.CMvPolynomial.eval
+          (fun k => addCasesFun (fun t => t.elim0) (Fin.cons 1 x)
+            (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) p) := by
+    exact sum_over_hypercube_recursive_congr _ _ _ (fun x => congr_arg (CPoly.CMvPolynomial.eval · p) (hinner 1 x))
+
+  have hlhs := congr_arg₂ (· + ·) hsum0 hsum1
+
+  have hrhs := sum_over_hypercube_recursive_succ (𝔽 := 𝔽) (β := 𝔽) 0 1 (· + ·) (m := n')
+    (F := fun x => CPoly.CMvPolynomial.eval
+      (fun k => addCasesFun (fun t => t.elim0) x (Fin.cast (by simp : Nat.succ n' = 0 + Nat.succ n') k)) p)
+
+  calc _ = _ + _ := by rfl
+       _ = _ := hlhs
+       _ = _ := hrhs.symm
+
+-- ============================================================================
+-- Lemmas moved from Theorems/Completeness.lean
+-- ============================================================================
+
+
+lemma honestTranscript_roundPoly_eq_honestRoundPoly
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n) :
+  (generate_honest_transcript (𝔽 := 𝔽) (n := n) p (true_sum p) r).round_polys i
+    =
+  honest_round_poly (p := p) (ch := r) i := by
+  classical
+
+  -- Force the same `==` that `generate_honest_transcript` uses.
+  letI : BEq 𝔽 := instBEqOfDecidableEq (α := 𝔽)
+
+  -- Make it lawful using decide.
+  letI : LawfulBEq 𝔽 :=
+  { rfl := by
+      intro a
+      simp
+    eq_of_beq := by
+      intro a b h
+      have hdec : decide (a = b) = true := by
+        simpa [instBEqOfDecidableEq] using h
+      have : (decide (a = b) = true) = (a = b) := by
+        simp
+      have hab : a = b := by
+        simpa [this] using hdec
+      exact hab }
+
+  cases i with
+  | mk k hk => simp [generate_honest_transcript, honest_round_poly, honest_prover_message]
+
+
+lemma honest_transcript_sum_identity
+  {𝔽 : Type _} {n : ℕ}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (p : CPoly.CMvPolynomial n 𝔽)
+  (r : Fin n → 𝔽)
+  (i : Fin n) :
+  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => (0 : 𝔽))
+    ((generate_honest_transcript p (true_sum p) r).round_polys i) +
+  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => (1 : 𝔽))
+    ((generate_honest_transcript p (true_sum p) r).round_polys i) =
+  (generate_honest_transcript p (true_sum p) r).claims (Fin.castSucc i) := by
+  classical
+
+  have hrp : (generate_honest_transcript p (true_sum p) r).round_polys i =
+    honest_round_poly p r i := by
+    exact honestTranscript_roundPoly_eq_honestRoundPoly p r i
+  rw [hrp]
+
+  cases' h : i.val with k
+  · have hcast : Fin.castSucc i = ⟨0, Nat.succ_pos n⟩ := by
+      ext; simp [h]
+    simp only [generate_honest_transcript, derive_claims, hcast]
+    have hn_pos : 0 < n := i.pos
+    obtain ⟨n', hn'⟩ : ∃ n' : ℕ, n = Nat.succ n' := Nat.exists_eq_succ_of_ne_zero (Nat.pos_iff_ne_zero.mp hn_pos)
+    subst hn'
+    have hi_eq : i = ⟨0, Nat.succ_pos n'⟩ := by
+      ext
+      exact h
+    subst hi_eq
+    exact honest_round0_endpoints_eq_true_sum p r
+
+  · have hi_val : i.val = k + 1 := by simp [h]
+    have hk_lt : k < n := by omega
+    have hk1_lt : k + 1 < n := by omega
+    let prev : Fin n := ⟨k, hk_lt⟩
+    have hstep := honest_step_round (𝔽 := 𝔽) (n := n) (p := p) (r := r) (i := prev) hk1_lt
+    simp only [generate_honest_transcript, derive_claims]
+    have hi_eq : i = ⟨k + 1, hk1_lt⟩ := Fin.ext hi_val
+    subst hi_eq
+    simp only [prev, honest_round_poly, honest_prover_message] at hstep ⊢
+    exact hstep
+
+
+lemma honest_transcript_final_eq_eval
+  {𝔽 : Type _}
+  [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+  ∀ (n : ℕ) (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽),
+  (generate_honest_transcript p (true_sum p) r).claims (Fin.last n) =
+    CPoly.CMvPolynomial.eval (generate_honest_transcript p (true_sum p) r).challenges p := by
+  intro n
+  induction n with
+  | zero =>
+    intro p r
+    simp [generate_honest_transcript, derive_claims, Fin.last,
+          true_sum, residual_sum, sum_over_hypercube_recursive_zero]
+    congr 1
+    funext i
+    exact Fin.elim0 i
+  | succ n' ih =>
+    intro p r
+    simp only [generate_honest_transcript, derive_claims, Fin.last]
+    let iLast : Fin (n' + 1) := ⟨n', Nat.lt_succ_self n'⟩
+    have hLast : iLast.val.succ = n' + 1 := by simp [iLast]
+    have hrp : honest_prover_message p (challenge_subset r iLast) (Nat.succ_le_of_lt iLast.isLt) =
+        honest_round_poly p r iLast := by
+      simp [honest_round_poly, honest_prover_message]
+    rw [hrp]
+    exact honest_last_round p r iLast hLast
