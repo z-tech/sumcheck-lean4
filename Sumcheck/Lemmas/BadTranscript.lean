@@ -1,4 +1,4 @@
-import CompPoly.CMvPolynomial
+import CompPoly.Multivariate.CMvPolynomial
 
 import Sumcheck.Events.BadTranscript
 import Sumcheck.Models.Adversary

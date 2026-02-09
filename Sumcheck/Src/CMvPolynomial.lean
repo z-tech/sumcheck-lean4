@@ -1,5 +1,5 @@
-import CompPoly.CMvPolynomial
-import CompPoly.MvPolyEquiv
+import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.MvPolyEquiv
 
 -- this is a constant for a polynomial w/ one variable (arity must be specified)
 @[simp] def c1 {𝔽} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) :

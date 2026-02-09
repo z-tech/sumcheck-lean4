@@ -1,4 +1,4 @@
-import CompPoly.CMvMonomial
+import CompPoly.Multivariate.CMvMonomial
 import Mathlib.Data.Vector.Basic
 import Mathlib.Data.Vector.Zip
 

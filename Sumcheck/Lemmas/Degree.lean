@@ -1,5 +1,5 @@
-import CompPoly.CMvPolynomial
-import CompPoly.MvPolyEquiv
+import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.MvPolyEquiv
 
 import Sumcheck.Src.CMvPolynomial
 import Sumcheck.Src.Prover

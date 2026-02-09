@@ -1,7 +1,7 @@
 import CompPoly
-import CompPoly.CMvPolynomial
-import CompPoly.CMvMonomial
-import CompPoly.Lawful
+import CompPoly.Multivariate.CMvPolynomial
+import CompPoly.Multivariate.CMvMonomial
+import CompPoly.Multivariate.Lawful
 
 import Sumcheck.Src.Verifier
 
