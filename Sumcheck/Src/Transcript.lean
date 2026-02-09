@@ -1,4 +1,4 @@
-import CompPoly.CMvPolynomial
+import CompPoly.Multivariate.CMvPolynomial
 import Sumcheck.Src.Prover
 
 -- The transcript of a sumcheck protocol interaction

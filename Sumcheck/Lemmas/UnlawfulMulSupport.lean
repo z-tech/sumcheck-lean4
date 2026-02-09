@@ -1,5 +1,5 @@
-import CompPoly.Unlawful
-import CompPoly.Lawful
+import CompPoly.Multivariate.Unlawful
+import CompPoly.Multivariate.Lawful
 import ExtTreeMapLemmas.ExtTreeMap
 
 namespace Sumcheck
@@ -21,7 +21,7 @@ lemma getElem?_fromUnlawful (u : CPoly.Unlawful n R) (m : CPoly.CMvMonomial n) :
   -- so we align the goal with a `change` and then `exact` it.
   change (Std.ExtTreeMap.filter (fun (_ : CPoly.CMvMonomial n) (c : R) => c != 0) u)[m]?
       = Option.filter ((fun (_ : CPoly.CMvMonomial n) (c : R) => c != 0) m) u[m]?
-  exact (Std.ExtTreeMap.getElem?_filter
+  exact (Std.ExtTreeMap.getElem?_filter_with_getKey
     (f := fun (_ : CPoly.CMvMonomial n) (c : R) => c != 0)
     (k := m) (m := u))
 

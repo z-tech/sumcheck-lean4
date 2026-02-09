@@ -1,4 +1,4 @@
-import CompPoly.CMvPolynomial
+import CompPoly.Multivariate.CMvPolynomial
 import Mathlib.Data.Nat.Bitwise
 import Mathlib.Data.ZMod.Basic
 import Mathlib.Data.Fin.VecNotation

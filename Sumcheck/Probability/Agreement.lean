@@ -1,4 +1,4 @@
-import CompPoly.CMvPolynomial
+import CompPoly.Multivariate.CMvPolynomial
 
 import Sumcheck.Counting.Agreement
 import Sumcheck.Counting.Polynomials

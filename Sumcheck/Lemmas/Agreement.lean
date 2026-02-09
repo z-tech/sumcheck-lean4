@@ -1,4 +1,4 @@
-import CompPoly.CMvPolynomial
+import CompPoly.Multivariate.CMvPolynomial
 import Mathlib.Algebra.MvPolynomial.SchwartzZippel
 
 

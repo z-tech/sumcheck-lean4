@@ -1,4 +1,4 @@
-import CompPoly.CMvPolynomial
+import CompPoly.Multivariate.CMvPolynomial
 
 def Adversary (𝔽 : Type _) (n : ℕ) [CommRing 𝔽] :=
   ∀ (_p : CPoly.CMvPolynomial n 𝔽) (_claim : 𝔽),
