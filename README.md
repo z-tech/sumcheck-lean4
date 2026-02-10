@@ -47,7 +47,7 @@ theorem soundness_dishonest
 
 If a prover claims a value $c \neq \sum_{b \in \\{0,1\\}^n} p(b)$, then for any strategy, the probability the verifier accepts is bounded by:
 
-$$\Pr[\text{accept}] \leq\; \frac{n \cdot d}{|\mathbb{F}|}$$
+$$\Pr[\text{accept}] \leq \frac{n \cdot d}{|\mathbb{F}|}$$
 
 where $d = \max_i \deg_{X_i}(p)$ is the max individual degree of $p$. The proof sketch is:
 
