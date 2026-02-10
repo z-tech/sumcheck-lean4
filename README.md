@@ -59,7 +59,7 @@ where $d = \max_i \deg_{X_i}(p)$ is the max individual degree of $p$. The proof 
 
 The honest prover message at round $i$ is defined as the **univariate polynomial** in $X_i$ computed by summing out the remaining variables over the Boolean hypercube:
 
-$$g_i(X_i) = \sum_{b \in \\{0,1\\}^{n-i-1}} p(r_1, \dots, r_{i-1},\; X_i,\; b_1, \dots, b_{n-i-1})$$
+$$g_i(X_i) = \sum_{b \in \\{0,1\\}^{n-i-1}} p(r_1, \dots, r_{i-1}, X_i, b_1, \dots, b_{n-i-1})$$
 
 where $r_1, \dots, r_{i-1}$ are the verifier's previous challenges. This is implemented in [`Src/Prover.lean`](Sumcheck/Src/Prover.lean) as `honest_prover_message_at`, which:
 
