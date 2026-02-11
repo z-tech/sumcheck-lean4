@@ -16,14 +16,17 @@ def claim_poly : CPoly.CMvPolynomial 2 (ZMod 19) :=
 def claim : (ZMod 19) := (17 : ZMod 19)
 def simulated_challenges := ![(2 : ZMod 19), (3 : ZMod 19)]
 
-def valid_transcript := generate_honest_transcript claim_poly claim simulated_challenges
-lemma valid_transcript_accepts : is_verifier_accepts_transcript claim_poly valid_transcript = true := by
+-- Boolean hypercube domain
+def bool_domain : List (ZMod 19) := [0, 1]
+
+def valid_transcript := generate_honest_transcript bool_domain claim_poly claim simulated_challenges
+lemma valid_transcript_accepts : is_verifier_accepts_transcript bool_domain claim_poly valid_transcript = true := by
   unfold is_verifier_accepts_transcript
   simp
   native_decide
 
-def invalid_transcript := generate_honest_transcript claim_poly (claim + 1) simulated_challenges
-lemma invalid_transcript_rejects : is_verifier_accepts_transcript claim_poly invalid_transcript = false := by
+def invalid_transcript := generate_honest_transcript bool_domain claim_poly (claim + 1) simulated_challenges
+lemma invalid_transcript_rejects : is_verifier_accepts_transcript bool_domain claim_poly invalid_transcript = false := by
   unfold is_verifier_accepts_transcript
   simp
   native_decide

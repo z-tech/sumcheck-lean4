@@ -105,6 +105,7 @@ set_option maxHeartbeats 90000000 in
 lemma degree_honest_prover_message_at_le_of_per_b
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ}
+  (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (i : Fin n)
   (challenges : Fin i.val → 𝔽)
@@ -115,7 +116,7 @@ lemma degree_honest_prover_message_at_le_of_per_b
         (CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
       ≤ d) :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-      (honest_prover_message_at (𝔽 := 𝔽) (p := p) (i := i) (challenges := challenges))
+      (honest_prover_message_at domain (𝔽 := 𝔽) (p := p) (i := i) (challenges := challenges))
     ≤ d := by
   classical
 
@@ -124,7 +125,6 @@ lemma degree_honest_prover_message_at_le_of_per_b
     fun q => CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q
 
   -- CRITICAL: choose the *homogeneous* HAdd instance explicitly.
-  -- This prevents Lean from using Lawful.instHAddMaxNat.
   let add1 :
       CPoly.CMvPolynomial 1 𝔽 → CPoly.CMvPolynomial 1 𝔽 → CPoly.CMvPolynomial 1 𝔽 :=
     fun a b =>
@@ -139,43 +139,48 @@ lemma degree_honest_prover_message_at_le_of_per_b
         deg (add1 a b) ≤ d := by
     intro a b ha hb
     dsimp [deg, add1] at ha hb ⊢
-    -- goal is now exactly the shape produced by degreeOf_add_le_of_le
     exact degreeOf_add_le_of_le (𝔽 := 𝔽) (d := d) a b ha hb
 
+  have hzero : deg (0 : CPoly.CMvPolynomial 1 𝔽) ≤ d := by
+    dsimp [deg]
+    -- (0 : CMvPolynomial 1 𝔽) has no monomials, so degreeOf = 0
+    have h0 : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (0 : CPoly.CMvPolynomial 1 𝔽) = 0 := by
+      have := CPoly.degreeOf_equiv (p := (0 : CPoly.CMvPolynomial 1 𝔽)) (S := 𝔽)
+      simp [MvPolynomial.degreeOf_zero] at this
+      exact congrArg (fun f => f 0) this
+    omega
+
   have h :=
-    sum_over_hypercube_recursive_deg_le
+    sum_over_domain_recursive_deg_le
       (𝔽 := 𝔽)
       (β := CPoly.CMvPolynomial 1 𝔽)
       (deg := deg)
       (d := d)
-      (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽))
+      domain
       (add := add1)
+      (zero := 0)
       (m := num_open_vars (n := n) i)
       (F := fun b =>
         CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
       (hadd := hadd)
+      (hzero := hzero)
       (hF := hF)
 
-  -- Finish by unfolding honest_prover_message_at, then aligning `add` with `add1`.
-  -- NOTE: this last step will work *iff* honest_prover_message_at uses the homogeneous add.
-  -- If your honest_prover_message_at currently uses `fun a b => a + b`, I recommend changing it
-  -- to exactly `add1` (or to the typed version of +) as shown below.
   simpa [honest_prover_message_at, deg, add1] using h
 
 lemma residual_sum_with_openVars_cast_congr
   {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   {k n openVars : ℕ}
+  (domain : List 𝔽)
   (hn₁ hn₂ : k + openVars = n)
   (ch : Fin k → 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) :
   residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
-      (openVars := openVars) (hn := hn₁) ch p
+      domain (openVars := openVars) (hn := hn₁) ch p
     =
   residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
-      (openVars := openVars) (hn := hn₂) ch p := by
+      domain (openVars := openVars) (hn := hn₂) ch p := by
   classical
-  -- `residual_sum_with_openVars` differs only in the `Fin.cast hn.symm` proof.
-  -- Proofs of equalities live in Prop, so they are subsingletons.
   have hhn : hn₁ = hn₂ := Subsingleton.elim _ _
   subst hhn
   rfl
@@ -184,32 +189,28 @@ lemma residual_sum_with_openVars_cast_congr
 lemma residual_sum_with_openVars_def_with_hn
   {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   {k n openVars : ℕ}
+  (domain : List 𝔽)
   (hn hn' : k + openVars = n)
   (ch : Fin k → 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) :
   residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
-      (openVars := openVars) (hn := hn) ch p
+      domain (openVars := openVars) (hn := hn) ch p
     =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽)
-      (0 : 𝔽) (1 : 𝔽) (· + ·) (m := openVars)
+  sum_over_domain_recursive (𝔽 := 𝔽) (β := 𝔽)
+      domain (· + ·) 0 (m := openVars)
       (fun x =>
         let point : Fin n → 𝔽 :=
           fun j => addCasesFun ch x (Fin.cast hn'.symm j)
         CPoly.CMvPolynomial.eval point p) := by
   classical
-  -- Start from the definitional RHS (which uses hn),
-  -- then swap hn -> hn' using proof-irrelevance.
   have hswap :
       residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
-          (openVars := openVars) (hn := hn) ch p
+          domain (openVars := openVars) (hn := hn) ch p
         =
       residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
-          (openVars := openVars) (hn := hn') ch p :=
+          domain (openVars := openVars) (hn := hn') ch p :=
     residual_sum_with_openVars_cast_congr (𝔽 := 𝔽) (k := k) (n := n)
-      (openVars := openVars) hn hn' ch p
-
-  -- Now unfold the definition on the hn' side.
-  -- (This produces exactly the `Fin.cast hn'.symm` you want.)
+      domain (openVars := openVars) hn hn' ch p
   simp [residual_sum_with_openVars]
 
 theorem degreeOf_x0_le_one {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :

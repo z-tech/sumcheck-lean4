@@ -142,17 +142,19 @@ lemma honest_right_map_succ
 @[simp] lemma honest_prover_message_at_def
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ}
+  (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (i : Fin n)
   (challenges : Fin i.val → 𝔽) :
-  honest_prover_message_at (𝔽 := 𝔽) (n := n) p i challenges
+  honest_prover_message_at domain (𝔽 := 𝔽) (n := n) p i challenges
     =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
-    (b0 := (0 : 𝔽)) (b1 := (1 : 𝔽))
+  sum_over_domain_recursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
+    domain
     (add := fun a b =>
       @HAdd.hAdd
         (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
         instHAdd a b)
+    (zero := c1 (𝔽 := 𝔽) 0)
     (m := num_open_vars (n := n) i)
     (F := fun b =>
       CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p) := by

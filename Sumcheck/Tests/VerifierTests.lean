@@ -13,12 +13,15 @@ namespace __VerifierTests__
       ((0 : CPoly.Unlawful 1 (ZMod 19)).insert ⟨#[1], by decide⟩ (13 : ZMod 19))
         |>.insert ⟨#[0], by decide⟩ (2 : ZMod 19)
 
+  -- Boolean hypercube domain
+  def bool_domain : List (ZMod 19) := [0, 1]
+
   namespace __verifier_check_tests__
 
-    def received_false := verifier_check 1 (11 : ZMod 19) test_round_p
+    def received_false := verifier_check bool_domain 1 (11 : ZMod 19) test_round_p
     lemma it_should_check_false_round_correctly : received_false = false := by native_decide
 
-    def received_true := verifier_check 1 (17 : ZMod 19) test_round_p
+    def received_true := verifier_check bool_domain 1 (17 : ZMod 19) test_round_p
     lemma it_should_check_true_round_correctly :received_true = true := by native_decide
 
   end __verifier_check_tests__
