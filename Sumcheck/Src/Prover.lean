@@ -52,17 +52,19 @@ by
 def honest_prover_message_at
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ}
+  (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (i : Fin n)
   (challenges : Fin i.val → 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
 by
   classical
   exact
-    sum_over_hypercube_recursive (β := CPoly.CMvPolynomial 1 𝔽)
-      (b0 := 0) (b1 := 1)
+    sum_over_domain_recursive (β := CPoly.CMvPolynomial 1 𝔽)
+      domain
       (add := fun a b =>
         @HAdd.hAdd (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
           instHAdd a b)
+      (zero := c1 (𝔽 := 𝔽) 0)
       (m := num_open_vars (n := n) i)
       (F := fun b =>
         CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
@@ -71,6 +73,7 @@ by
 def honest_prover_message
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n k : ℕ}
+  (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (challenges : Fin k → 𝔽)
   (hcard : k + 1 ≤ n) : CPoly.CMvPolynomial 1 𝔽 :=
@@ -79,4 +82,4 @@ by
   have hk : k < n := Nat.lt_of_lt_of_le (Nat.lt_succ_self k) hcard
   let i : Fin n := ⟨k, hk⟩
   -- i.val = k definitionally, so challenges types line up
-  simpa [i] using honest_prover_message_at (p := p) (i := i) (challenges := challenges)
+  simpa [i] using honest_prover_message_at domain (p := p) (i := i) (challenges := challenges)

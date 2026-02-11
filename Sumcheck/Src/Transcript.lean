@@ -29,12 +29,13 @@ def generate_honest_claims
 
 def generate_honest_transcript
   {𝔽} {n} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (domain : List 𝔽)
   (claim_p  : CPoly.CMvPolynomial n 𝔽)
   (initial_claim : 𝔽)
   (challenges : Fin n → 𝔽) : Transcript 𝔽 n :=
 by
   let round_polys : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
-    fun i => honest_prover_message claim_p (challenge_subset challenges i) (Nat.succ_le_of_lt i.isLt)
+    fun i => honest_prover_message domain claim_p (challenge_subset challenges i) (Nat.succ_le_of_lt i.isLt)
   let claims: Fin (n + 1) → 𝔽 := generate_honest_claims initial_claim round_polys challenges
   exact {
     round_polys := round_polys

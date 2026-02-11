@@ -15,24 +15,25 @@ import Sumcheck.Lemmas.HonestRoundProofs
 
 lemma accepts_and_bad_implies_exists_round_disagree_but_agree
   {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (domain : List 𝔽)
   (claim : 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (adv : Adversary 𝔽 n)
   (r : Fin n → 𝔽) :
-  AcceptsAndBadTranscriptOnChallenges claim p adv r →
-    ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge (claim := claim) (p := p) (adv := adv) r i := by
+  AcceptsAndBadTranscriptOnChallenges domain claim p adv r →
+    ∃ i : Fin n, RoundDisagreeButAgreeAtChallenge domain (claim := claim) (p := p) (adv := adv) r i := by
   classical
   intro h
   rcases h with ⟨hAcc, hBad⟩
   let t : Transcript 𝔽 n := AdversaryTranscript claim p adv r
 
   -- pick the last bad round
-  have hLast : LastBadRound (claim := claim) (p := p) (adv := adv) (r := r) := by
-    exact badTranscript_implies_lastBadRound (claim := claim) (p := p) (adv := adv) (r := r) (by
+  have hLast : LastBadRound domain (claim := claim) (p := p) (adv := adv) (r := r) := by
+    exact badTranscript_implies_lastBadRound domain (claim := claim) (p := p) (adv := adv) (r := r) (by
       simpa [t] using hBad)
 
   rcases hLast with ⟨i, hi_bad, hi_after⟩
   refine ⟨i, ?_⟩
 
-  have hneq : t.round_polys i ≠ honest_round_poly (p := p) (ch := r) i := by
+  have hneq : t.round_polys i ≠ honest_round_poly domain (p := p) (ch := r) i := by
     simpa [t] using hi_bad
 
   -- A helper that forces `simp`/`match` on `i.succ` to take the `succ`-branch, without `↑i` coercion issues.
@@ -53,7 +54,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
     have hlast_add : n = i.val + 1 := by
       simpa [Nat.succ_eq_add_one] using hlast.symm
     have hfinal : t.claims (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p := by
-      have hdec := acceptsEvent_final_ok (p := p) (t := t) hAcc
+      have hdec := acceptsEvent_final_ok domain (p := p) (t := t) hAcc
       exact (decide_eq_true_eq.mp hdec)
 
     -- relate Fin.last n to i.succ using hlast
@@ -69,34 +70,28 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
     have ht_claim_last :
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
           = CPoly.CMvPolynomial.eval r p := by
-      -- note: we want the result in the same orientation as the goal; use `Eq.symm` if simp flips it.
       have := hfinal'.symm
-      -- unfolding t / AdversaryTranscript puts t.challenges = r and t.claims (i.succ) = next_claim ...
-      -- hsuc kills the `match` in generate_honest_claims at i.succ
-      -- `simp` may produce `eval r p = ...`; `simpa` below normalizes it to `... = eval r p`
       have htmp :
           CPoly.CMvPolynomial.eval r p =
             next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i) := by
         simpa [t, AdversaryTranscript, generate_honest_claims, next_claim, hsuc] using this
       simpa [eq_comm] using htmp
 
-    -- TODO (honest consistency for the last round):
     have honest_last :
-        next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i)
+        next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly domain (p := p) (ch := r) i)
           = CPoly.CMvPolynomial.eval r p := by
-      simpa using (honest_last_round (p := p) (r := r) (i := i) hlast)
-
+      simpa using (honest_last_round domain (p := p) (r := r) (i := i) hlast)
 
     -- Turn equality of next_claim into equality of eval₂.
     have hnc :
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
           =
-        next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i) := by
+        next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly domain (p := p) (ch := r) i) := by
       calc
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
             = CPoly.CMvPolynomial.eval r p := ht_claim_last
         _   = next_claim (𝔽 := 𝔽) (round_challenge := r i)
-                (honest_round_poly (p := p) (ch := r) i) := by
+                (honest_round_poly domain (p := p) (ch := r) i) := by
               simpa using honest_last.symm
 
     refine ⟨hneq, ?_⟩
@@ -106,21 +101,19 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
     have hlt : i.val.succ < n := Nat.lt_of_le_of_ne (Nat.succ_le_of_lt i.isLt) hlast
     let j : Fin n := ⟨i.val.succ, hlt⟩
 
-    have hj_honest : t.round_polys j = honest_round_poly (p := p) (ch := r) j := by
+    have hj_honest : t.round_polys j = honest_round_poly domain (p := p) (ch := r) j := by
       have hij : i < j := by
         -- j.val = i.val.succ
         exact Fin.lt_iff_val_lt_val.mpr (Nat.lt_succ_self i.val)
       simpa [t, j] using hi_after j hij
 
     have hsum :
-        CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽))
-            (honest_round_poly (p := p) (ch := r) j)
-          +
-        CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
-            (honest_round_poly (p := p) (ch := r) j)
+        domain.foldl (fun acc a =>
+          acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+            (honest_round_poly domain (p := p) (ch := r) j)) 0
           =
         t.claims (Fin.castSucc j) := by
-      exact acceptsEvent_endpoints_sum_eq_claim_of_honest
+      exact acceptsEvent_domain_sum_eq_claim_of_honest domain
         (p := p) (r := r) (t := t) (i := j) (hi := hj_honest) hAcc
 
     -- castSucc j equals i.succ (both have value i.val.succ)
@@ -141,17 +134,15 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i) := by
       simpa [hcast] using hclaim_i_succ
 
-    -- TODO (honest step consistency):
+    -- honest step consistency:
     have honest_step :
-        CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽))
-            (honest_round_poly (p := p) (ch := r) j)
-          +
-        CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
-            (honest_round_poly (p := p) (ch := r) j)
+        domain.foldl (fun acc a =>
+          acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+            (honest_round_poly domain (p := p) (ch := r) j)) 0
           =
-        next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly (p := p) (ch := r) i) := by
+        next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly domain (p := p) (ch := r) i) := by
       -- `honest_step_round` introduces `j` via a `let`, so we `simpa [j]` to match your `j`.
-      simpa [j] using (honest_step_round (p := p) (r := r) (i := i) hlt)
+      simpa [j] using (honest_step_round domain (p := p) (r := r) (i := i) hlt)
 
     refine ⟨hneq, ?_⟩
     calc
@@ -160,11 +151,9 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
               -- from hclaim_j : claims = next_claim, flip it
               simpa using (Eq.symm hclaim_j)
       _ =
-          CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽))
-            (honest_round_poly (p := p) (ch := r) j)
-          +
-          CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽))
-            (honest_round_poly (p := p) (ch := r) j) := by
+          domain.foldl (fun acc a =>
+            acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+              (honest_round_poly domain (p := p) (ch := r) j)) 0 := by
               simpa using hsum.symm
       _ = next_claim (𝔽 := 𝔽) (round_challenge := r i)
-            (honest_round_poly (p := p) (ch := r) i) := honest_step
+            (honest_round_poly domain (p := p) (ch := r) i) := honest_step
