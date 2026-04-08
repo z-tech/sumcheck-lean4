@@ -2,40 +2,21 @@ import Mathlib.Data.Rat.Init
 import Mathlib.Data.Fintype.Pi
 import Mathlib.Data.Finset.Filter
 
-/-!
-# Public-Coin Interactive Protocols
+-- Here we define an interface for public-coin interactive protocols
+-- verifier messages are simply challenges (random field elements)
+-- the Fiat-Shamir transformation applies to this class of protocols
 
-This module defines a generic interface for **public-coin interactive protocols** (IPs).
-A public-coin IP is one where the verifier's messages are simply random field elements
-(challenges). This is the class of protocols to which the Fiat-Shamir transformation
-applies.
+-- round messages (from the prover) can be different types
+-- prover is "adaptive" meaning it sees all challenges from rounds 0..i-1
+-- we define completeness and soundness generically
 
-## Design Choices
+-- the idea is that concrete protocols like sumcheck can instantiate this structure
+-- and that FiatShamir is formalized generically over this interface
 
-- **Round-dependent message types**: `ProverMessage` is indexed by `Fin n`, allowing
-  each round to have a different prover message type (e.g., different polynomial arities).
-- **Adaptive prover**: The prover at round `i` sees all challenges from rounds `0..i-1`.
-- **Completeness and soundness** are both defined generically.
+-- S is the statement (public instance)
+-- C is the type from which challenges are uniformly sampled
+-- n is the number of rounds
 
-## Architecture
-
-This module is protocol-agnostic. Concrete protocols (e.g., sumcheck) instantiate the
-`PublicCoinProtocol` structure. The Fiat-Shamir transformation (in `FiatShamir.lean`) is
-proved generically over this interface.
--/
-
-/-- A public-coin interactive protocol with `n` rounds over a challenge type `C`.
-
-In each round `i : Fin n`:
-1. The prover sends a message of type `ProverMessage i`
-2. The verifier responds with a random challenge of type `C`
-
-After all rounds, the verifier makes a decision based on the full transcript.
-
-Parameters:
-- `S`: the type of public instances (statements)
-- `C`: the type from which challenges are uniformly sampled
-- `n`: the number of rounds -/
 structure PublicCoinProtocol (S : Type*) (C : Type*) (n : ℕ) where
   /-- The type of the prover's message at round `i`.
       This is round-dependent: different rounds may use different message types. -/

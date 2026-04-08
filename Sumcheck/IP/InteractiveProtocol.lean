@@ -19,21 +19,6 @@ def sumcheckClaimIsCorrect {𝔽 : Type} {n : ℕ} [Field 𝔽] [DecidableEq �
     (st : SumcheckStatement 𝔽 n) : Prop :=
   st.claim = honest_claim st.domain st.polynomial
 
-/-- The soundness error bound for a sumcheck statement. -/
-noncomputable def sumcheckSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-    (st : SumcheckStatement 𝔽 n) : ℚ :=
-  soundness_error st.polynomial
-
-/-- Reconstruct an old-style `Transcript` from round polynomials, challenges,
-    and an initial claim. -/
-def toOldTranscript {𝔽 : Type} {n : ℕ} [CommRing 𝔽] [DecidableEq 𝔽]
-    (claim : 𝔽)
-    (round_polys : Fin n → CPoly.CMvPolynomial 1 𝔽)
-    (chs : Fin n → 𝔽) : Transcript 𝔽 n :=
-  { round_polys := round_polys
-    challenges := chs
-    claims := generate_honest_claims claim round_polys chs }
-
 /-- The sumcheck protocol as a `PublicCoinProtocol`. -/
 noncomputable def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     PublicCoinProtocol (SumcheckStatement 𝔽 n) 𝔽 n where
@@ -44,7 +29,9 @@ noncomputable def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
   proverMessage := fun tr i => tr.1 i
   verifier_accepts := fun st tr =>
     is_verifier_accepts_transcript st.domain st.polynomial
-      (toOldTranscript st.claim tr.1 tr.2) = true
+      { round_polys := tr.1
+        challenges := tr.2
+        claims := generate_honest_claims st.claim tr.1 tr.2 } = true
   verifier_decides := fun _ _ => inferInstance
   challenges_mk := fun _ _ => rfl
   proverMessage_mk := fun _ _ _ => rfl
@@ -79,8 +66,10 @@ lemma sumcheck_verifier_accepts_eq {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
     sumcheckProtocol.verifier_accepts st
       (generateTranscript sumcheckProtocol st P r)
     = (is_verifier_accepts_transcript st.domain st.polynomial
-        (toOldTranscript st.claim
-          (fun i => P.respond st i (challenge_subset r i)) r) = true) := by
+        { round_polys := fun i => P.respond st i (challenge_subset r i)
+          challenges := r
+          claims := generate_honest_claims st.claim
+            (fun i => P.respond st i (challenge_subset r i)) r } = true) := by
   rfl
 
 /-! ## Main Theorems -/
@@ -90,7 +79,7 @@ theorem sumcheck_hasSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
     hasSoundnessError
       (sumcheckProtocol (𝔽 := 𝔽) (n := n))
       sumcheckClaimIsCorrect
-      sumcheckSoundnessError := by
+      (fun st => soundness_error st.polynomial) := by
   intro st P hFalse
   unfold probAccept
   set adv : Adversary 𝔽 n := proverToAdversary P st with hadv
@@ -100,8 +89,7 @@ theorem sumcheck_hasSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
     = (fun r => AcceptsOnChallenges st.domain st.claim st.polynomial adv r) := by
     ext r
     simp only [sumcheck_verifier_accepts_eq, AcceptsOnChallenges, AcceptsEvent,
-               AdversaryTranscript, proverToAdversary, hadv,
-               toOldTranscript]
+               AdversaryTranscript, proverToAdversary, hadv]
   rw [hEq, probEvent_eq_prob_over_challenges']
   have hClaim : st.claim ≠ honest_claim st.domain st.polynomial := by
     unfold sumcheckClaimIsCorrect at hFalse; exact hFalse
@@ -123,7 +111,7 @@ theorem sumcheck_hasPerfectCompleteness {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fi
     ext r
     simp only [sumcheck_verifier_accepts_eq, sumcheckHonestProver,
                AcceptsEvent, generate_honest_transcript,
-               honest_prover_message, toOldTranscript]
+               honest_prover_message]
   rw [hEq, probEvent_eq_prob_over_challenges']
   rw [hTrue]
   exact perfect_completeness st.domain st.polynomial
