@@ -7,7 +7,7 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
   (claim_p : CPoly.CMvPolynomial n 𝔽)
   (adv : Adversary 𝔽 n) :
      prob_over_challenges (E := AcceptsAndBadTranscriptOnChallenges domain claim claim_p adv)
-      ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) := by
+      ≤ soundness_error claim_p := by
   classical
 
   -- Keep AcceptsAndBad in the per-round event.
@@ -50,8 +50,8 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
   have hround :
       (∑ i : Fin n,
         prob_over_challenges (𝔽 := 𝔽) (n := n) (fun r => E i r))
-      ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) := by
-    simpa [E] using
+      ≤ soundness_error claim_p := by
+    simpa [E, soundness_error] using
       sum_accepts_and_round_disagree_but_agree_bound domain
         (claim := claim) (p := claim_p) (adv := adv)
 
@@ -65,7 +65,7 @@ theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
   (adv : Adversary 𝔽 n)
   (h : claim ≠ honest_claim domain (p := claim_p)) :
   prob_over_challenges (E := AcceptsOnChallenges domain claim claim_p adv)
-    ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) := by
+    ≤ soundness_error claim_p := by
   classical
 
   -- Key reduction: dishonest claim ⇒ (accept → bad), hence accept ⊆ (accept ∧ bad).
@@ -94,7 +94,7 @@ theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
   have hsound :
       prob_over_challenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsAndBadTranscriptOnChallenges domain claim claim_p adv r)
-        ≤ n * (max_ind_degree claim_p) / field_size (𝔽 := 𝔽) :=
+        ≤ soundness_error claim_p :=
     soundness domain (𝔽 := 𝔽) (n := n) (claim := claim) (claim_p := claim_p) (adv := adv)
 
   exact le_trans hmono hsound

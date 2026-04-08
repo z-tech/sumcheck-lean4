@@ -94,7 +94,7 @@ interactive verifier's challenges.
 theorem fiatShamir_preserves_soundness {S C : Type*} {n : ℕ} [Fintype C]
     (ip : PublicCoinProtocol S C n)
     (isTrue : S → Prop)
-    (ε : ℚ)
+    (ε : S → ℚ)
     (enc : Encoding ip)
     (h_sound : hasSoundnessError ip isTrue ε) :
     -- For every FS adversary (who produces a proof given a random oracle),

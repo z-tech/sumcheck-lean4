@@ -1,15 +1,16 @@
 import CompPoly.Multivariate.CMvPolynomial
 import Sumcheck.Src.Prover
 
+-- the subset of challenges the prover is allowed to see at round i
+def challenge_subset {𝔽} {n} (ch : Fin n → 𝔽) (i : Fin n) : Fin i.val → 𝔽 :=
+  fun j => ch ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
+
 -- The transcript of a sumcheck protocol interaction
 structure Transcript (𝔽 : Type _) (n : ℕ) [CommRing 𝔽] where
   round_polys : Fin n → (CPoly.CMvPolynomial 1 𝔽)
   challenges : Fin n → 𝔽
   claims : Fin (n + 1) → 𝔽
 
--- the subset of challenges the prover is allowed to see at round i
-def challenge_subset {𝔽} {n} (ch : Fin n → 𝔽) (i : Fin n) : Fin i.val → 𝔽 :=
-  fun j => ch ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
 
 -- Attention: when round_p is dishonest, this is not necessarily the genuine next claim
 @[simp] def next_claim {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]

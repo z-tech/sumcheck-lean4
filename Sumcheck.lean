@@ -6,3 +6,4 @@ import Sumcheck.Probability
 import Sumcheck.Universe
 import Sumcheck.Tests
 import Sumcheck.Theorems
+import Sumcheck.IP.InteractiveProtocol

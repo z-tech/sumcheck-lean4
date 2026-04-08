@@ -72,17 +72,13 @@ structure Prover {S C : Type*} {n : ℕ} (ip : PublicCoinProtocol S C n) where
       produce a prover message for this round. -/
   respond : S → (i : Fin n) → (Fin i.val → C) → ip.ProverMessage i
 
-/-- The prefix of challenges visible to the prover at round `i`:
-    challenges `0, 1, ..., i-1`. -/
-def challengePrefix {C : Type*} {n : ℕ} (r : Fin n → C) (i : Fin n) : Fin i.val → C :=
-  fun j => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
-
 /-- Generate the transcript produced by a (potentially dishonest) prover
-    interacting with random challenges `r`. -/
+    interacting with random challenges `r`.
+    At round `i`, the prover sees challenges `0, 1, ..., i-1`. -/
 def generateTranscript {S C : Type*} {n : ℕ}
     (ip : PublicCoinProtocol S C n)
     (st : S) (P : Prover ip) (r : Fin n → C) : ip.Transcript :=
-  ip.mkTranscript (fun i => P.respond st i (challengePrefix r i)) r
+  ip.mkTranscript (fun i => P.respond st i (fun j => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩)) r
 
 /-! ## Probability over challenges -/
 
@@ -116,10 +112,10 @@ noncomputable def probAccept {S C : Type*} {n : ℕ} [Fintype C]
     (in the Random Oracle Model). -/
 def hasSoundnessError {S C : Type*} {n : ℕ} [Fintype C]
     (ip : PublicCoinProtocol S C n)
-    (isTrue : S → Prop) (ε : ℚ) : Prop :=
+    (isTrue : S → Prop) (ε : S → ℚ) : Prop :=
   ∀ (st : S) (P : Prover ip),
     ¬ isTrue st →
-    probAccept ip st P ≤ ε
+    probAccept ip st P ≤ ε st
 
 /-- A public-coin interactive protocol has **perfect completeness** with respect to
     a validity predicate `isTrue` and an honest prover if:

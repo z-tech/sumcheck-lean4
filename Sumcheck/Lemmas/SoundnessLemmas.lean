@@ -609,7 +609,7 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
         (fun r =>
           AcceptsAndBadTranscriptOnChallenges domain claim p adv r ∧
           RoundDisagreeButAgreeAtChallenge domain (claim := claim) (p := p) (adv := adv) r i))
-    ≤ n * (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
+    ≤ soundness_error p := by
   classical
   -- Sum the pointwise bounds.
   have hsum :
@@ -635,8 +635,8 @@ theorem sum_accepts_and_round_disagree_but_agree_bound {𝔽 : Type _} {n : ℕ}
         ≤ ∑ i : Fin n, ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := hsum
     _ = (n : ℚ) * ((max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)) := by
       simp
-    _ = n * (max_ind_degree p) / field_size (𝔽 := 𝔽) := by
-      simp [div_eq_mul_inv, mul_left_comm, mul_comm]
+    _ = soundness_error p := by
+      simp [soundness_error, div_eq_mul_inv, mul_left_comm, mul_comm]
 
 lemma all_rounds_honest_of_not_bad
   {𝔽 : Type _} {n : ℕ}

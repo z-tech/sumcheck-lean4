@@ -9,10 +9,8 @@ open Std
 
 namespace CPoly.Unlawful
 
-variable {n : ℕ} {R : Type _}
-variable [Zero R] [BEq R] [LawfulBEq R]
-
-lemma getElem?_fromUnlawful (u : CPoly.Unlawful n R) (m : CPoly.CMvMonomial n) :
+lemma getElem?_fromUnlawful {n : ℕ} {R : Type _} [Zero R] [BEq R] [LawfulBEq R]
+    (u : CPoly.Unlawful n R) (m : CPoly.CMvMonomial n) :
   (CPoly.Lawful.fromUnlawful (n := n) (R := R) u).1[m]?
     = Option.filter (fun c => c != 0) u[m]? := by
   unfold CPoly.Lawful.fromUnlawful
@@ -25,8 +23,8 @@ lemma getElem?_fromUnlawful (u : CPoly.Unlawful n R) (m : CPoly.CMvMonomial n) :
     (f := fun (_ : CPoly.CMvMonomial n) (c : R) => c != 0)
     (k := m) (m := u))
 
-lemma mem_fromUnlawful_imp_exists_coeff
-  (u : CPoly.Unlawful n R) (m : CPoly.CMvMonomial n) :
+lemma mem_fromUnlawful_imp_exists_coeff {n : ℕ} {R : Type _} [Zero R] [BEq R] [LawfulBEq R]
+    (u : CPoly.Unlawful n R) (m : CPoly.CMvMonomial n) :
   m ∈ (CPoly.Lawful.fromUnlawful (n := n) (R := R) u)
     → ∃ v : R, v ≠ 0 ∧ u[m]? = some v := by
   intro hm
