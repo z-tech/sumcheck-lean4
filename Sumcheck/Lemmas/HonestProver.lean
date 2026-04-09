@@ -158,6 +158,4 @@ lemma honest_right_map_succ
     (m := num_open_vars (n := n) i)
     (F := fun b =>
       CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p) := by
-  classical
-  -- your definition is literally `by classical exact ...`
-  simp [honest_prover_message_at]
+  rfl

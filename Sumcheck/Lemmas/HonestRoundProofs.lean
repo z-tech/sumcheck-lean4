@@ -229,27 +229,21 @@ lemma honest_last_round
       CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
         (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0)
         p := by
-    -- unfold to the domain sum
-    simp [honest_round_poly, honest_prover_message_at_def]
-
-    -- name the function being summed
-    let F :
-        (Fin (num_open_vars (n := n) i) → 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
-      fun b =>
-        CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
-          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) p
-
+    -- unfold honest_round_poly to honest_prover_message_at, then to domain sum
+    change honest_prover_message_at domain p i (challenge_subset r i)
+      = CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p
+    rw [honest_prover_message_at_def]
+    -- since num_open_vars = 0, the domain sum collapses to F(empty)
     have hcollapse :=
       sum_over_domain_recursive_eq_of_m_eq_zero
-        (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
-        domain
-        (add := fun a b =>
-          @HAdd.hAdd (CPoly.CMvPolynomial 1 𝔽) (CPoly.CMvPolynomial 1 𝔽)
-            (CPoly.CMvPolynomial 1 𝔽) instHAdd a b)
-        (zero := 0)
-        (m := num_open_vars (n := n) i) (F := F) hopen
-
-    simpa [F, b0, empty_open_assignment] using hcollapse
+        (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽) domain
+        (fun a b => @HAdd.hAdd _ _ _ instHAdd a b) (c1 (𝔽 := 𝔽) 0)
+        (m := num_open_vars (n := n) i)
+        (F := fun b => CPoly.eval₂Poly c1
+          (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) p)
+        hopen
+    rw [hcollapse]
+    congr 1; congr 1; funext j; exact Fin.elim0 (hopen ▸ j)
 
   -- expand next_claim, rewrite by hround
   have hnc :

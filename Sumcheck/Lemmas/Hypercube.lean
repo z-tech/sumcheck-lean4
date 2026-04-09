@@ -62,9 +62,8 @@ lemma sumcheck_evalMonomial_zero
         (fun x => F (Fin.cons b0 x)))
       (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
         (fun x => F (Fin.cons b1 x))) := by
-  conv_lhs => unfold sum_over_hypercube_recursive
+  rw [sum_over_hypercube_recursive.eq_succ]
   simp only [Fin_cases_eq_cons]
-  rfl
 
 lemma sum_over_hypercube_recursive_deg_le
   {𝔽 β : Type _}
@@ -79,8 +78,7 @@ lemma sum_over_hypercube_recursive_deg_le
   classical
   induction m with
   | zero =>
-      -- only one assignment exists: Fin 0 → 𝔽
-      simpa [sum_over_hypercube_recursive] using hF (fun i => nomatch i)
+      simpa [sum_over_hypercube_recursive.eq_zero] using hF Fin.elim0
   | succ m ih =>
       -- split on the last coordinate (0 vs 1)
       have h0 :
@@ -117,7 +115,7 @@ lemma sum_over_hypercube_recursive_map
   classical
   induction m with
   | zero =>
-      simp [sum_over_hypercube_recursive]
+      simp [sum_over_hypercube_recursive.eq_zero]
   | succ m ih =>
       -- Apply IH to the two branch functions explicitly
       have ih0 :
@@ -136,9 +134,7 @@ lemma sum_over_hypercube_recursive_map
                 (fun x => g (F (Fin.cons b1 x))) :=
         ih (F := fun x => F (Fin.cons b1 x))
 
-      -- IMPORTANT: rewrite both sides using the *succ lemma*, not the definition (avoids Nat.recAux junk)
-      -- LHS becomes g (addβ (...) (...)), RHS becomes addγ (...) (...)\
-      simp [sum_over_hypercube_recursive_succ, hg, ih0, ih1]
+      rw [sum_over_hypercube_recursive_succ, sum_over_hypercube_recursive_succ, hg, ih0, ih1]
 
 @[simp] lemma sum_over_hypercube_recursive_zero
   {𝔽 β : Type _}
@@ -147,11 +143,8 @@ lemma sum_over_hypercube_recursive_map
   sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
     (b0 := b0) (b1 := b1) (add := add) (m := 0) F
     =
-  F (fun x : Fin 0 => nomatch x) := by
-  -- unfold the recursion at m=0
-  simp [sum_over_hypercube_recursive]
-  -- remaining goal is just α-renaming of the empty function
-  rfl
+  F Fin.elim0 := by
+  simp [sum_over_hypercube_recursive.eq_zero]
 
 lemma sum_over_hypercube_recursive_eq_of_m_eq_zero
   {𝔽 β : Type _}
@@ -163,10 +156,9 @@ lemma sum_over_hypercube_recursive_eq_of_m_eq_zero
     =
   F (by
     refine Eq.ndrec (motive := fun k => Fin k → 𝔽)
-      (fun x : Fin 0 => nomatch x) hm.symm) := by
+      Fin.elim0 hm.symm) := by
   subst hm
-  -- goal is now reflexive
-  rfl
+  simp [sum_over_hypercube_recursive.eq_zero]
 
 theorem sum_over_hypercube_recursive_cast {𝔽 β : Type _}
   (b0 b1 : 𝔽)
@@ -193,9 +185,10 @@ theorem sum_over_hypercube_recursive_congr {𝔽 β : Type _}
   classical
   induction m with
   | zero =>
-      simp [sum_over_hypercube_recursive, hFG]
+      simp [sum_over_hypercube_recursive.eq_zero, hFG]
   | succ m ih =>
-      simp [sum_over_hypercube_recursive, Nat.recAux, hFG]
+      simp only [sum_over_hypercube_recursive_succ]
+      congr 1 <;> exact ih (hFG := fun x => hFG _)
 
 theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
   (b0 b1 : 𝔽)
@@ -211,7 +204,7 @@ theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
     (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
       (fun x => F ((Fin.cons b1 x) ∘ Fin.cast hm))) := by
   cases hm
-  simp
+  simp [Fin_cases_eq_cons]
 
 -- ============================================================================
 -- sum_over_domain_recursive lemmas
@@ -223,9 +216,8 @@ theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
   (F : (Fin 0 → 𝔽) → β) :
   sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := 0) F
     =
-  F (fun x : Fin 0 => nomatch x) := by
-  simp [sum_over_domain_recursive]
-  rfl
+  F Fin.elim0 := by
+  simp [sum_over_domain_recursive.eq_zero]
 
 @[simp] lemma sum_over_domain_recursive_succ
   {𝔽 β : Type _}
@@ -238,9 +230,8 @@ theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
   domain.foldl (fun acc a =>
     add acc (sum_over_domain_recursive domain add zero (m := m)
       (fun x => F (Fin.cons a x)))) zero := by
-  conv_lhs => unfold sum_over_domain_recursive
+  rw [sum_over_domain_recursive.eq_succ]
   simp only [Fin_cases_eq_cons]
-  rfl
 
 lemma sum_over_domain_recursive_eq_of_m_eq_zero
   {𝔽 β : Type _}
@@ -251,9 +242,9 @@ lemma sum_over_domain_recursive_eq_of_m_eq_zero
     =
   F (by
     refine Eq.ndrec (motive := fun k => Fin k → 𝔽)
-      (fun x : Fin 0 => nomatch x) hm.symm) := by
+      Fin.elim0 hm.symm) := by
   subst hm
-  rfl
+  simp [sum_over_domain_recursive.eq_zero]
 
 theorem sum_over_domain_recursive_congr {𝔽 β : Type _}
   (domain : List 𝔽) (add : β → β → β) (zero : β)
@@ -266,9 +257,13 @@ theorem sum_over_domain_recursive_congr {𝔽 β : Type _}
   classical
   induction m with
   | zero =>
-      simp [sum_over_domain_recursive, hFG]
+      simp [sum_over_domain_recursive.eq_zero, hFG]
   | succ m ih =>
-      simp [sum_over_domain_recursive, Nat.recAux, hFG]
+      simp only [sum_over_domain_recursive_succ]
+      congr 1
+      ext acc a
+      congr 1
+      exact ih (hFG := fun x => hFG _)
 
 theorem sum_over_domain_recursive_cast {𝔽 β : Type _}
   (domain : List 𝔽) (add : β → β → β) (zero : β)
@@ -307,7 +302,7 @@ lemma sum_over_domain_recursive_deg_le
   classical
   induction m with
   | zero =>
-      simpa [sum_over_domain_recursive] using hF (fun i => nomatch i)
+      simpa [sum_over_domain_recursive.eq_zero] using hF Fin.elim0
   | succ m ih =>
       rw [sum_over_domain_recursive_succ]
       exact foldl_invariant
@@ -349,7 +344,7 @@ lemma sum_over_domain_recursive_map
   classical
   induction m with
   | zero =>
-      simp [sum_over_domain_recursive]
+      simp [sum_over_domain_recursive.eq_zero]
   | succ m ih =>
       rw [sum_over_domain_recursive_succ, sum_over_domain_recursive_succ]
       -- We prove a generalized version: for any list ds, the foldl commutes with g
@@ -383,4 +378,4 @@ theorem sum_over_domain_recursive_succ_of_hopen {𝔽 β : Type _}
     add acc (sum_over_domain_recursive domain add zero (m := m)
       (fun x => F ((Fin.cons a x) ∘ Fin.cast hm)))) zero := by
   cases hm
-  simp
+  simp [Fin_cases_eq_cons]

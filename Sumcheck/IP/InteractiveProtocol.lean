@@ -20,7 +20,7 @@ def sumcheckClaimIsCorrect {𝔽 : Type} {n : ℕ} [Field 𝔽] [DecidableEq �
   st.claim = honest_claim st.domain st.polynomial
 
 /-- The sumcheck protocol as a `PublicCoinProtocol`. -/
-noncomputable def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     PublicCoinProtocol (SumcheckStatement 𝔽 n) 𝔽 n where
   ProverMessage := fun _ => CPoly.CMvPolynomial 1 𝔽
   Transcript := (Fin n → CPoly.CMvPolynomial 1 𝔽) × (Fin n → 𝔽)
@@ -37,17 +37,16 @@ noncomputable def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
   proverMessage_mk := fun _ _ _ => rfl
 
 /-- Convert a generic `Prover` to an old-style `Adversary` relative to a statement. -/
-noncomputable def proverToAdversary {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+def proverToAdversary {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
     (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
     (st : SumcheckStatement 𝔽 n) : Adversary 𝔽 n :=
   fun _p _claim i chs => P.respond st i chs
 
 /-- The honest sumcheck prover as a generic `Prover`. -/
-noncomputable def sumcheckHonestProver {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
+def sumcheckHonestProver {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)) where
-  respond := fun st i chs => by
-    classical
-    exact honest_prover_message_at st.domain st.polynomial i chs
+  respond := fun st i chs =>
+    honest_prover_message_at st.domain st.polynomial i chs
 
 /-! ## Bridge Lemmas -/
 
