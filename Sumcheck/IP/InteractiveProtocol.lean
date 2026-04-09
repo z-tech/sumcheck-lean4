@@ -1,9 +1,10 @@
-import InteractiveProtocol.Basic
+import InteractiveProtocol.Src.Protocol
+import InteractiveProtocol.Properties.Soundness
 import Sumcheck.Src
-import Sumcheck.Theorems
-import Sumcheck.Events
-import Sumcheck.Models
-import Sumcheck.Probability
+import Sumcheck.Properties.Theorems
+import Sumcheck.Properties.Events
+import Sumcheck.Properties.Models
+import Sumcheck.Properties.Probability
 
 -- Here we map sumcheck into the interface for public coin interactive protocols
 -- the intention is to show how completeness and soundness of the IP lift into the framework

@@ -1,6 +1,5 @@
 import CompPoly.Multivariate.CMvPolynomial
 import CompPoly.Multivariate.MvPolyEquiv
-import Sumcheck.Counting.Fields
 
 -- this is a constant for a polynomial w/ one variable (arity must be specified)
 @[simp] def c1 {𝔽} [CommSemiring 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] (c : 𝔽) :
@@ -63,12 +62,6 @@ def max_ind_degree
   {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) : ℕ :=
   (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i p)
-
-/-- The sumcheck soundness error bound: n * max_ind_degree(p) / |𝔽|. -/
-noncomputable def soundness_error
-  {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽] [Fintype 𝔽]
-  (p : CPoly.CMvPolynomial n 𝔽) : ℚ :=
-  (n : ℚ) * (max_ind_degree p : ℚ) / (field_size (𝔽 := 𝔽) : ℚ)
 
 @[simp]
 def ind_degree_k

@@ -1,6 +1,6 @@
 import Mathlib.Data.ZMod.Basic
 
-import Sumcheck.Counting.Polynomials
+import Sumcheck.Properties.Probability.CountingPolynomials
 import Sumcheck.Src.Prover
 import Sumcheck.Src.Verifier
 
