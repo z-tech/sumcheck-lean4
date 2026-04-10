@@ -227,17 +227,17 @@ theorem prob_over_challenges_fiber_le {𝔽 : Type _} {n : ℕ} [Fintype 𝔽] [
 
 -- if the verifier accepts a transcript, the round-i polynomial has degree ≤ max_ind_degree
 lemma adversary_poly_degree_le_max_ind_degree {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-    (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (t : Transcript 𝔽 n) (i : Fin n)
-    (hAcc : AcceptsEvent domain p t) :
+    (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (claim : 𝔽) (t : Transcript 𝔽 n) (i : Fin n)
+    (hAcc : AcceptsEvent domain p claim t) :
     CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (t.round_polys i) ≤ max_ind_degree p := by
   have hcheck :
-      verifier_check domain (ind_degree_k p i) (t.claims (Fin.castSucc i)) (t.round_polys i) = true :=
-    (acceptsEvent_round_facts domain (p := p) (t := t) (i := i) hAcc).1
+      verifier_check domain (ind_degree_k p i) (t.claims claim (Fin.castSucc i)) (t.round_polys i) = true :=
+    (acceptsEvent_round_facts domain (p := p) (claim := claim) (t := t) (i := i) hAcc).1
   have hdeg :
       CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ (t.round_polys i) ≤ ind_degree_k p i :=
     ((verifier_check_eq_true_iff (𝔽 := 𝔽) domain
       (max_degree := ind_degree_k p i)
-      (round_claim := t.claims (Fin.castSucc i))
+      (round_claim := t.claims claim (Fin.castSucc i))
       (round_p := t.round_polys i)).1 hcheck).2
   exact le_trans hdeg (ind_degree_k_le_max_ind_degree p i)
 
@@ -404,7 +404,7 @@ theorem prob_single_round_accepts_and_disagree_le {𝔽 : Type _} {n : ℕ} [Fie
           -- degree bounds
           have hgdeg : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) g ≤ max_ind_degree st.polynomial := by
             have : adv_tr_a0.round_polys i = g := hg_eq a0
-            simpa [this] using adversary_poly_degree_le_max_ind_degree st.domain st.polynomial adv_tr_a0 i (ha0E.1).1
+            simpa [this] using adversary_poly_degree_le_max_ind_degree st.domain st.polynomial st.claim adv_tr_a0 i (ha0E.1).1
           have hhdeg : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) h ≤ max_ind_degree st.polynomial := by
             have : CPoly.CMvPolynomial.degreeOf (0 : Fin 1) h ≤ ind_degree_k st.polynomial i := by
               simpa [h] using honest_round_poly_degree_le_ind_degree_k st.domain st.polynomial r0 i
@@ -518,9 +518,8 @@ lemma all_rounds_honest_of_not_bad
   (st : SumcheckStatement 𝔽 n)
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
   (r : Fin n → 𝔽) :
-  (proverTranscript st P r).claims ⟨0, Nat.succ_pos n⟩ = st.claim := by
-  -- unfold proverTranscript; claims is generate_honest_claims; then use the helper above
-  simp [proverTranscript]
+  (proverTranscript st P r).claims st.claim ⟨0, Nat.succ_pos n⟩ = st.claim := by
+  simp [proverTranscript, Transcript.claims]
 
 
 @[simp] lemma proverTranscript_claims_castSucc_zero
@@ -528,10 +527,9 @@ lemma all_rounds_honest_of_not_bad
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckStatement 𝔽 (Nat.succ n'))
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := Nat.succ n'))) (r : Fin (Nat.succ n') → 𝔽) :
-  (proverTranscript st P r).claims (Fin.castSucc (⟨0, Nat.succ_pos n'⟩))
+  (proverTranscript st P r).claims st.claim (Fin.castSucc (⟨0, Nat.succ_pos n'⟩))
     = st.claim := by
-  -- rewrite castSucc-zero to 0, then use generate_honest_claims_zero via proverTranscript
-  simp [proverTranscript]
+  simp [proverTranscript, Transcript.claims]
 
 @[simp] lemma Fin.addCases_left_Fin0
   {α : Type _} {m : ℕ}
@@ -641,7 +639,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
     ∀ i : Fin n,
       (proverTranscript st P r).round_polys i
         = honest_round_poly st.domain (p := st.polynomial) (ch := (proverTranscript st P r).challenges) i)
-  (hAcc : AcceptsEvent st.domain st.polynomial (proverTranscript st P r)) :
+  (hAcc : AcceptsEvent st.domain st.polynomial st.claim (proverTranscript st P r)) :
   st.claim = honest_claim st.domain (p := st.polynomial) := by
   classical
   let t : Transcript 𝔽 n := proverTranscript st P r
@@ -649,18 +647,18 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
   cases n with
   | zero =>
       have hacc_bool :
-          is_verifier_accepts_transcript (𝔽 := 𝔽) (n := 0) st.domain st.polynomial t = true := by
+          is_verifier_accepts (𝔽 := 𝔽) (n := 0) st.domain st.polynomial st.claim t = true := by
         simpa [AcceptsEvent, t] using hAcc
 
       have hfinal_ok :
-          decide (t.claims (Fin.last 0) = CPoly.CMvPolynomial.eval t.challenges st.polynomial) = true := by
-        simpa [is_verifier_accepts_transcript, t] using hacc_bool
+          decide (t.claims st.claim (Fin.last 0) = CPoly.CMvPolynomial.eval t.challenges st.polynomial) = true := by
+        simpa [is_verifier_accepts, Transcript.claims, t] using hacc_bool
 
       have hEq :
-          t.claims (Fin.last 0) = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
+          t.claims st.claim (Fin.last 0) = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
         exact of_decide_eq_true hfinal_ok
 
-      have hclaim0 : t.claims (Fin.last 0) = st.claim := by
+      have hclaim0 : t.claims st.claim (Fin.last 0) = st.claim := by
         simpa [t] using
           (proverTranscript_claims_at_zero (st := st) (P := P) (r := r))
 
@@ -674,7 +672,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
       calc
         st.claim = CPoly.CMvPolynomial.eval (fun i : Fin 0 => i.elim0) st.polynomial := by
           have : st.claim = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
-            have : st.claim = t.claims (Fin.last 0) := by simpa [hclaim0]
+            have : st.claim = t.claims st.claim (Fin.last 0) := by simpa [hclaim0]
             exact this.trans (hEq.trans (by rfl))
           simpa [hchal0] using this
         _ = honest_claim st.domain (p := st.polynomial) := by
@@ -684,14 +682,14 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
       let i0 : Fin (Nat.succ n') := ⟨0, Nat.succ_pos n'⟩
 
       have hround :
-          verifier_check st.domain (ind_degree_k st.polynomial i0) (t.claims i0.castSucc) (t.round_polys i0) = true ∧
-          t.claims i0.succ = next_claim (t.challenges i0) (t.round_polys i0) := by
+          verifier_check st.domain (ind_degree_k st.polynomial i0) (t.claims st.claim i0.castSucc) (t.round_polys i0) = true ∧
+          t.claims st.claim i0.succ = next_claim (t.challenges i0) (t.round_polys i0) := by
         simpa [t] using
-          acceptsEvent_round_facts (𝔽 := 𝔽) (n := Nat.succ n') st.domain (p := st.polynomial) (t := t) (i := i0) (by
+          acceptsEvent_round_facts (𝔽 := 𝔽) (n := Nat.succ n') st.domain (p := st.polynomial) (claim := st.claim) (t := t) (i := i0) (by
             simpa [t] using hAcc)
 
       have hcheck :
-          verifier_check st.domain (ind_degree_k st.polynomial i0) (t.claims i0.castSucc) (t.round_polys i0) = true :=
+          verifier_check st.domain (ind_degree_k st.polynomial i0) (t.claims st.claim i0.castSucc) (t.round_polys i0) = true :=
         hround.1
 
       -- Turn verifier_check = true into domain foldl sum identity
@@ -699,21 +697,21 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
           (st.domain.foldl (fun acc a =>
             acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i0)) 0
             =
-           t.claims i0.castSucc)
+           t.claims st.claim i0.castSucc)
           ∧
           CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ (t.round_polys i0) ≤ ind_degree_k st.polynomial i0 := by
         simpa using
           (verifier_check_eq_true_iff (𝔽 := 𝔽)
             st.domain
             (max_degree := ind_degree_k st.polynomial i0)
-            (round_claim := t.claims i0.castSucc)
+            (round_claim := t.claims st.claim i0.castSucc)
             (round_p := t.round_polys i0)).1 hcheck
 
       have hsum0 :
           st.domain.foldl (fun acc a =>
             acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i0)) 0
           =
-          t.claims i0.castSucc :=
+          t.claims st.claim i0.castSucc :=
         hsum.1
 
       -- round 0 poly is honest by hall
@@ -722,7 +720,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
         simpa [t, proverTranscript] using hall i0
 
       -- claims at castSucc-zero is st.claim
-      have hclaim0 : t.claims i0.castSucc = st.claim := by
+      have hclaim0 : t.claims st.claim i0.castSucc = st.claim := by
         simpa [t] using
           (proverTranscript_claims_castSucc_zero
             (st := st) (P := P) (r := r))
@@ -738,7 +736,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
 
       -- Finish: st.claim = (domain sum of t.round_polys 0) = honest_claim
       calc
-        st.claim = t.claims i0.castSucc := by simp [hclaim0]
+        st.claim = t.claims st.claim i0.castSucc := by simp [hclaim0]
         _ = st.domain.foldl (fun acc a =>
               acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i0)) 0 := by
               symm; exact hsum0
@@ -757,7 +755,7 @@ lemma accepts_on_challenges_dishonest_implies_bad
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
   (r : Fin n → 𝔽)
   (hDish : st.claim ≠ honest_claim st.domain (p := st.polynomial))
-  (hAcc : AcceptsEvent st.domain st.polynomial (proverTranscript st P r)) :
+  (hAcc : AcceptsEvent st.domain st.polynomial st.claim (proverTranscript st P r)) :
   BadTranscriptEvent st.domain st.polynomial (proverTranscript st P r) := by
   classical
 

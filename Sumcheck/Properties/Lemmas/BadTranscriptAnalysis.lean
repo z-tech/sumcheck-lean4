@@ -41,13 +41,13 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
 
   by_cases hlast : i.val.succ = n
   · -- last-round case
-    have hfinal : t.claims (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
-      exact (decide_eq_true_eq.mp (acceptsEvent_final_ok st.domain (p := st.polynomial) (t := t) hAcc))
+    have hfinal : t.claims st.claim (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
+      exact (decide_eq_true_eq.mp (acceptsEvent_final_ok st.domain (p := st.polynomial) (claim := st.claim) (t := t) hAcc))
 
     have hlast_idx : (Fin.last n : Fin (n + 1)) = i.succ := by
       ext; simp [Fin.last]; omega
 
-    have hfinal' : t.claims (i.succ) = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
+    have hfinal' : t.claims st.claim (i.succ) = CPoly.CMvPolynomial.eval t.challenges st.polynomial := by
       simpa [hlast_idx] using hfinal
 
     have ht_claim_last :
@@ -93,21 +93,21 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
           acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
             (honest_round_poly st.domain (p := st.polynomial) (ch := r) j)) 0
           =
-        t.claims (Fin.castSucc j) := by
+        t.claims st.claim (Fin.castSucc j) := by
       exact acceptsEvent_domain_sum_eq_claim_of_honest st.domain
-        (p := st.polynomial) (r := r) (t := t) (i := j) (hi := hj_honest) hAcc
+        (p := st.polynomial) (claim := st.claim) (r := r) (t := t) (i := j) (hi := hj_honest) hAcc
 
     have hcast : (Fin.castSucc j) = i.succ := by
       ext; simp [j]
 
     have hclaim_i_succ :
-        t.claims (i.succ)
+        t.claims st.claim (i.succ)
           =
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i) := by
-      simp [t, proverTranscript, generate_honest_claims, next_claim, hsuc]
+      simp [t, proverTranscript, Transcript.claims, generate_honest_claims, next_claim, hsuc]
 
     have hclaim_j :
-        t.claims (Fin.castSucc j)
+        t.claims st.claim (Fin.castSucc j)
           =
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i) := by
       simpa [hcast] using hclaim_i_succ
@@ -123,7 +123,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
     refine ⟨hneq, ?_⟩
     calc
       next_claim (𝔽 := 𝔽) (round_challenge := r i) (t.round_polys i)
-          = t.claims (Fin.castSucc j) := by
+          = t.claims st.claim (Fin.castSucc j) := by
               simpa using (Eq.symm hclaim_j)
       _ =
           st.domain.foldl (fun acc a =>
