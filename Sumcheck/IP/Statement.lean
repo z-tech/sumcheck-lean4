@@ -48,3 +48,17 @@ def proverTranscript
   { round_polys := round_polys
     challenges := r
     claims := generate_honest_claims st.claim round_polys r }
+
+@[simp] lemma proverTranscript_challenges
+    {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st : SumcheckStatement 𝔽 n)
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
+    (r : Fin n → 𝔽) :
+    (proverTranscript st P r).challenges = r := rfl
+
+@[simp] lemma proverTranscript_round_polys
+    {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+    (st : SumcheckStatement 𝔽 n)
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
+    (r : Fin n → 𝔽) (i : Fin n) :
+    (proverTranscript st P r).round_polys i = P.respond st i (challenge_subset r i) := rfl

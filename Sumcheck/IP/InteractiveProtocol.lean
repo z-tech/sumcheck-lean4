@@ -2,8 +2,9 @@ import Sumcheck.IP.Statement
 import InteractiveProtocol.Properties.Soundness
 import Sumcheck.Properties.Theorems
 import Sumcheck.Properties.Events
-import Sumcheck.Properties.Models
 import Sumcheck.Properties.Probability
+
+-- Here we show how sumcheck's completeness and soundness lift into the IP framework
 
 -- the "verifier_accepts" in the IP interface is the same as sumcheck's
 -- is_verifier_accepts_transcript function
@@ -27,17 +28,15 @@ theorem sumcheck_hasSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
       (fun st => soundness_error st.polynomial) := by
   intro st P hFalse
   unfold probAccept
-  set adv : Adversary 𝔽 n := (fun _p _claim i chs => P.respond st i chs) with hadv
   have hEq : (fun r => sumcheckProtocol.verifier_accepts st
       (generateTranscript sumcheckProtocol st P r))
-    = (fun r => AcceptsOnChallenges st.domain st.claim st.polynomial adv r) := by
+    = (fun r => AcceptsOnChallenges st P r) := by
     ext r
-    simp only [sumcheck_verifier_accepts_eq, AcceptsOnChallenges, AcceptsEvent,
-               AdversaryTranscript, hadv]
+    simp only [sumcheck_verifier_accepts_eq, AcceptsOnChallenges, AcceptsEvent, proverTranscript]
   rw [hEq]
   have hClaim : st.claim ≠ honest_claim st.domain st.polynomial := by
     unfold sumcheckClaimIsCorrect at hFalse; exact hFalse
-  exact soundness_dishonest st.domain st.claim st.polynomial adv hClaim
+  exact soundness_dishonest st P hClaim
 
 theorem sumcheck_hasPerfectCompleteness {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     hasPerfectCompleteness
