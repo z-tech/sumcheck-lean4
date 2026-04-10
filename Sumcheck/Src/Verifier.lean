@@ -22,7 +22,6 @@ def is_verifier_accepts_transcript
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
   (t : Transcript 𝔽 n) : Bool :=
-by
   let rounds_ok : Bool :=
     (List.finRange n).all (fun i : Fin n =>
       verifier_check domain (ind_degree_k p i) (t.claims (Fin.castSucc i)) (t.round_polys i)
@@ -31,4 +30,4 @@ by
     )
   let final_ok : Bool :=
     decide (t.claims (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p)
-  exact rounds_ok && final_ok
+  rounds_ok && final_ok

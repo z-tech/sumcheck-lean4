@@ -29,15 +29,24 @@ def sum_over_domain_recursive
   (add : β → β → β) (zero : β)
   {m : ℕ}
   (F : (Fin m → 𝔽) → β) : β :=
-by
-  classical
-  induction m with
-  | zero =>
-      exact F (fun i => nomatch i)
-  | succ m ih =>
-      let extend (a : 𝔽) (x : Fin m → 𝔽) : Fin (m+1) → 𝔽 :=
+  match m, F with
+  | 0, F => F Fin.elim0
+  | m + 1, F =>
+      let extend (a : 𝔽) (x : Fin m → 𝔽) : Fin (m + 1) → 𝔽 :=
         fun i => Fin.cases a x i
-      exact domain.foldl (fun acc a => add acc (ih (fun x => F (extend a x)))) zero
+      domain.foldl (fun acc a => add acc (sum_over_domain_recursive domain add zero (fun x => F (extend a x)))) zero
+
+@[simp] theorem sum_over_domain_recursive.eq_zero {𝔽 β : Type _}
+  (domain : List 𝔽) (add : β → β → β) (zero : β) (F : (Fin 0 → 𝔽) → β) :
+  sum_over_domain_recursive domain add zero F = F Fin.elim0 := rfl
+
+@[simp] theorem sum_over_domain_recursive.eq_succ {𝔽 β : Type _}
+  (domain : List 𝔽) (add : β → β → β) (zero : β) {m : ℕ} (F : (Fin (m + 1) → 𝔽) → β) :
+  sum_over_domain_recursive domain add zero F =
+    domain.foldl (fun acc a => add acc (sum_over_domain_recursive domain add zero
+      (fun x => F (fun i => Fin.cases a x i)))) zero := rfl
+
+attribute [irreducible] sum_over_domain_recursive
 
 /-- Sum over the boolean hypercube {b0, b1}^m. Kept for backwards compatibility. -/
 def sum_over_hypercube_recursive
@@ -46,16 +55,25 @@ def sum_over_hypercube_recursive
   (add : β → β → β)
   {m : ℕ}
   (F : (Fin m → 𝔽) → β) : β :=
-by
-  classical
-  induction m with
-  | zero =>
-      exact F (fun i => nomatch i)
-  | succ m ih =>
-      let extend (b : 𝔽) (x : Fin m → 𝔽) : Fin (m+1) → 𝔽 :=
+  match m, F with
+  | 0, F => F Fin.elim0
+  | m + 1, F =>
+      let extend (b : 𝔽) (x : Fin m → 𝔽) : Fin (m + 1) → 𝔽 :=
         fun i => Fin.cases b x i
-      exact add (ih (fun x => F (extend b0 x)))
-                (ih (fun x => F (extend b1 x)))
+      add (sum_over_hypercube_recursive b0 b1 add (fun x => F (extend b0 x)))
+          (sum_over_hypercube_recursive b0 b1 add (fun x => F (extend b1 x)))
+
+@[simp] theorem sum_over_hypercube_recursive.eq_zero {𝔽 β : Type _}
+  (b0 b1 : 𝔽) (add : β → β → β) (F : (Fin 0 → 𝔽) → β) :
+  sum_over_hypercube_recursive b0 b1 add F = F Fin.elim0 := rfl
+
+@[simp] theorem sum_over_hypercube_recursive.eq_succ {𝔽 β : Type _}
+  (b0 b1 : 𝔽) (add : β → β → β) {m : ℕ} (F : (Fin (m + 1) → 𝔽) → β) :
+  sum_over_hypercube_recursive b0 b1 add F =
+    add (sum_over_hypercube_recursive b0 b1 add (fun x => F (fun i => Fin.cases b0 x i)))
+        (sum_over_hypercube_recursive b0 b1 add (fun x => F (fun i => Fin.cases b1 x i))) := rfl
+
+attribute [irreducible] sum_over_hypercube_recursive
 
 /-- Non-dependent `Fin.addCases` specialized to functions. Avoids needing to specify `motive`. -/
 def addCasesFun {α : Type} {m n : ℕ}
@@ -69,18 +87,15 @@ def residual_sum
   (ch : Fin k → 𝔽)
   (p : CPoly.CMvPolynomial num_vars 𝔽)
   (hk : k ≤ num_vars) : 𝔽 :=
-by
-  classical
   let openVars : ℕ := num_vars - k
   have hn : k + openVars = num_vars := by
     simpa [openVars] using Nat.add_sub_of_le hk
-  exact
-    sum_over_domain_recursive (𝔽 := 𝔽) (β := 𝔽)
-      domain (· + ·) 0 (m := openVars)
-      (fun x =>
-        let point : Fin num_vars → 𝔽 :=
-          fun i => addCasesFun ch x (Fin.cast hn.symm i)
-        CPoly.CMvPolynomial.eval point p)
+  sum_over_domain_recursive (𝔽 := 𝔽) (β := 𝔽)
+    domain (· + ·) 0 (m := openVars)
+    (fun x =>
+      let point : Fin num_vars → 𝔽 :=
+        fun i => addCasesFun ch x (Fin.cast hn.symm i)
+      CPoly.CMvPolynomial.eval point p)
 
 def residual_sum_with_openVars
   {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
@@ -104,9 +119,8 @@ def round_sum
   (current : 𝔽)
   (p : CPoly.CMvPolynomial num_vars 𝔽)
   (hcard : num_challenges + 1 ≤ num_vars) : 𝔽 :=
-by
   -- the same as residual sum after fixing the current variable
-  exact residual_sum (𝔽 := 𝔽)
+  residual_sum (𝔽 := 𝔽)
     domain
     (k := num_challenges + 1) (num_vars := num_vars)
     (ch := Fin.snoc challenges current)
@@ -118,7 +132,4 @@ def honest_claim
   {n : ℕ} {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : 𝔽 :=
-by
-  classical
-  let empty : Fin 0 → 𝔽 := fun i => (Fin.elim0 i)
-  exact residual_sum (𝔽 := 𝔽) domain (k := 0) (num_vars := n) empty p (by simp)
+  residual_sum (𝔽 := 𝔽) domain (k := 0) (num_vars := n) Fin.elim0 p (Nat.zero_le n)
