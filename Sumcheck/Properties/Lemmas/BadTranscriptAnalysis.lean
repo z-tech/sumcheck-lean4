@@ -104,7 +104,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
     have hj_honest : t.round_polys j = honest_round_poly domain (p := p) (ch := r) j := by
       have hij : i < j := by
         -- j.val = i.val.succ
-        exact Fin.lt_iff_val_lt_val.mpr (Nat.lt_succ_self i.val)
+        exact Fin.lt_def.mpr (Nat.lt_succ_self i.val)
       simpa [t, j] using hi_after j hij
 
     have hsum :

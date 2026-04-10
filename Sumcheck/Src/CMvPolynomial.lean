@@ -17,9 +17,7 @@ import CompPoly.Multivariate.MvPolyEquiv
       mon_x1 (1 : 𝔽)
 
   refine ⟨(show CPoly.Unlawful 1 𝔽 from t), ?_⟩
-  intro m
-  -- prove: t[m]? ≠ some 0
-  intro hm0
+  intro m hm0
 
   -- if t[m]? = some 0 then (m,0) is in toList
   have hmem0 : (m, (0 : 𝔽)) ∈ t.toList := by

@@ -676,7 +676,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
 
       have htrue0 :
           honest_claim domain (p := p) = CPoly.CMvPolynomial.eval (fun i : Fin 0 => i.elim0) p := by
-        simp [honest_claim, residual_sum, sum_over_domain_recursive_zero]
+        simp [honest_claim, residual_sum]
 
       have hchal0 : t.challenges = (fun i : Fin 0 => i.elim0) := by
         funext i; exact i.elim0

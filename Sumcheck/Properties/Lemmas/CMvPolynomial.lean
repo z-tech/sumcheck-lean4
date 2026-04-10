@@ -147,7 +147,7 @@ lemma fromCMvPolynomial_x0_eq_X {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] 
       simpa using h'.symm
     have hlookup : t[CPoly.CMvMonomial.ofFinsupp s]? = none := by
       -- unfold the insert-lookup formula and simplify
-      simp [t, Std.compare_eq_iff_eq, hne]
+      simp [t, hne]
     simp [hlookup, hs]
 
 -- ============================================================================

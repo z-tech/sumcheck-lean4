@@ -484,7 +484,7 @@ lemma honest_transcript_final_eq_eval
   | zero =>
     intro domain p r
     simp [generate_honest_transcript, generate_honest_claims, Fin.last,
-          honest_claim, residual_sum, sum_over_domain_recursive_zero]
+          honest_claim, residual_sum]
     congr 1
     funext i
     exact Fin.elim0 i
