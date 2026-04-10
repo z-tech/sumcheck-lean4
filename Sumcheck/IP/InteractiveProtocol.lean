@@ -51,11 +51,10 @@ def sumcheckHonestProver {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [De
 
 /-! ## Bridge Lemmas -/
 
-/-- Bridge between `probEvent` and `prob_over_challenges`. -/
+/-- Bridge between `probEvent` and `prob_over_challenges` (now definitionally equal). -/
 lemma probEvent_eq_prob_over_challenges' {𝔽 : Type} {n : ℕ} [Fintype 𝔽]
     (E : (Fin n → 𝔽) → Prop) :
-    @probEvent 𝔽 n _ E = prob_over_challenges E := by
-  simp only [probEvent, prob_over_challenges, allChallenges, all_assignments_n]
+    @probEvent 𝔽 n _ E = prob_over_challenges E := rfl
 
 /-- The acceptance event in the generic framework matches the old one,
     for any prover/adversary that produces the same messages. -/

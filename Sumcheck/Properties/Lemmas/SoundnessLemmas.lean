@@ -198,7 +198,7 @@ theorem prob_over_challenges_fiber_le {𝔽 : Type _} {n : ℕ} [Fintype 𝔽] [
   ((Finset.univ : Finset 𝔽).filter (fun a => E (Fin.insertNth i a rRest))).card ≤ d) :
   prob_over_challenges (𝔽 := 𝔽) (n := n + 1) E ≤ (d : ℚ) / field_size (𝔽 := 𝔽) := by
   classical
-  simp [prob_over_challenges, all_assignments_n, field_size]
+  simp [probEvent, allChallenges, field_size]
   -- align the classical decidable instance with the provided one
   have hfilter :
       (@Finset.filter (Fin (n + 1) → 𝔽) E (fun a => Classical.propDecidable (E a)) Finset.univ)

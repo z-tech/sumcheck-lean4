@@ -1,29 +1,31 @@
 import InteractiveProtocol.Src.Protocol
 
--- Computable definitions for the Fiat-Shamir transformation
--- these are the things you need to actually generate and verify non-interactive proofs
+-- Here we have a systemization of elements need to compute the
+-- Fiat-Shamir transformation. These are computable definitions to
+-- generate and verify non-interactive proofs
 
-/-- A random oracle maps bytestrings (modeled as lists) to challenge elements.
-    In the ROM, this is a uniformly random function. -/
+-- A Random Oracle maps bytestrings (lists here) to challenges.
+-- in the Random Oracle Model (ROM), this is a uniformly random function
+-- here, this can be implemented by a hash function
 def RandomOracle (C : Type*) := List ℕ → C
 
-/-- A non-interactive argument system derived from a public-coin protocol
-    via the Fiat-Shamir transformation. The "proof" consists of all prover messages. -/
+-- this is the non-interactive argument system derived from a protocol
+-- via Fiat-Shamir transformation. The proof is the prover messages.
 structure FiatShamirProof {S C : Type*} {n : ℕ} (ip : PublicCoinProtocol S C n) where
-  /-- The prover messages (the "proof" in the non-interactive setting) -/
   messages : ∀ i : Fin n, ip.ProverMessage i
 
-/-- An encoding function that serializes a statement and partial transcript
-    into a bytestring for hashing. This is needed to compute FS challenges.
-    The encoding at round `i` takes the statement and messages from rounds `0..i-1`. -/
+-- to generate FS challenges we much serialize statement and partial transcript
+-- into a bytestring for hashing. Encoding at round `i` takes the statement and
+-- messages from rounds `0..i-1`.
 structure Encoding {S C : Type*} {n : ℕ} (ip : PublicCoinProtocol S C n) where
-  /-- Encode the statement + first `i` prover messages into a bytestring -/
+           -- statement
   encode : S → (i : Fin n) →
+           -- first i messages
            (∀ j : Fin i.val, ip.ProverMessage ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩) →
            List ℕ
 
-/-- Derive Fiat-Shamir challenges from a random oracle, encoding, statement,
-    and prover messages. Challenge at round `i` is `H(encode(st, msgs[0..i-1]))`. -/
+-- derive the challenges from random oracle, encoding, statement, and prover messages
+-- challenge at round i is H(encode(st, msgs[0..i-1]))
 def fiatShamirChallenges {S C : Type*} {n : ℕ}
     (ip : PublicCoinProtocol S C n)
     (H : RandomOracle C)
@@ -37,8 +39,8 @@ def fiatShamirChallenges {S C : Type*} {n : ℕ}
       fun j => msgs ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
     H (enc.encode st i prevMsgs)
 
-/-- The Fiat-Shamir verifier: given a statement and non-interactive proof,
-    re-derive challenges using the random oracle and check acceptance. -/
+-- the verifier is given a statement and the non-interactive proof
+-- their job is to rederive challenges using the random oracle and check accepts
 def fiatShamirVerify {S C : Type*} {n : ℕ}
     (ip : PublicCoinProtocol S C n)
     (H : RandomOracle C)

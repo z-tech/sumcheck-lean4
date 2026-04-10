@@ -55,4 +55,4 @@ theorem perfect_completeness
     ext r
     simp [hE r]
 
-  simp [prob_over_challenges, all_assignments_n, hfilter]
+  simp [probEvent, allChallenges, hfilter]

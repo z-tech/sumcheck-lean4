@@ -1,33 +1,12 @@
 import InteractiveProtocol.Src.FiatShamir
 import InteractiveProtocol.Properties.Soundness
 
-/-!
-# Fiat-Shamir Soundness Preservation
+-- this file is about Fiat-Shamir soundness preservation.
+-- if an interactive protocol has soundness error ε, then
+-- the non-interactive protocol obtained by replacing random
+-- challenges with hash functions (random oracle) also has
+-- soundness ε.
 
-The main theorem: if an interactive protocol has soundness error `ε`, then the
-non-interactive protocol obtained by replacing random challenges with hash outputs
-(modeled as a Random Oracle) also has soundness error `ε`.
-
-## Status: Scaffold
-
-The theorem is stated but not proved (`sorry`).
-This is the entry point for the Fiat-Shamir/BCS soundness proof.
--/
-
-/-- **Fiat-Shamir Soundness Preservation** (Random Oracle Model).
-
-If a public-coin interactive protocol has soundness error `ε`,
-then the non-interactive protocol obtained via the Fiat-Shamir
-transformation also has soundness error `ε`, when the hash function
-is modeled as a random oracle.
-
-This is the central theorem that the BCS proof establishes.
-The proof requires showing that any successful FS adversary can be
-turned into a successful interactive adversary with the same success
-probability, by programming the random oracle to return the
-interactive verifier's challenges.
-
-**Status**: Statement only. Proof to be completed. -/
 theorem fiatShamir_preserves_soundness {S C : Type*} {n : ℕ} [Fintype C]
     (ip : PublicCoinProtocol S C n)
     (isTrue : S → Prop)
