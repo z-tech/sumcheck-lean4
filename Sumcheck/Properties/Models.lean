@@ -1,2 +1,2 @@
-import Sumcheck.Properties.Models.Adversary
-import Sumcheck.Properties.Models.AdversaryTranscript
+-- Models barrel file (Adversary and AdversaryTranscript have been eliminated
+-- in favor of Prover and proverTranscript from IP/Statement.lean)

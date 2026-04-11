@@ -20,13 +20,13 @@ def simulated_challenges := ![(2 : ZMod 19), (3 : ZMod 19)]
 def bool_domain : List (ZMod 19) := [0, 1]
 
 def valid_transcript := generate_honest_transcript bool_domain claim_poly claim simulated_challenges
-lemma valid_transcript_accepts : is_verifier_accepts_transcript bool_domain claim_poly valid_transcript = true := by
-  unfold is_verifier_accepts_transcript
+lemma valid_transcript_accepts : is_verifier_accepts bool_domain claim_poly claim valid_transcript = true := by
+  unfold is_verifier_accepts
   simp
   native_decide
 
 def invalid_transcript := generate_honest_transcript bool_domain claim_poly (claim + 1) simulated_challenges
-lemma invalid_transcript_rejects : is_verifier_accepts_transcript bool_domain claim_poly invalid_transcript = false := by
-  unfold is_verifier_accepts_transcript
+lemma invalid_transcript_rejects : is_verifier_accepts bool_domain claim_poly (claim + 1) invalid_transcript = false := by
+  unfold is_verifier_accepts
   simp
   native_decide

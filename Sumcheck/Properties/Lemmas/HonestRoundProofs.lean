@@ -439,7 +439,7 @@ lemma honest_transcript_sum_identity
   domain.foldl (fun acc a =>
     acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => a)
       ((generate_honest_transcript domain p (honest_claim domain p) r).round_polys i)) 0 =
-  (generate_honest_transcript domain p (honest_claim domain p) r).claims (Fin.castSucc i) := by
+  (generate_honest_transcript domain p (honest_claim domain p) r).claims (honest_claim domain p) (Fin.castSucc i) := by
   classical
 
   have hrp : (generate_honest_transcript domain p (honest_claim domain p) r).round_polys i =
@@ -451,7 +451,7 @@ lemma honest_transcript_sum_identity
   cases' h : i.val with k
   · have hcast : Fin.castSucc i = ⟨0, Nat.succ_pos n⟩ := by
       ext; simp [h]
-    simp only [generate_honest_transcript, generate_honest_claims, hcast]
+    simp only [generate_honest_transcript, hcast]
     have hn_pos : 0 < n := i.pos
     obtain ⟨n', hn'⟩ : ∃ n' : ℕ, n = Nat.succ n' := Nat.exists_eq_succ_of_ne_zero (Nat.pos_iff_ne_zero.mp hn_pos)
     subst hn'
@@ -466,7 +466,7 @@ lemma honest_transcript_sum_identity
     have hk1_lt : k + 1 < n := by omega
     let prev : Fin n := ⟨k, hk_lt⟩
     have hstep := honest_step_round (𝔽 := 𝔽) (n := n) domain (p := p) (r := r) (i := prev) hk1_lt
-    simp only [generate_honest_transcript, generate_honest_claims]
+    simp only [generate_honest_transcript]
     have hi_eq : i = ⟨k + 1, hk1_lt⟩ := Fin.ext hi_val
     subst hi_eq
     simp only [prev, honest_round_poly, honest_prover_message] at hstep ⊢
@@ -477,20 +477,18 @@ lemma honest_transcript_final_eq_eval
   {𝔽 : Type _}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
   ∀ (n : ℕ) (domain : List 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽),
-  (generate_honest_transcript domain p (honest_claim domain p) r).claims (Fin.last n) =
+  (generate_honest_transcript domain p (honest_claim domain p) r).claims (honest_claim domain p) (Fin.last n) =
     CPoly.CMvPolynomial.eval (generate_honest_transcript domain p (honest_claim domain p) r).challenges p := by
   intro n
   induction n with
   | zero =>
     intro domain p r
-    simp [generate_honest_transcript, generate_honest_claims, Fin.last,
+    simp [generate_honest_transcript, Transcript.claims, generate_honest_claims, Fin.last,
           honest_claim, residual_sum]
-    congr 1
-    funext i
-    exact Fin.elim0 i
+    congr 1; funext i; exact Fin.elim0 i
   | succ n' ih =>
     intro domain p r
-    simp only [generate_honest_transcript, generate_honest_claims, Fin.last]
+    simp only [generate_honest_transcript, Transcript.claims, generate_honest_claims, Fin.last]
     let iLast : Fin (n' + 1) := ⟨n', Nat.lt_succ_self n'⟩
     have hLast : iLast.val.succ = n' + 1 := by simp [iLast]
     have hrp : honest_prover_message domain p (challenge_subset r iLast) (Nat.succ_le_of_lt iLast.isLt) =
