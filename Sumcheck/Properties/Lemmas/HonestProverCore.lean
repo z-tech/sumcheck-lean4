@@ -9,7 +9,7 @@ lemma honest_split_eq {n : ℕ} (i : Fin n) :
   set m : ℕ := num_open_vars (n := n) i with hm
   have hle : i.val + 1 ≤ n := Nat.succ_le_of_lt i.isLt
   have h1 : (i.val + 1) + m = n := by
-    simpa [m, num_open_vars] using (Nat.add_sub_of_le hle)
+    simp [m, num_open_vars, Nat.add_sub_of_le hle]
   calc
     i.val + (m + 1)
         = i.val + m + 1 := by simp [Nat.add_assoc]

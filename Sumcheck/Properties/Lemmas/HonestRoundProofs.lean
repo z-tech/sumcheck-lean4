@@ -3,15 +3,15 @@ import Sumcheck.Src.Hypercube
 import Sumcheck.Src.Verifier
 import Sumcheck.Properties.Lemmas.HonestProver
 import Sumcheck.Properties.Lemmas.Hypercube
-import Sumcheck.Properties.Lemmas.Eval2
+import Sumcheck.Properties.Lemmas.Eval
 import Sumcheck.Properties.Lemmas.Nat
 import Sumcheck.Properties.Lemmas.Fin
 
-theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
+theorem eval_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) (r : Fin n → 𝔽) (i : Fin n) (a : 𝔽) :
-  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+  CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
       (honest_round_poly domain (p := p) (ch := r) i)
     =
   sum_over_domain_recursive (𝔽 := 𝔽) (β := 𝔽)
@@ -52,7 +52,7 @@ theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
     (zeroβ := 0)
     (addγ := (· + ·))
     (zeroγ := 0)
-    (g := fun q => CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) q)
+    (g := fun q => CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) q)
     (hg := by intro x y; simp)
     (hgz := by simp)
     (m := num_open_vars (n := n) i)
@@ -60,7 +60,7 @@ theorem eval₂_honest_round_poly_eq_sum_eval {𝔽 : Type _} {n : ℕ}
   rw [hmap]
   apply sum_over_domain_recursive_congr
   intro x
-  simp [CPoly.eval₂_eval₂Poly_c1, eval₂_honest_combined_map_eq_addCasesFun]
+  simp [CPoly.eval₂_eval₂Poly_c1, eval_honest_combined_map_eq_addCasesFun]
 
 
 theorem num_open_vars_succ {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) :
@@ -75,7 +75,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
   (hlt : i.val.succ < n) :
   let j : Fin n := ⟨i.val.succ, hlt⟩
   domain.foldl (fun acc a =>
-    acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+    acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
       (honest_round_poly domain (p := p) (ch := r) j)) 0
     =
     next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly domain (p := p) (ch := r) i) := by
@@ -85,7 +85,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
 
   -- Rewrite each eval₂ using the sum-expansion lemma
   have hr :=
-    eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := n) domain (p := p) (r := r) (i := i) (a := r i)
+    eval_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := n) domain (p := p) (r := r) (i := i) (a := r i)
   rw [hr]
 
   set openI : ℕ := num_open_vars (n := n) i
@@ -132,7 +132,7 @@ theorem honest_step_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] 
   -- We need: eval₂(a)(honest_round_poly domain j) = sum_over_domain_recursive ... (Fi ∘ cons a ∘ cast hm)
 
   have heval_a :=
-    eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := n) domain (p := p) (r := r) (i := j) (a := a)
+    eval_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := n) domain (p := p) (r := r) (i := j) (a := a)
 
   rw [heval_a]
   congr 1
@@ -237,7 +237,7 @@ lemma honest_last_round
     have hcollapse :=
       sum_over_domain_recursive_eq_of_m_eq_zero
         (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽) domain
-        (fun a b => @HAdd.hAdd _ _ _ instHAdd a b) (c1 (𝔽 := 𝔽) 0)
+        (fun a b => a + b) (c1 (𝔽 := 𝔽) 0)
         (m := num_open_vars (n := n) i)
         (F := fun b => CPoly.eval₂Poly c1
           (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) p)
@@ -250,22 +250,19 @@ lemma honest_last_round
       next_claim (𝔽 := 𝔽) (round_challenge := r i)
           (honest_round_poly domain (p := p) (ch := r) i)
         =
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-        (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+      CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i)
         (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
           (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p) := by
     simp [next_claim, hround]
 
   have heval :
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-        (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+      CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i)
         (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
           (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p)
         =
       CPoly.CMvPolynomial.eval
         (fun j =>
-          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-            (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+          CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i)
             (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
         p := by
     simpa using
@@ -275,8 +272,7 @@ lemma honest_last_round
 
   have hpt :
       (fun j =>
-        CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-          (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+        CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i)
           (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
       =
       r := by
@@ -288,7 +284,7 @@ lemma honest_last_round
         simpa using
           (honest_combined_map_at_i_is_x0 (𝔽 := 𝔽) (n := n)
             (i := j) (challenges := challenge_subset r j) (b := b0))
-      simpa [hcm, x0] using (CPoly.eval₂_x0 (𝔽 := 𝔽) (b := r j))
+      simpa [hcm, x0] using (CPoly.eval_x0 (𝔽 := 𝔽) (b := r j))
     ·
       have hjlt_succ : j.val < i.val.succ := by
         exact (hlast.symm ▸ j.isLt)
@@ -322,23 +318,23 @@ lemma honest_last_round
           (⟨t.val, Nat.lt_trans t.isLt i.isLt⟩ : Fin n) = j := by
         ext
         rfl
-      simp [hmap, challenge_subset, htj]
+      simp [hmap, challenge_subset, htj, c1]
+      show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i) (CPoly.CMvPolynomial.C _) = _
+      exact CPoly.eval_C _ _
 
   -- final assembly
   calc
     next_claim (𝔽 := 𝔽) (round_challenge := r i)
         (honest_round_poly domain (p := p) (ch := r) i)
         =
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-        (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+      CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i)
         (CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1
           (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0) p) := by
           exact hnc
     _ =
       CPoly.CMvPolynomial.eval
         (fun j =>
-          CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-            (RingHom.id 𝔽) (fun _ : Fin 1 => r i)
+          CPoly.CMvPolynomial.eval (fun _ : Fin 1 => r i)
             (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b0 j))
         p := by
           exact heval
@@ -358,7 +354,7 @@ lemma honest_round0_domain_sum_eq_honest_claim
   (r : Fin (Nat.succ n') → 𝔽) :
   let i0 : Fin (Nat.succ n') := ⟨0, Nat.succ_pos n'⟩
   domain.foldl (fun acc a =>
-    acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+    acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
       (honest_round_poly domain (p := p) (ch := r) i0)) 0
     =
     honest_claim domain (p := p) := by
@@ -387,7 +383,7 @@ lemma honest_round0_domain_sum_eq_honest_claim
   funext acc a
 
   -- Show the inner expressions match
-  have heval_a := eval₂_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n') domain
+  have heval_a := eval_honest_round_poly_eq_sum_eval (𝔽 := 𝔽) (n := Nat.succ n') domain
     (p := p) (r := r) (i := i0) (a := a)
   rw [heval_a]
   congr 1
@@ -426,7 +422,7 @@ lemma honestTranscript_roundPoly_eq_honestRoundPoly
       exact hab }
 
   cases i with
-  | mk k hk => simp [generate_honest_transcript, honest_round_poly, honest_prover_message]
+  | mk k hk => simp [generate_honest_transcript, honest_round_poly, honest_prover_message_at]
 
 
 lemma honest_transcript_sum_identity
@@ -437,7 +433,7 @@ lemma honest_transcript_sum_identity
   (r : Fin n → 𝔽)
   (i : Fin n) :
   domain.foldl (fun acc a =>
-    acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => a)
+    acc + CPoly.CMvPolynomial.eval (fun _ => a)
       ((generate_honest_transcript domain p (honest_claim domain p) r).round_polys i)) 0 =
   (generate_honest_transcript domain p (honest_claim domain p) r).claims (honest_claim domain p) (Fin.castSucc i) := by
   classical
@@ -469,7 +465,7 @@ lemma honest_transcript_sum_identity
     simp only [generate_honest_transcript]
     have hi_eq : i = ⟨k + 1, hk1_lt⟩ := Fin.ext hi_val
     subst hi_eq
-    simp only [prev, honest_round_poly, honest_prover_message] at hstep ⊢
+    simp only [prev, honest_round_poly, honest_prover_message_at] at hstep ⊢
     exact hstep
 
 
@@ -491,8 +487,8 @@ lemma honest_transcript_final_eq_eval
     simp only [generate_honest_transcript, Transcript.claims, generate_honest_claims, Fin.last]
     let iLast : Fin (n' + 1) := ⟨n', Nat.lt_succ_self n'⟩
     have hLast : iLast.val.succ = n' + 1 := by simp [iLast]
-    have hrp : honest_prover_message domain p (challenge_subset r iLast) (Nat.succ_le_of_lt iLast.isLt) =
+    have hrp : honest_prover_message_at domain p iLast (challenge_subset r iLast) =
         honest_round_poly domain p r iLast := by
-      simp [honest_round_poly, honest_prover_message]
+      simp [honest_round_poly]
     rw [hrp]
     exact honest_last_round domain p r iLast hLast

@@ -2,7 +2,7 @@ import Sumcheck.Properties.Lemmas.Agreement
 import Sumcheck.Properties.Lemmas.Degree
 import Sumcheck.Properties.Lemmas.Monomials
 import Sumcheck.Properties.Lemmas.UnlawfulMulSupport
-import Sumcheck.Properties.Lemmas.Eval2
+import Sumcheck.Properties.Lemmas.Eval
 import Sumcheck.Properties.Lemmas.HonestProver
 import Sumcheck.Properties.Lemmas.List
 import Sumcheck.Properties.Lemmas.ExtTreeMap

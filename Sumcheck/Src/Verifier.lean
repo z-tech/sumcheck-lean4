@@ -9,7 +9,7 @@ import Sumcheck.Src.CMvPolynomial
   (round_p : CPoly.CMvPolynomial 1 𝔽) : Bool :=
   let round_identity_ok : Prop :=
     domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) round_p) 0
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) round_p) 0
       = round_claim
   let deg_bound_ok : Prop :=
     CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ round_p ≤ max_degree

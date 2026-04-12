@@ -30,9 +30,13 @@ structure PublicCoinProtocol (S : Type*) (C : Type*) (n : ℕ) where
 structure Prover {S C : Type*} {n : ℕ} (ip : PublicCoinProtocol S C n) where
   respond : S → (i : Fin n) → (Fin i.val → C) → ip.ProverMessage i
 
+-- the subset of challenges visible to the prover at round i
+def challenge_subset {C : Type*} {n : ℕ} (r : Fin n → C) (i : Fin n) : Fin i.val → C :=
+  fun j => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
+
 -- generate the transcript from a prover interacting with random challenges
 -- at round i, the prover sees challenges 0, 1, ..., i-1
 def generateTranscript {S C : Type*} {n : ℕ}
     (ip : PublicCoinProtocol S C n)
     (st : S) (P : Prover ip) (r : Fin n → C) : ip.Transcript :=
-  ip.mkTranscript (fun i => P.respond st i (fun j => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩)) r
+  ip.mkTranscript (fun i => P.respond st i (challenge_subset r i)) r

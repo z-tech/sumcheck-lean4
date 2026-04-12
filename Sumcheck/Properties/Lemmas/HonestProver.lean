@@ -6,7 +6,7 @@ import Sumcheck.Src.Verifier
 
 import Sumcheck.Properties.Events.BadRound
 
-import Sumcheck.Properties.Lemmas.Eval2
+import Sumcheck.Properties.Lemmas.Eval
 import Sumcheck.Properties.Lemmas.Monomials
 import Sumcheck.Properties.Lemmas.HonestProverCore  -- Re-export core lemmas
 
@@ -28,14 +28,13 @@ lemma honest_right_map_zero
   unfold honest_right_map
   rfl
 
-lemma eval₂_honest_right_map_succ
+lemma eval_honest_right_map_succ
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
   (a : 𝔽)
   (b : Fin (num_open_vars (n := n) i) → 𝔽)
   (t : Fin (num_open_vars (n := n) i)) :
-  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-      (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+  CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
       (honest_right_map (𝔽 := 𝔽) (n := n) i b t.succ)
     = b t := by
   classical
@@ -43,16 +42,17 @@ lemma eval₂_honest_right_map_succ
   cases t with
   | mk tv th =>
       -- now simp can reduce the match on tv.succ and the Fin.mk proof field mismatch vanishes
-      simp [honest_right_map, Fin.succ, c1, CPoly.eval₂_Lawful_C]
+      simp [honest_right_map, Fin.succ, c1]
+      show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (CPoly.CMvPolynomial.C (b ⟨tv, _⟩)) = b ⟨tv, _⟩
+      exact CPoly.eval_C _ _
 
-lemma eval₂_honest_right_map
+lemma eval_honest_right_map
   {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   {n : ℕ} (i : Fin n)
   (a : 𝔽)
   (b : Fin (num_open_vars (n := n) i) → 𝔽)
   (t : Fin (num_open_vars (n := n) i + 1)) :
-  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-      (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+  CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
       (honest_right_map (𝔽 := 𝔽) (n := n) i b t)
     =
   Fin.cases a b t := by
@@ -60,16 +60,16 @@ lemma eval₂_honest_right_map
   cases t using Fin.cases with
   | zero =>
       -- t = 0
-      -- rewrite honest_right_map ... 0 = x0, then eval₂_x0
+      -- rewrite honest_right_map ... 0 = x0, then eval_x0
       rw [honest_right_map_zero (𝔽 := 𝔽) (i := i) (b := b)]
       -- RHS is `a`
-      simpa using (CPoly.eval₂_x0 (𝔽 := 𝔽) a)
+      simpa using (CPoly.eval_x0 (𝔽 := 𝔽) a)
   | succ t =>
       -- t = succ t
       -- RHS is `b t`
-      simpa using (eval₂_honest_right_map_succ (𝔽 := 𝔽) (i := i) (a := a) (b := b) (t := t))
+      simpa using (eval_honest_right_map_succ (𝔽 := 𝔽) (i := i) (a := a) (b := b) (t := t))
 
-lemma eval₂_addCases_honest_right_map
+lemma eval_addCases_honest_right_map
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (r : Fin n → 𝔽)
@@ -77,8 +77,7 @@ lemma eval₂_addCases_honest_right_map
   (a : 𝔽)
   (b : Fin (num_open_vars (n := n) i) → 𝔽)
   (j : Fin n) :
-  CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-      (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+  CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
       (Fin.addCases
         (fun t : Fin i.val =>
           CPoly.Lawful.C (n := 1) (challenge_subset r i t))
@@ -96,22 +95,23 @@ lemma eval₂_addCases_honest_right_map
   | left t =>
       -- left branch: we are evaluating a constant polynomial `C (...)`
       -- and RHS is the corresponding r ⟨t, _⟩.
-      simp [Fin.addCases, CPoly.eval₂_Lawful_C, challenge_subset]
+      simp [Fin.addCases, challenge_subset]
+      show CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (CPoly.CMvPolynomial.C _) = _
+      exact CPoly.eval_C _ _
   | right t =>
-      -- right branch: use your `eval₂_honest_right_map`
+      -- right branch: use your `eval_honest_right_map`
       -- RHS is `Fin.cases a b t`
       simpa [Fin.addCases, addCasesFun, h] using
-        (eval₂_honest_right_map (𝔽 := 𝔽) (i := i) (a := a) (b := b)
+        (eval_honest_right_map (𝔽 := 𝔽) (i := i) (a := a) (b := b)
           (t := t))
 
-lemma eval₂_honest_combined_map_eq_addCasesFun
+lemma eval_honest_combined_map_eq_addCasesFun
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (r : Fin n → 𝔽) (i : Fin n) (a : 𝔽)
   (b : Fin (num_open_vars (n := n) i) → 𝔽) :
   (fun j : Fin n =>
-      CPoly.CMvPolynomial.eval₂ (n := 1) (R := 𝔽) (S := 𝔽)
-        (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+      CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
         (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b j))
   =
   (fun j : Fin n =>
@@ -124,7 +124,7 @@ lemma eval₂_honest_combined_map_eq_addCasesFun
   -- unfold combined map (it is addCases of constants + honest_right_map)
   -- then apply your lemma
   simpa [honest_combined_map_def, addCasesFun] using
-    (eval₂_addCases_honest_right_map (𝔽 := 𝔽) (r := r) (i := i) (a := a) (b := b) (j := j))
+    (eval_addCases_honest_right_map (𝔽 := 𝔽) (r := r) (i := i) (a := a) (b := b) (j := j))
 
 -- ============================================================================
 -- Lemmas that CAN be in Lemmas/ (not used by Lemmas/Degree.lean, no cycle)

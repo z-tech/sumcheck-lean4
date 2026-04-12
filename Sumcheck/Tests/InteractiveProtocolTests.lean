@@ -63,8 +63,9 @@ lemma honest_claim_accepted :
         sumcheckHonestProver challenges) := by
   -- Rewrite through the bridge lemma to reach the computable verifier,
   -- then unfold the generic prover to its concrete implementation.
-  rw [sumcheck_verifier_accepts_eq]
-  simp only [sumcheckHonestProver]
+  show AcceptsOnChallenges _ _ _
+  simp only [AcceptsOnChallenges_unfold, AcceptsEvent, is_verifier_accepts,
+             Transcript.claims, proverTranscript, sumcheckHonestProver]
   native_decide
 
 /-! ## Wrong claim: sum = 18
@@ -85,8 +86,9 @@ lemma wrong_claim_rejected :
     ¬ sumcheckProtocol.verifier_accepts dishonestStatement
       (generateTranscript sumcheckProtocol dishonestStatement
         sumcheckHonestProver challenges) := by
-  rw [sumcheck_verifier_accepts_eq]
-  simp only [sumcheckHonestProver]
+  show ¬ AcceptsOnChallenges _ _ _
+  simp only [AcceptsOnChallenges_unfold, AcceptsEvent, is_verifier_accepts,
+             Transcript.claims, proverTranscript, sumcheckHonestProver]
   native_decide
 
 end __InteractiveProtocolTests__

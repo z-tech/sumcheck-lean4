@@ -34,7 +34,7 @@ import Sumcheck.Properties.Lemmas.Degree
 import Sumcheck.Properties.Lemmas.List
 import Sumcheck.Properties.Lemmas.Fin
 import Sumcheck.Properties.Lemmas.CMvPolynomial
-import Sumcheck.Properties.Lemmas.Eval2
+import Sumcheck.Properties.Lemmas.Eval
 import Sumcheck.Properties.Lemmas.Nat
 import Sumcheck.Properties.Lemmas.HonestRoundProofs
 import Sumcheck.Properties.Lemmas.BadTranscriptAnalysis
@@ -577,48 +577,44 @@ lemma all_rounds_honest_of_not_bad
   funext k
   simp [addCasesFun, Fin.addCases]
 
-@[simp] lemma eval₂_const0_eq
+@[simp] lemma eval_const0_eq
   {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   (q : CPoly.CMvPolynomial 1 𝔽) :
-  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (0 : 𝔽)) q =
-    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => (0 : 𝔽)) q := by
+  CPoly.CMvPolynomial.eval (fun _ : Fin 1 => (0 : 𝔽)) q =
+    CPoly.CMvPolynomial.eval (fun _ => (0 : 𝔽)) q := by
   rfl
 
-@[simp] lemma eval₂_const1_eq
+@[simp] lemma eval_const1_eq
   {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   (q : CPoly.CMvPolynomial 1 𝔽) :
-  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => (1 : 𝔽)) q =
-    CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ => (1 : 𝔽)) q := by
+  CPoly.CMvPolynomial.eval (fun _ : Fin 1 => (1 : 𝔽)) q =
+    CPoly.CMvPolynomial.eval (fun _ => (1 : 𝔽)) q := by
   rfl
 
-lemma eval₂_sum_over_hypercube_recursive
+lemma eval_sum_over_hypercube_recursive
   {𝔽 : Type _} [CommSemiring 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (z : Fin 1 → 𝔽)
   (b0 b1 : 𝔽)
   {m : ℕ}
   (F : (Fin m → 𝔽) → CPoly.CMvPolynomial 1 𝔽) :
-  CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) z
+  CPoly.CMvPolynomial.eval z
       (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
         b0 b1 (· + ·) (m := m) F)
     =
   sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽)
     b0 b1 (· + ·) (m := m) (fun x =>
-      CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) z (F x)) := by
+      CPoly.CMvPolynomial.eval z (F x)) := by
   classical
-  simpa using
-    (sum_over_hypercube_recursive_map
-      (𝔽 := 𝔽)
-      (β := CPoly.CMvPolynomial 1 𝔽)
-      (γ := 𝔽)
-      (b0 := b0) (b1 := b1)
-      (addβ := (· + ·)) (addγ := (· + ·))
-      (g := fun q => CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) z q)
-      (hg := by
-        intro a b
-        simp
-      )
-      (m := m)
-      (F := F))
+  exact sum_over_hypercube_recursive_map
+    (𝔽 := 𝔽)
+    (β := CPoly.CMvPolynomial 1 𝔽)
+    (γ := 𝔽)
+    (b0 := b0) (b1 := b1)
+    (addβ := (· + ·)) (addγ := (· + ·))
+    (g := fun q => CPoly.CMvPolynomial.eval z q)
+    (hg := fun a b => CPoly.eval_add z a b)
+    (m := m)
+    (F := F)
 
 @[simp] lemma Fin.cons_eq_cases_const
   {α : Type _} {n : ℕ} (a : α) (x : Fin n → α) :
@@ -695,7 +691,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
       -- Turn verifier_check = true into domain foldl sum identity
       have hsum :
           (st.domain.foldl (fun acc a =>
-            acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i0)) 0
+            acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.round_polys i0)) 0
             =
            t.claims st.claim i0.castSucc)
           ∧
@@ -709,7 +705,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
 
       have hsum0 :
           st.domain.foldl (fun acc a =>
-            acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i0)) 0
+            acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.round_polys i0)) 0
           =
           t.claims st.claim i0.castSucc :=
         hsum.1
@@ -728,7 +724,7 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
       -- domain foldl of honest round 0 = honest_claim
       have htrue :
           st.domain.foldl (fun acc a =>
-            acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+            acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
               (honest_round_poly st.domain (p := st.polynomial) (ch := t.challenges) i0)) 0
           =
           honest_claim st.domain (p := st.polynomial) := by
@@ -738,10 +734,10 @@ lemma claim_eq_honest_claim_of_accepts_and_all_rounds_honest
       calc
         st.claim = t.claims st.claim i0.castSucc := by simp [hclaim0]
         _ = st.domain.foldl (fun acc a =>
-              acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i0)) 0 := by
+              acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.round_polys i0)) 0 := by
               symm; exact hsum0
         _ = st.domain.foldl (fun acc a =>
-              acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+              acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
                 (honest_round_poly st.domain (p := st.polynomial) (ch := t.challenges) i0)) 0 := by
               simp [hi0]
         _ = honest_claim st.domain (p := st.polynomial) := htrue

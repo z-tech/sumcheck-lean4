@@ -39,7 +39,7 @@ namespace __ProtocolTests__
   def bool_domain : List (ZMod 19) := [0, 1]
 
   -- round 0
-  def round_poly_0 := honest_prover_message bool_domain claim_poly ![] (by decide) -- message = 13x + 2
+  def round_poly_0 := honest_prover_message_at bool_domain claim_poly ⟨0, by decide⟩ ![] -- message = 13x + 2
   def max_degree_0 : ℕ := ind_degree_k claim_poly ⟨0, by decide⟩
   lemma verifier_check_0_is_correct : verifier_check bool_domain max_degree_0 claim round_poly_0  = true := by
     simp
@@ -49,7 +49,7 @@ namespace __ProtocolTests__
   -- round 1
   def claim_1 := next_claim simulated_challenge_0 round_poly_0
   def max_degree_1 : ℕ := ind_degree_k claim_poly ⟨1, by decide⟩
-  def round_poly_1 := honest_prover_message bool_domain claim_poly ![simulated_challenge_0] (by decide) -- message = 6x + 11
+  def round_poly_1 := honest_prover_message_at bool_domain claim_poly ⟨1, by decide⟩ ![simulated_challenge_0] -- message = 6x + 11
   lemma verifier_check_1_is_correct : verifier_check bool_domain max_degree_1 claim_1 round_poly_1 = true := by
     simp
     native_decide

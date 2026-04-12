@@ -90,7 +90,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
 
     have hsum :
         st.domain.foldl (fun acc a =>
-          acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+          acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
             (honest_round_poly st.domain (p := st.polynomial) (ch := r) j)) 0
           =
         t.claims st.claim (Fin.castSucc j) := by
@@ -114,7 +114,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
 
     have honest_step :
         st.domain.foldl (fun acc a =>
-          acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+          acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
             (honest_round_poly st.domain (p := st.polynomial) (ch := r) j)) 0
           =
         next_claim (𝔽 := 𝔽) (round_challenge := r i) (honest_round_poly st.domain (p := st.polynomial) (ch := r) i) := by
@@ -127,7 +127,7 @@ lemma accepts_and_bad_implies_exists_round_disagree_but_agree
               simpa using (Eq.symm hclaim_j)
       _ =
           st.domain.foldl (fun acc a =>
-            acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a)
+            acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a)
               (honest_round_poly st.domain (p := st.polynomial) (ch := r) j)) 0 := by
               simpa using hsum.symm
       _ = next_claim (𝔽 := 𝔽) (round_challenge := r i)

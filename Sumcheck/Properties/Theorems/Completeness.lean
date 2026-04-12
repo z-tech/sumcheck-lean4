@@ -38,7 +38,7 @@ theorem perfect_completeness
           -- The honest polynomial has degree at most the individual degree
           have hpoly : (generate_honest_transcript domain p (honest_claim domain p) r).round_polys i =
             honest_round_poly domain p r i := by
-            simp [generate_honest_transcript, honest_round_poly, honest_prover_message]
+            simp [generate_honest_transcript, honest_round_poly, honest_prover_message_at]
           rw [hpoly]
           exact honest_round_poly_degree_le_ind_degree_k domain p r i
       · -- Claims consistency: claims i.succ = next_claim (challenges i) (round_polys i)

@@ -70,7 +70,7 @@ lemma verifier_check_eq_true_iff
   verifier_check (𝔽 := 𝔽) domain max_degree round_claim round_p = true
     ↔
     (domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) round_p) 0
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) round_p) 0
       = round_claim)
     ∧
     (CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ round_p ≤ max_degree) := by
@@ -121,7 +121,7 @@ lemma acceptsEvent_domain_sum_eq_claim
   (i : Fin n) :
   AcceptsEvent domain p claim t →
     domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (t.round_polys i)) 0
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.round_polys i)) 0
       =
     t.claims claim (Fin.castSucc i) := by
   intro hAcc
@@ -147,7 +147,7 @@ lemma acceptsEvent_domain_sum_eq_claim_of_honest
   (hi : t.round_polys i = honest_round_poly domain p r i) :
   AcceptsEvent domain p claim t →
     domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval₂ (RingHom.id 𝔽) (fun _ : Fin 1 => a) (honest_round_poly domain p r i)) 0
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (honest_round_poly domain p r i)) 0
       =
     t.claims claim (Fin.castSucc i) := by
   intro hAcc

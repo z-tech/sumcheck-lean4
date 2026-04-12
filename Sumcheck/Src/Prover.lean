@@ -29,7 +29,7 @@ def honest_combined_map
     set m : ℕ := num_open_vars (n := n) i
     have hle : i.val + 1 ≤ n := Nat.succ_le_of_lt i.isLt
     have h1 : (i.val + 1) + m = n := by
-      simpa [m, num_open_vars] using (Nat.add_sub_of_le hle)
+      simp [m, num_open_vars, Nat.add_sub_of_le hle]
     calc
       i.val + (m + 1)
           = i.val + m + 1 := by simp [Nat.add_assoc]
@@ -59,15 +59,3 @@ def honest_prover_message_at
     (m := num_open_vars (n := n) i)
     (F := fun b =>
       CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
-
-/-- Backwards-compatible wrapper: keep the old signature so existing call sites compile. -/
-def honest_prover_message
-  {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
-  {n k : ℕ}
-  (domain : List 𝔽)
-  (p : CPoly.CMvPolynomial n 𝔽)
-  (challenges : Fin k → 𝔽)
-  (hcard : k + 1 ≤ n) : CPoly.CMvPolynomial 1 𝔽 :=
-  honest_prover_message_at domain (p := p)
-    (i := ⟨k, Nat.lt_of_lt_of_le (Nat.lt_succ_self k) hcard⟩)
-    (challenges := challenges)
