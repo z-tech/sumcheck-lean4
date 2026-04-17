@@ -4,8 +4,8 @@ import Sumcheck.Properties.Lemmas.SoundnessLemmas
 theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckStatement 𝔽 n)
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n))) :
-     prob_over_challenges (E := AcceptsAndBadTranscriptOnChallenges st P)
-      ≤ soundness_error st.polynomial := by
+     probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges st P)
+      ≤ soundnessError st.polynomial := by
   classical
 
   -- Keep AcceptsAndBad in the per-round event.
@@ -27,29 +27,29 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
     exact ⟨i, ⟨hAB, hi⟩⟩
 
   have hmono :
-      prob_over_challenges (𝔽 := 𝔽) (n := n)
+      probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsAndBadTranscriptOnChallenges st P r)
         ≤
-      prob_over_challenges (𝔽 := 𝔽) (n := n)
+      probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => ∃ i : Fin n, E i r) :=
     prob_over_challenges_mono (𝔽 := 𝔽) (n := n) hImp
 
   -- Step 2: union bound over i.
   have hunion :
-      prob_over_challenges (𝔽 := 𝔽) (n := n)
+      probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => ∃ i : Fin n, E i r)
         ≤
       (∑ i : Fin n,
-        prob_over_challenges (𝔽 := 𝔽) (n := n)
+        probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => E i r)) :=
     prob_over_challenges_exists_le_sum (𝔽 := 𝔽) (n := n) E
 
   -- Step 3: use the (now-lemma) sumcheck-specific bound.
   have hround :
       (∑ i : Fin n,
-        prob_over_challenges (𝔽 := 𝔽) (n := n) (fun r => E i r))
-      ≤ soundness_error st.polynomial := by
-    simpa [E, soundness_error] using
+        probOverChallenges (𝔽 := 𝔽) (n := n) (fun r => E i r))
+      ≤ soundnessError st.polynomial := by
+    simpa [E, soundnessError] using
       sum_accepts_and_round_disagree_but_agree_bound
         (st := st) (P := P)
 
@@ -59,9 +59,9 @@ theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decidab
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckStatement 𝔽 n)
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
-  (h : st.claim ≠ honest_claim st.domain (p := st.polynomial)) :
-  prob_over_challenges (E := AcceptsOnChallenges st P)
-    ≤ soundness_error st.polynomial := by
+  (h : st.claim ≠ honestClaim st.domain (p := st.polynomial)) :
+  probOverChallenges (E := AcceptsOnChallenges st P)
+    ≤ soundnessError st.polynomial := by
   classical
 
   -- Key reduction: dishonest claim ⇒ (accept → bad), hence accept ⊆ (accept ∧ bad).
@@ -79,18 +79,18 @@ theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
           (st := st) (P := P) (r := r) h hAcc
 
   have hmono :
-      prob_over_challenges (𝔽 := 𝔽) (n := n)
+      probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsOnChallenges st P r)
         ≤
-      prob_over_challenges (𝔽 := 𝔽) (n := n)
+      probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsAndBadTranscriptOnChallenges st P r) :=
     prob_over_challenges_mono (𝔽 := 𝔽) (n := n) hImp
 
   -- Now just reuse your existing soundness_accept_bad_transcript theorem.
   have hsound :
-      prob_over_challenges (𝔽 := 𝔽) (n := n)
+      probOverChallenges (𝔽 := 𝔽) (n := n)
           (fun r => AcceptsAndBadTranscriptOnChallenges st P r)
-        ≤ soundness_error st.polynomial :=
+        ≤ soundnessError st.polynomial :=
     soundness (𝔽 := 𝔽) (n := n) (st := st) (P := P)
 
   exact le_trans hmono hsound

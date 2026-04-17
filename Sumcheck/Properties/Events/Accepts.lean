@@ -10,9 +10,9 @@ def AcceptsEvent
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
-  (initial_claim : 𝔽)
+  (initialClaim : 𝔽)
   (t : Transcript 𝔽 n) : Prop :=
-  is_verifier_accepts (𝔽 := 𝔽) (n := n) domain p initial_claim t = true
+  isVerifierAccepts (𝔽 := 𝔽) (n := n) domain p initialClaim t = true
 
 -- the verifier accepts the prover's transcript for a given set of challenges
 -- defined directly in terms of the generic protocol interface
@@ -22,7 +22,7 @@ def AcceptsOnChallenges
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n))) :
   (Fin n → 𝔽) → Prop :=
 fun r =>
-  sumcheckProtocol.verifier_accepts st (generateTranscript sumcheckProtocol st P r)
+  sumcheckProtocol.verifierAccepts st (generateTranscript sumcheckProtocol st P r)
 
 -- unfold AcceptsOnChallenges to the concrete AcceptsEvent for use in proofs
 @[simp] lemma AcceptsOnChallenges_unfold

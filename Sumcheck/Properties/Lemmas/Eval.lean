@@ -80,14 +80,14 @@ lemma eval₂Poly_eq_list_foldl
   CPoly.eval₂Poly (n := n) (𝔽 := 𝔽) f vs p
     =
   List.foldl
-    (fun acc (mc : CPoly.CMvMonomial n × 𝔽) => (f mc.2) * (subst_monomial vs mc.1) + acc)
+    (fun acc (mc : CPoly.CMvMonomial n × 𝔽) => (f mc.2) * (substMonomial vs mc.1) + acc)
     (c1 (𝔽 := 𝔽) 0)
     p.1.toList := by
   classical
   simpa [CPoly.eval₂Poly] using
     (Std.ExtTreeMap.foldl_eq_foldl_toList
       (t := p.1)
-      (f := fun acc m c => (f c) * (subst_monomial vs m) + acc)
+      (f := fun acc m c => (f c) * (substMonomial vs m) + acc)
       (init := c1 (𝔽 := 𝔽) 0))
 
 @[simp] lemma eval₂_add
@@ -190,16 +190,16 @@ lemma eval_pow_univariate
   {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (q : CMvPolynomial 1 𝔽) (b : 𝔽) :
   ∀ e : ℕ,
-    CMvPolynomial.eval (fun _ : Fin 1 => b) (pow_univariate q e)
+    CMvPolynomial.eval (fun _ : Fin 1 => b) (powUnivariate q e)
       =
     (CMvPolynomial.eval (fun _ : Fin 1 => b) q) ^ e
 | 0 => by
-    dsimp [pow_univariate, c1]
+    dsimp [powUnivariate, c1]
     rw [pow_zero]
     show CMvPolynomial.eval (fun _ : Fin 1 => b) (CMvPolynomial.C 1) = 1
     exact CPoly.eval_C _ _
 | Nat.succ e => by
-    dsimp [pow_univariate]
+    dsimp [powUnivariate]
     rw [CPoly.eval_mul]
     rw [eval_pow_univariate (𝔽 := 𝔽) q b e]
     ring
@@ -211,10 +211,10 @@ lemma eval_pow_univariate
   (vs : Fin 1 → 𝔽)
   (F : (Fin m → 𝔽) → CPoly.CMvPolynomial 1 𝔽) :
   CPoly.CMvPolynomial.eval vs
-      (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
+      (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := CPoly.CMvPolynomial 1 𝔽)
         b0 b1 (fun a b => a + b) (m := m) F)
     =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := 𝔽)
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := 𝔽)
     b0 b1 (fun a b => a + b) (m := m)
     (fun x =>
       CPoly.CMvPolynomial.eval vs (F x)) := by
@@ -243,14 +243,14 @@ lemma eval_foldl_mul_pow_univariate
   ∀ (A : CPoly.CMvPolynomial 1 𝔽) (L : List (Fin n)),
     CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
         (List.foldl
-          (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+          (fun acc i => Mul.mul acc (powUnivariate (vs i) (extractExpVarI m i)))
           A L)
       =
     List.foldl
       (fun acc i =>
         acc *
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (vs i)) ^
-            (extract_exp_var_i m i))
+            (extractExpVarI m i))
       (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) A)
       L
   | A, [] => by
@@ -258,26 +258,26 @@ lemma eval_foldl_mul_pow_univariate
   | A, i :: L => by
       have hp :
           CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-              (pow_univariate (vs i) (extract_exp_var_i m i))
+              (powUnivariate (vs i) (extractExpVarI m i))
             =
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (vs i)) ^
-            (extract_exp_var_i m i) := by
+            (extractExpVarI m i) := by
         simpa using
-          eval_pow_univariate (𝔽 := 𝔽) (q := vs i) (b := b) (e := extract_exp_var_i m i)
+          eval_pow_univariate (𝔽 := 𝔽) (q := vs i) (b := b) (e := extractExpVarI m i)
 
       have hmul :
           CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-              (Mul.mul A (pow_univariate (vs i) (extract_exp_var_i m i)))
+              (Mul.mul A (powUnivariate (vs i) (extractExpVarI m i)))
             =
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) A)
             *
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-              (pow_univariate (vs i) (extract_exp_var_i m i))) := by
+              (powUnivariate (vs i) (extractExpVarI m i))) := by
         simpa using
           (eval₂_mul_Mul
             (n := 1) (R := 𝔽) (S := 𝔽)
             (f := RingHom.id 𝔽) (vals := fun _ : Fin 1 => b)
-            (a := A) (b := pow_univariate (vs i) (extract_exp_var_i m i)))
+            (a := A) (b := powUnivariate (vs i) (extractExpVarI m i)))
 
       -- Unfold foldl once on both sides
       simp [List.foldl]
@@ -285,13 +285,13 @@ lemma eval_foldl_mul_pow_univariate
       -- IH at the updated accumulator
       have ih :=
         eval_foldl_mul_pow_univariate (vs := vs) (m := m) (b := b)
-          (A := Mul.mul A (pow_univariate (vs i) (extract_exp_var_i m i)))
+          (A := Mul.mul A (powUnivariate (vs i) (extractExpVarI m i)))
           (L := L)
 
       -- Normalize IH into the same "Vector.get" form as the goal, then rewrite the seed.
       have hseed :
           CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-              (Mul.mul A (pow_univariate (vs i) (Vector.get m i)))
+              (Mul.mul A (powUnivariate (vs i) (Vector.get m i)))
             =
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) A)
             *
@@ -300,17 +300,17 @@ lemma eval_foldl_mul_pow_univariate
         -- rewrite hmul/hp into Vector.get form and combine
         have hmul' :
             CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-                (Mul.mul A (pow_univariate (vs i) (Vector.get m i)))
+                (Mul.mul A (powUnivariate (vs i) (Vector.get m i)))
               =
             (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) A)
               *
             (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-                (pow_univariate (vs i) (Vector.get m i))) := by
+                (powUnivariate (vs i) (Vector.get m i))) := by
           simpa [extract_exp_var_i_eq_get] using hmul
 
         have hp' :
             CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-                (pow_univariate (vs i) (Vector.get m i))
+                (powUnivariate (vs i) (Vector.get m i))
               =
             (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (vs i)) ^
               (Vector.get m i) := by
@@ -329,14 +329,14 @@ lemma eval_subst_monomial
   (m : CPoly.CMvMonomial n)
   (b : 𝔽) :
   CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-      (subst_monomial (n := n) (𝔽 := 𝔽) vs m)
+      (substMonomial (n := n) (𝔽 := 𝔽) vs m)
     =
   CPoly.MonoR.evalMonomial (n := n) (R := 𝔽)
       (fun i =>
         CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (vs i))
       m := by
   classical
-  unfold subst_monomial
+  unfold substMonomial
 
   have hfold :=
     CPoly.eval_foldl_mul_pow_univariate
@@ -354,7 +354,7 @@ lemma eval_subst_monomial
   have hscalar :
       CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
           (List.foldl
-            (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+            (fun acc i => Mul.mul acc (powUnivariate (vs i) (extractExpVarI m i)))
             (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
             (List.finRange n))
         =
@@ -362,7 +362,7 @@ lemma eval_subst_monomial
         (fun acc i =>
           acc *
             (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (vs i)) ^
-              (extract_exp_var_i m i))
+              (extractExpVarI m i))
         1
         (List.finRange n) := by
     simpa [hA] using hfold
@@ -372,25 +372,25 @@ lemma eval_subst_monomial
       CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) (vs i)
 
   have hprod :
-      List.foldl (fun acc i => acc * (vals i) ^ (extract_exp_var_i m i)) 1 (List.finRange n)
+      List.foldl (fun acc i => acc * (vals i) ^ (extractExpVarI m i)) 1 (List.finRange n)
         =
-      (∏ i : Fin n, (vals i) ^ (extract_exp_var_i m i)) := by
+      (∏ i : Fin n, (vals i) ^ (extractExpVarI m i)) := by
     simpa using
       (foldl_finRange_mul_eq_prod (α := 𝔽) (n := n)
-        (g := fun i : Fin n => (vals i) ^ (extract_exp_var_i m i))
+        (g := fun i : Fin n => (vals i) ^ (extractExpVarI m i))
         (s0 := (1 : 𝔽)))
 
   calc
     CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
         (List.foldl
-          (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+          (fun acc i => Mul.mul acc (powUnivariate (vs i) (extractExpVarI m i)))
           (CPoly.Lawful.C (n := 1) (R := 𝔽) (1 : 𝔽))
           (List.finRange n))
         =
-      List.foldl (fun acc i => acc * (vals i) ^ (extract_exp_var_i m i)) 1 (List.finRange n) := by
+      List.foldl (fun acc i => acc * (vals i) ^ (extractExpVarI m i)) 1 (List.finRange n) := by
         simpa [vals] using hscalar
     _ =
-      (∏ i : Fin n, (vals i) ^ (extract_exp_var_i m i)) := hprod
+      (∏ i : Fin n, (vals i) ^ (extractExpVarI m i)) := hprod
     _ =
       CPoly.MonoR.evalMonomial (n := n) (R := 𝔽) vals m := by
       simp [CPoly.MonoR.evalMonomial, vals]
@@ -418,7 +418,7 @@ theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
 
   -- fold step used in eval₂Poly
   let step : CPoly.CMvPolynomial 1 𝔽 → (CPoly.CMvMonomial n × 𝔽) → CPoly.CMvPolynomial 1 𝔽 :=
-    fun acc mc => (c1 (𝔽 := 𝔽) mc.2) * (subst_monomial vs mc.1) + acc
+    fun acc mc => (c1 (𝔽 := 𝔽) mc.2) * (substMonomial vs mc.1) + acc
 
   have hpoly :
       CPoly.eval₂Poly (𝔽 := 𝔽) (n := n) c1 vs p =
@@ -437,10 +437,10 @@ theorem eval₂_eval₂Poly_c1 {𝔽 : Type _} {n : ℕ}
           (CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b) acc)
           mc := by
     intro acc mc
-    -- rewrite eval₂(subst_monomial ...) using the honest prover lemma
+    -- rewrite eval₂(substMonomial ...) using the honest prover lemma
     have hs :
         CPoly.CMvPolynomial.eval (fun _ : Fin 1 => b)
-            (subst_monomial vs mc.1)
+            (substMonomial vs mc.1)
           =
         CPoly.MonoR.evalMonomial pt mc.1 := by
       simpa [pt] using

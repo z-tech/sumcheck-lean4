@@ -15,23 +15,23 @@ lemma acceptsEvent_rounds_ok
   (t : Transcript 𝔽 n) :
   AcceptsEvent domain p claim t →
     (List.finRange n).all (fun i : Fin n =>
-      verifier_check domain (ind_degree_k p i) (t.claims claim (Fin.castSucc i)) (t.round_polys i)
+      verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
       &&
-      decide (t.claims claim i.succ = next_claim (t.challenges i) (t.round_polys i))
+      decide (t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i))
     ) = true := by
   intro hAcc
   dsimp [AcceptsEvent] at hAcc
-  simp [is_verifier_accepts] at hAcc
+  simp [isVerifierAccepts] at hAcc
   have h : (by
       -- name these lets the same way `simp` expanded them
-      -- but we don't actually need to name them; `simp` already reduced to (rounds_ok && final_ok) = true
+      -- but we don't actually need to name them; `simp` already reduced to (roundsOk && finalOk) = true
       exact True) := by
     trivial
-  -- turn (rounds_ok && final_ok) = true into rounds_ok = true ∧ final_ok = true
+  -- turn (roundsOk && finalOk) = true into roundsOk = true ∧ finalOk = true
   have h' : ( (List.finRange n).all (fun i : Fin n =>
-      verifier_check domain (ind_degree_k p i) (t.claims claim (Fin.castSucc i)) (t.round_polys i)
+      verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
       &&
-      decide (t.claims claim i.succ = next_claim (t.challenges i) (t.round_polys i))
+      decide (t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i))
     ) = true
     ∧
     decide (t.claims claim (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p) = true) := by
@@ -49,12 +49,12 @@ lemma acceptsEvent_final_ok
     decide (t.claims claim (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p) = true := by
   intro hAcc
   dsimp [AcceptsEvent] at hAcc
-  simp [is_verifier_accepts] at hAcc
+  simp [isVerifierAccepts] at hAcc
   have h' :
       (List.finRange n).all (fun i : Fin n =>
-        verifier_check domain (ind_degree_k p i) (t.claims claim (Fin.castSucc i)) (t.round_polys i)
+        verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i)
         &&
-        decide (t.claims claim i.succ = next_claim (t.challenges i) (t.round_polys i))
+        decide (t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i))
       ) = true
       ∧
       decide (t.claims claim (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p) = true := by
@@ -64,17 +64,17 @@ lemma acceptsEvent_final_ok
 lemma verifier_check_eq_true_iff
   {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
-  (max_degree : ℕ)
-  (round_claim : 𝔽)
-  (round_p : CPoly.CMvPolynomial 1 𝔽) :
-  verifier_check (𝔽 := 𝔽) domain max_degree round_claim round_p = true
+  (maxDegree : ℕ)
+  (roundClaim : 𝔽)
+  (roundP : CPoly.CMvPolynomial 1 𝔽) :
+  verifierCheck (𝔽 := 𝔽) domain maxDegree roundClaim roundP = true
     ↔
     (domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) round_p) 0
-      = round_claim)
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) roundP) 0
+      = roundClaim)
     ∧
-    (CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ round_p ≤ max_degree) := by
-  simp [verifier_check]
+    (CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ roundP ≤ maxDegree) := by
+  simp [verifierCheck]
 
 lemma acceptsEvent_round_facts
   {𝔽 : Type _} {n : ℕ}
@@ -85,17 +85,17 @@ lemma acceptsEvent_round_facts
   (t : Transcript 𝔽 n)
   (i : Fin n) :
   AcceptsEvent domain p claim t →
-    verifier_check domain (ind_degree_k p i) (t.claims claim (Fin.castSucc i)) (t.round_polys i) = true
+    verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i) = true
     ∧
-    t.claims claim i.succ = next_claim (t.challenges i) (t.round_polys i) := by
+    t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i) := by
   intro hAcc
   have hRounds := acceptsEvent_rounds_ok domain (p := p) (claim := claim) (t := t) hAcc
 
   have hall :
       ∀ x, x ∈ List.finRange n →
-        (verifier_check domain (ind_degree_k p x) (t.claims claim (Fin.castSucc x)) (t.round_polys x)
+        (verifierCheck domain (indDegreeK p x) (t.claims claim (Fin.castSucc x)) (t.roundPolys x)
           &&
-          decide (t.claims claim x.succ = next_claim (t.challenges x) (t.round_polys x))) = true := by
+          decide (t.claims claim x.succ = nextClaim (t.challenges x) (t.roundPolys x))) = true := by
     exact List.all_eq_true.mp hRounds
 
   have hi_mem : i ∈ List.finRange n := by
@@ -104,8 +104,8 @@ lemma acceptsEvent_round_facts
   have hix := hall i hi_mem
 
   have hsplit :
-      verifier_check domain (ind_degree_k p i) (t.claims claim (Fin.castSucc i)) (t.round_polys i) = true
-      ∧ decide (t.claims claim i.succ = next_claim (t.challenges i) (t.round_polys i)) = true := by
+      verifierCheck domain (indDegreeK p i) (t.claims claim (Fin.castSucc i)) (t.roundPolys i) = true
+      ∧ decide (t.claims claim i.succ = nextClaim (t.challenges i) (t.roundPolys i)) = true := by
     simpa [Bool.and_eq_true] using hix
 
   refine ⟨hsplit.1, ?_⟩
@@ -121,17 +121,17 @@ lemma acceptsEvent_domain_sum_eq_claim
   (i : Fin n) :
   AcceptsEvent domain p claim t →
     domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.round_polys i)) 0
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (t.roundPolys i)) 0
       =
     t.claims claim (Fin.castSucc i) := by
   intro hAcc
   have hcheck := (acceptsEvent_round_facts domain (p := p) (claim := claim) (t := t) (i := i) hAcc).1
-  -- unpack verifier_check = true into the domain sum equality
+  -- unpack verifierCheck = true into the domain sum equality
   have hiff :=
     (verifier_check_eq_true_iff (𝔽 := 𝔽) domain
-      (max_degree := ind_degree_k p i)
-      (round_claim := t.claims claim (Fin.castSucc i))
-      (round_p := t.round_polys i))
+      (maxDegree := indDegreeK p i)
+      (roundClaim := t.claims claim (Fin.castSucc i))
+      (roundP := t.roundPolys i))
   have hprops := hiff.mp hcheck
   exact hprops.1
 
@@ -144,10 +144,10 @@ lemma acceptsEvent_domain_sum_eq_claim_of_honest
   (r : Fin n → 𝔽)
   (t : Transcript 𝔽 n)
   (i : Fin n)
-  (hi : t.round_polys i = honest_round_poly domain p r i) :
+  (hi : t.roundPolys i = honestRoundPoly domain p r i) :
   AcceptsEvent domain p claim t →
     domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (honest_round_poly domain p r i)) 0
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) (honestRoundPoly domain p r i)) 0
       =
     t.claims claim (Fin.castSucc i) := by
   intro hAcc

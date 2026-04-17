@@ -6,8 +6,8 @@ import Mathlib.Algebra.BigOperators.Fin
 import Sumcheck.Properties.Lemmas.List
 import Sumcheck.Properties.Lemmas.Degree
 
-def honest_split_eq_cast {n : ℕ} (i : Fin n) (m : ℕ)
-    (hm : num_open_vars (n := n) i = m) :
+def honestSplitEqCast {n : ℕ} (i : Fin n) (m : ℕ)
+    (hm : numOpenVars (n := n) i = m) :
     i.val + (m + 1) = n :=
 by
   exact
@@ -34,11 +34,11 @@ lemma cast_split_eq_succ_castSucc {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (
   let j : Fin n := ⟨i.val.succ, hlt⟩
   Fin.cast (honest_split_eq (n := n) j).symm k
       =
-    Fin.castAdd (num_open_vars (n := n) j + 1) (Fin.castSucc t0)
+    Fin.castAdd (numOpenVars (n := n) j + 1) (Fin.castSucc t0)
   →
   Fin.cast (honest_split_eq (n := n) i).symm k
     =
-  Fin.castAdd (num_open_vars (n := n) i + 1) t0 := by
+  Fin.castAdd (numOpenVars (n := n) i + 1) t0 := by
   classical
   dsimp
   intro h
@@ -55,11 +55,11 @@ lemma cast_split_eq_succ_last {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (k : 
   let j : Fin n := ⟨i.val.succ, hlt⟩
   Fin.cast (honest_split_eq (n := n) j).symm k
       =
-    Fin.castAdd (num_open_vars (n := n) j + 1) (Fin.last i.val)
+    Fin.castAdd (numOpenVars (n := n) j + 1) (Fin.last i.val)
   →
   Fin.cast (honest_split_eq (n := n) i).symm k
     =
-  Fin.natAdd i.val (0 : Fin (num_open_vars (n := n) i + 1)) := by
+  Fin.natAdd i.val (0 : Fin (numOpenVars (n := n) i + 1)) := by
   -- unfold the `let` binder in the statement
   dsimp
   intro h
@@ -71,10 +71,10 @@ lemma cast_split_eq_succ_last {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (k : 
   simp [hk]
 
 lemma cast_split_eq_succ_right {n : ℕ} (i : Fin n) (hlt : i.val.succ < n) (k : Fin n)
-  (t : Fin (num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1))
+  (t : Fin (numOpenVars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1))
   (hm1 :
-    num_open_vars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 + 1
-      = num_open_vars (n := n) i + 1) :
+    numOpenVars (n := n) (⟨i.val.succ, hlt⟩ : Fin n) + 1 + 1
+      = numOpenVars (n := n) i + 1) :
   let j : Fin n := ⟨i.val.succ, hlt⟩
   Fin.cast (honest_split_eq (n := n) j).symm k = Fin.natAdd j.val t
   →

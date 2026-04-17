@@ -1,8 +1,8 @@
 import Sumcheck.Properties.Probability.Universe
 
--- prob_over_challenges is just probEvent
+-- probOverChallenges is just probEvent
 -- kept as alias for backwards compatibility during migration
-noncomputable abbrev prob_over_challenges
+noncomputable abbrev probOverChallenges
   {𝔽 : Type _} {n : ℕ} [Fintype 𝔽]
   (E : (Fin n → 𝔽) → Prop) : ℚ :=
   probEvent E

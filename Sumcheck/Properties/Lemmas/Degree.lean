@@ -111,12 +111,12 @@ lemma degree_honest_prover_message_at_le_of_per_b
   (challenges : Fin i.val → 𝔽)
   (d : ℕ)
   (hF :
-    ∀ b : Fin (num_open_vars (n := n) i) → 𝔽,
+    ∀ b : Fin (numOpenVars (n := n) i) → 𝔽,
       CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-        (CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
+        (CPoly.eval₂Poly c1 (honestCombinedMap (𝔽 := 𝔽) (n := n) i challenges b) p)
       ≤ d) :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-      (honest_prover_message_at domain (𝔽 := 𝔽) (p := p) (i := i) (challenges := challenges))
+      (honestProverMessageAt domain (𝔽 := 𝔽) (p := p) (i := i) (challenges := challenges))
     ≤ d := by
   classical
 
@@ -159,14 +159,14 @@ lemma degree_honest_prover_message_at_le_of_per_b
       domain
       (add := add1)
       (zero := 0)
-      (m := num_open_vars (n := n) i)
+      (m := numOpenVars (n := n) i)
       (F := fun b =>
-        CPoly.eval₂Poly c1 (honest_combined_map (𝔽 := 𝔽) (n := n) i challenges b) p)
+        CPoly.eval₂Poly c1 (honestCombinedMap (𝔽 := 𝔽) (n := n) i challenges b) p)
       (hadd := hadd)
       (hzero := hzero)
       (hF := hF)
 
-  simpa [honest_prover_message_at, deg, add1] using h
+  simpa [honestProverMessageAt, deg, add1] using h
 
 lemma residual_sum_with_openVars_cast_congr
   {𝔽 : Type _} [CommRing 𝔽] [DecidableEq 𝔽]
@@ -175,10 +175,10 @@ lemma residual_sum_with_openVars_cast_congr
   (hn₁ hn₂ : k + openVars = n)
   (ch : Fin k → 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) :
-  residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
+  residualSumWithOpenVars (𝔽 := 𝔽) (k := k) (n := n)
       domain (openVars := openVars) (hn := hn₁) ch p
     =
-  residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
+  residualSumWithOpenVars (𝔽 := 𝔽) (k := k) (n := n)
       domain (openVars := openVars) (hn := hn₂) ch p := by
   classical
   have hhn : hn₁ = hn₂ := Subsingleton.elim _ _
@@ -193,10 +193,10 @@ lemma residual_sum_with_openVars_def_with_hn
   (hn hn' : k + openVars = n)
   (ch : Fin k → 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) :
-  residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
+  residualSumWithOpenVars (𝔽 := 𝔽) (k := k) (n := n)
       domain (openVars := openVars) (hn := hn) ch p
     =
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := 𝔽)
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := 𝔽)
       domain (· + ·) 0 (m := openVars)
       (fun x =>
         let point : Fin n → 𝔽 :=
@@ -204,14 +204,14 @@ lemma residual_sum_with_openVars_def_with_hn
         CPoly.CMvPolynomial.eval point p) := by
   classical
   have hswap :
-      residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
+      residualSumWithOpenVars (𝔽 := 𝔽) (k := k) (n := n)
           domain (openVars := openVars) (hn := hn) ch p
         =
-      residual_sum_with_openVars (𝔽 := 𝔽) (k := k) (n := n)
+      residualSumWithOpenVars (𝔽 := 𝔽) (k := k) (n := n)
           domain (openVars := openVars) (hn := hn') ch p :=
     residual_sum_with_openVars_cast_congr (𝔽 := 𝔽) (k := k) (n := n)
       domain (openVars := openVars) hn hn' ch p
-  simp [residual_sum_with_openVars]
+  simp [residualSumWithOpenVars]
 
 theorem degreeOf_x0_le_one {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (x0 (𝔽 := 𝔽)) ≤ 1 := by
@@ -316,24 +316,24 @@ theorem degreeOf_c1_eq_zero {𝔽 : Type _} [CommSemiring 𝔽] [BEq 𝔽] [Lawf
 theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
 (q : CPoly.CMvPolynomial 1 𝔽) :
   ∀ e : ℕ,
-    CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (pow_univariate (𝔽 := 𝔽) q e)
+    CPoly.CMvPolynomial.degreeOf (0 : Fin 1) (powUnivariate (𝔽 := 𝔽) q e)
       ≤ e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
   intro e
   induction e with
   | zero =>
       have h0 :
           CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-              (pow_univariate (𝔽 := 𝔽) q 0) = 0 := by
-        simpa [pow_univariate] using
+              (powUnivariate (𝔽 := 𝔽) q 0) = 0 := by
+        simpa [powUnivariate] using
           (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := (1 : 𝔽)))
       -- goal is an inequality, but simp turns `≤ 0` into `= 0`
       simp [h0]
   | succ e ih =>
       have hmul :=
-        degreeOf_mul_le_univariate (𝔽 := 𝔽) q (pow_univariate (𝔽 := 𝔽) q e)
+        degreeOf_mul_le_univariate (𝔽 := 𝔽) q (powUnivariate (𝔽 := 𝔽) q e)
       have h1 :
           CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-              (Mul.mul q (pow_univariate (𝔽 := 𝔽) q e))
+              (Mul.mul q (powUnivariate (𝔽 := 𝔽) q e))
             ≤
             CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q +
               e * CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q := by
@@ -348,25 +348,25 @@ theorem degreeOf_pow_univariate_le {𝔽 : Type _} [CommRing 𝔽] [BEq 𝔽] [L
         -- to make it reflexive.
         simp [Nat.succ_mul, Nat.add_comm]
       have h2 := le_trans h1 harith
-      simpa [pow_univariate] using h2
+      simpa [powUnivariate] using h2
 
 
 theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
 (r : Fin n → 𝔽) (i : Fin n)
-(b : Fin (num_open_vars (n := n) i) → 𝔽)
+(b : Fin (numOpenVars (n := n) i) → 𝔽)
 (m : CPoly.CMvMonomial n) :
   CPoly.CMvPolynomial.degreeOf (0 : Fin 1)
-      (subst_monomial (n := n) (𝔽 := 𝔽)
-        (honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b) m)
-    ≤ extract_exp_var_i m i := by
+      (substMonomial (n := n) (𝔽 := 𝔽)
+        (honestCombinedMap (𝔽 := 𝔽) (n := n) i (challengeSubset r i) b) m)
+    ≤ extractExpVarI m i := by
   classical
   -- set up abbreviations
   let vs : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
-    honest_combined_map (𝔽 := 𝔽) (n := n) i (challenge_subset r i) b
+    honestCombinedMap (𝔽 := 𝔽) (n := n) i (challengeSubset r i) b
   let deg : CPoly.CMvPolynomial 1 𝔽 → ℕ :=
     fun q => CPoly.CMvPolynomial.degreeOf (0 : Fin 1) q
   let term : Fin n → CPoly.CMvPolynomial 1 𝔽 :=
-    fun j => pow_univariate (𝔽 := 𝔽) (vs j) (extract_exp_var_i m j)
+    fun j => powUnivariate (𝔽 := 𝔽) (vs j) (extractExpVarI m j)
   let degPow : Fin n → ℕ := fun j => deg (term j)
 
   -- bound degree of a foldl product by degree(acc) + sum of degrees
@@ -385,23 +385,23 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
         have h := le_trans ih' (Nat.add_le_add_right hmul _)
         simpa [List.foldl, List.map, degPow, Nat.add_assoc, Nat.add_left_comm, Nat.add_comm] using h
 
-  -- specialize to subst_monomial
+  -- specialize to substMonomial
   have hdeg_subst_le_list :
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m)
+      deg (substMonomial (n := n) (𝔽 := 𝔽) vs m)
         ≤ ((List.finRange n).map degPow).sum := by
     have h0 : deg (c1 (𝔽 := 𝔽) (1 : 𝔽)) = 0 := by
       simpa [deg] using (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := (1 : 𝔽)))
     have h := hfold (L := List.finRange n) (acc := c1 (𝔽 := 𝔽) (1 : 𝔽))
     have h' := h
     rw [h0] at h'
-    simpa [subst_monomial, term, degPow, deg] using h'
+    simpa [substMonomial, term, degPow, deg] using h'
 
   -- rewrite list sum as a Fintype sum
   have hsum_univ : (∑ j : Fin n, degPow j) = ((List.finRange n).map degPow).sum := by
     simpa using (Fin.sum_univ_def (n := n) (f := degPow))
 
   have hdeg_subst_le_sum :
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m) ≤ ∑ j : Fin n, degPow j := by
+      deg (substMonomial (n := n) (𝔽 := 𝔽) vs m) ≤ ∑ j : Fin n, degPow j := by
     have hsum_univ' : ((List.finRange n).map degPow).sum = ∑ j : Fin n, degPow j := by
       simpa using hsum_univ.symm
     simpa [hsum_univ'] using hdeg_subst_le_list
@@ -411,20 +411,20 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
     intro j hj
     have hdef :=
       (honest_combined_map_def (𝔽 := 𝔽) (n := n) (i := i)
-        (challenges := challenge_subset r i) (b := b) (j := j))
+        (challenges := challengeSubset r i) (b := b) (j := j))
     have hcast :
         vs j =
-          Fin.addCases (m := i.val) (n := num_open_vars (n := n) i + 1)
+          Fin.addCases (m := i.val) (n := numOpenVars (n := n) i + 1)
             (motive := fun _ => CPoly.CMvPolynomial 1 𝔽)
-            (fun t : Fin i.val => c1 (𝔽 := 𝔽) (challenge_subset r i t))
-            (honest_right_map (𝔽 := 𝔽) (n := n) i b)
+            (fun t : Fin i.val => c1 (𝔽 := 𝔽) (challengeSubset r i t))
+            (honestRightMap (𝔽 := 𝔽) (n := n) i b)
             (Fin.cast (honest_split_eq (n := n) i).symm j) := by
       simpa [vs] using hdef
     rw [hcast]
     cases h : (Fin.cast (honest_split_eq (n := n) i).symm j) using Fin.addCases with
     | left t =>
         simpa [Fin.addCases, h, deg] using
-          (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := challenge_subset r i t))
+          (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := challengeSubset r i t))
     | right t =>
         -- simplify the goal but keep the equation `h` around
         simp [Fin.addCases]
@@ -438,15 +438,15 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
         | succ t' =>
             cases t' with
             | mk tv htv =>
-                simpa [deg, honest_right_map] using
+                simpa [deg, honestRightMap] using
                   (degreeOf_c1_eq_zero (𝔽 := 𝔽) (c := b ⟨tv, htv⟩))
 
   -- show degPow j = 0 for j ≠ i
   have hdegPow_other : ∀ j : Fin n, j ≠ i → degPow j = 0 := by
     intro j hj
-    have hpow : degPow j ≤ (extract_exp_var_i m j) * deg (vs j) := by
+    have hpow : degPow j ≤ (extractExpVarI m j) * deg (vs j) := by
       simpa [degPow, deg] using
-        (degreeOf_pow_univariate_le (𝔽 := 𝔽) (q := vs j) (extract_exp_var_i m j))
+        (degreeOf_pow_univariate_le (𝔽 := 𝔽) (q := vs j) (extractExpVarI m j))
     have hdeg0 : deg (vs j) = 0 := hdeg_vs_other j hj
     have : degPow j ≤ 0 := by
       simpa [hdeg0] using hpow
@@ -460,27 +460,27 @@ theorem degree_subst_monomial_honest_combined_le_exp_i {𝔽 : Type _} {n : ℕ}
     exact hdegPow_other j hj
 
   -- bound the i-term by the exponent
-  have hdegPow_i : degPow i ≤ extract_exp_var_i m i := by
+  have hdegPow_i : degPow i ≤ extractExpVarI m i := by
     have hxi : vs i = x0 (𝔽 := 𝔽) := by
       simpa [vs] using
         (honest_combined_map_at_i_is_x0 (𝔽 := 𝔽) (n := n) (i := i)
-          (challenges := challenge_subset r i) (b := b))
-    have hpow : degPow i ≤ (extract_exp_var_i m i) * deg (vs i) := by
+          (challenges := challengeSubset r i) (b := b))
+    have hpow : degPow i ≤ (extractExpVarI m i) * deg (vs i) := by
       simpa [degPow, deg] using
-        (degreeOf_pow_univariate_le (𝔽 := 𝔽) (q := vs i) (extract_exp_var_i m i))
+        (degreeOf_pow_univariate_le (𝔽 := 𝔽) (q := vs i) (extractExpVarI m i))
     have hx0 : deg (vs i) ≤ 1 := by
       simpa [deg, hxi] using (degreeOf_x0_le_one (𝔽 := 𝔽))
-    have hmul : (extract_exp_var_i m i) * deg (vs i) ≤ extract_exp_var_i m i := by
-      simpa [Nat.mul_one] using (Nat.mul_le_mul_left (extract_exp_var_i m i) hx0)
+    have hmul : (extractExpVarI m i) * deg (vs i) ≤ extractExpVarI m i := by
+      simpa [Nat.mul_one] using (Nat.mul_le_mul_left (extractExpVarI m i) hx0)
     exact le_trans hpow hmul
 
   -- final assembly
   have :
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m) ≤ extract_exp_var_i m i := by
+      deg (substMonomial (n := n) (𝔽 := 𝔽) vs m) ≤ extractExpVarI m i := by
     calc
-      deg (subst_monomial (n := n) (𝔽 := 𝔽) vs m)
+      deg (substMonomial (n := n) (𝔽 := 𝔽) vs m)
           ≤ ∑ j : Fin n, degPow j := hdeg_subst_le_sum
       _ = degPow i := hsum_single
-      _ ≤ extract_exp_var_i m i := hdegPow_i
+      _ ≤ extractExpVarI m i := hdegPow_i
 
   simpa [degPow, deg, term, vs] using this

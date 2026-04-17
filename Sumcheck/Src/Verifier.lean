@@ -2,34 +2,34 @@ import CompPoly.Multivariate.CMvPolynomial
 import Sumcheck.Src.Transcript
 import Sumcheck.Src.CMvPolynomial
 
-@[simp] def verifier_check {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
+@[simp] def verifierCheck {𝔽} [CommRing 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
-  (max_degree : ℕ)
-  (round_claim : 𝔽)
-  (round_p : CPoly.CMvPolynomial 1 𝔽) : Bool :=
-  let round_identity_ok : Prop :=
+  (maxDegree : ℕ)
+  (roundClaim : 𝔽)
+  (roundP : CPoly.CMvPolynomial 1 𝔽) : Bool :=
+  let roundIdentityOk : Prop :=
     domain.foldl (fun acc a =>
-      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) round_p) 0
-      = round_claim
-  let deg_bound_ok : Prop :=
-    CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ round_p ≤ max_degree
-  decide round_identity_ok && decide deg_bound_ok
+      acc + CPoly.CMvPolynomial.eval (fun _ : Fin 1 => a) roundP) 0
+      = roundClaim
+  let degBoundOk : Prop :=
+    CPoly.CMvPolynomial.degreeOf ⟨0, by decide⟩ roundP ≤ maxDegree
+  decide roundIdentityOk && decide degBoundOk
 
 -- the verifier checks the transcript given an initial claim
-def is_verifier_accepts
+def isVerifierAccepts
   {𝔽 : Type _} {n : ℕ}
   [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (domain : List 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽)
-  (initial_claim : 𝔽)
+  (initialClaim : 𝔽)
   (t : Transcript 𝔽 n) : Bool :=
-  let claims := t.claims initial_claim
-  let rounds_ok : Bool :=
+  let claims := t.claims initialClaim
+  let roundsOk : Bool :=
     (List.finRange n).all (fun i : Fin n =>
-      verifier_check domain (ind_degree_k p i) (claims (Fin.castSucc i)) (t.round_polys i)
+      verifierCheck domain (indDegreeK p i) (claims (Fin.castSucc i)) (t.roundPolys i)
       &&
-      decide (claims i.succ = next_claim (t.challenges i) (t.round_polys i))
+      decide (claims i.succ = nextClaim (t.challenges i) (t.roundPolys i))
     )
-  let final_ok : Bool :=
+  let finalOk : Bool :=
     decide (claims (Fin.last n) = CPoly.CMvPolynomial.eval t.challenges p)
-  rounds_ok && final_ok
+  roundsOk && finalOk

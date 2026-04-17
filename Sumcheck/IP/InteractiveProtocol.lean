@@ -10,11 +10,11 @@ theorem sumcheck_hasSoundnessError {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype
     hasSoundnessError
       (sumcheckProtocol (𝔽 := 𝔽) (n := n))
       sumcheckClaimIsCorrect
-      (fun st => soundness_error st.polynomial) := by
+      (fun st => soundnessError st.polynomial) := by
   intro st P hFalse
   unfold probAccept
-  -- AcceptsOnChallenges IS sumcheckProtocol.verifier_accepts ∘ generateTranscript
-  have hEq : (fun r => sumcheckProtocol.verifier_accepts st
+  -- AcceptsOnChallenges IS sumcheckProtocol.verifierAccepts ∘ generateTranscript
+  have hEq : (fun r => sumcheckProtocol.verifierAccepts st
       (generateTranscript sumcheckProtocol st P r))
     = (fun r => AcceptsOnChallenges st P r) := rfl
   rw [hEq]
@@ -27,10 +27,10 @@ theorem sumcheck_hasPerfectCompleteness {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fi
       sumcheckHonestProver := by
   intro st hTrue
   unfold probAccept
-  have hEq : (fun r => sumcheckProtocol.verifier_accepts st
+  have hEq : (fun r => sumcheckProtocol.verifierAccepts st
       (generateTranscript sumcheckProtocol st sumcheckHonestProver r))
     = (fun r => AcceptsEvent st.domain st.polynomial st.claim
-        (generate_honest_transcript st.domain st.polynomial st.claim r)) := by
+        (generateHonestTranscript st.domain st.polynomial st.claim r)) := by
     rfl
   rw [hEq, hTrue]
   exact perfect_completeness st.domain st.polynomial

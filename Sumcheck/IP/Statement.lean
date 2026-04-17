@@ -10,7 +10,7 @@ structure SumcheckStatement (𝔽 : Type) [Field 𝔽] [DecidableEq 𝔽] (n : �
 -- need predicate so we can quantify over false/ true statements
 def sumcheckClaimIsCorrect {𝔽 : Type} {n : ℕ} [Field 𝔽] [DecidableEq 𝔽]
     (st : SumcheckStatement 𝔽 n) : Prop :=
-  st.claim = honest_claim st.domain st.polynomial
+  st.claim = honestClaim st.domain st.polynomial
 
 -- this is the actual mapping into the framework
 def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
@@ -20,10 +20,10 @@ def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decida
   mkTranscript := fun msgs chs => (msgs, chs)
   challenges := fun tr => tr.2
   proverMessage := fun tr i => tr.1 i
-  verifier_accepts := fun st tr =>
-    is_verifier_accepts st.domain st.polynomial st.claim
-      { round_polys := tr.1, challenges := tr.2 } = true
-  verifier_decides := fun _ _ => inferInstance
+  verifierAccepts := fun st tr =>
+    isVerifierAccepts st.domain st.polynomial st.claim
+      { roundPolys := tr.1, challenges := tr.2 } = true
+  verifierDecides := fun _ _ => inferInstance
   challenges_mk := fun _ _ => rfl
   proverMessage_mk := fun _ _ _ => rfl
 
@@ -31,7 +31,7 @@ def sumcheckProtocol {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decida
 def sumcheckHonestProver {𝔽 : Type} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽] :
     Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)) where
   respond := fun st i chs =>
-    honest_prover_message_at st.domain st.polynomial i chs
+    honestProverMessageAt st.domain st.polynomial i chs
 
 -- construct a Transcript from a Prover and challenges
 def proverTranscript
@@ -39,7 +39,7 @@ def proverTranscript
     (st : SumcheckStatement 𝔽 n)
     (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
     (r : Fin n → 𝔽) : Transcript 𝔽 n :=
-  { round_polys := fun i => P.respond st i (challenge_subset r i)
+  { roundPolys := fun i => P.respond st i (challengeSubset r i)
     challenges := r }
 
 @[simp] lemma proverTranscript_challenges
@@ -54,4 +54,4 @@ def proverTranscript
     (st : SumcheckStatement 𝔽 n)
     (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
     (r : Fin n → 𝔽) (i : Fin n) :
-    (proverTranscript st P r).round_polys i = P.respond st i (challenge_subset r i) := rfl
+    (proverTranscript st P r).roundPolys i = P.respond st i (challengeSubset r i) := rfl

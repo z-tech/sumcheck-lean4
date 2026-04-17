@@ -12,4 +12,4 @@ def BadTranscriptEvent
   (p : CPoly.CMvPolynomial n 𝔽)
   (t : Transcript 𝔽 n) : Prop :=
   ∃ i : Fin n,
-    BadRound domain (t.round_polys i) p t.challenges i
+    BadRound domain (t.roundPolys i) p t.challenges i

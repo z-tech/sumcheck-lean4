@@ -20,8 +20,8 @@ structure PublicCoinProtocol (S : Type*) (C : Type*) (n : ℕ) where
   mkTranscript : (∀ i : Fin n, ProverMessage i) → (Fin n → C) → Transcript
   challenges : Transcript → (Fin n → C)
   proverMessage : Transcript → (i : Fin n) → ProverMessage i
-  verifier_accepts : S → Transcript → Prop
-  verifier_decides : ∀ (st : S) (tr : Transcript), Decidable (verifier_accepts st tr)
+  verifierAccepts : S → Transcript → Prop
+  verifierDecides : ∀ (st : S) (tr : Transcript), Decidable (verifierAccepts st tr)
   challenges_mk : ∀ msgs chs, challenges (mkTranscript msgs chs) = chs
   proverMessage_mk : ∀ msgs chs i, proverMessage (mkTranscript msgs chs) i = msgs i
 
@@ -31,7 +31,7 @@ structure Prover {S C : Type*} {n : ℕ} (ip : PublicCoinProtocol S C n) where
   respond : S → (i : Fin n) → (Fin i.val → C) → ip.ProverMessage i
 
 -- the subset of challenges visible to the prover at round i
-def challenge_subset {C : Type*} {n : ℕ} (r : Fin n → C) (i : Fin n) : Fin i.val → C :=
+def challengeSubset {C : Type*} {n : ℕ} (r : Fin n → C) (i : Fin n) : Fin i.val → C :=
   fun j => r ⟨j.val, Nat.lt_trans j.isLt i.isLt⟩
 
 -- generate the transcript from a prover interacting with random challenges
@@ -39,4 +39,4 @@ def challenge_subset {C : Type*} {n : ℕ} (r : Fin n → C) (i : Fin n) : Fin i
 def generateTranscript {S C : Type*} {n : ℕ}
     (ip : PublicCoinProtocol S C n)
     (st : S) (P : Prover ip) (r : Fin n → C) : ip.Transcript :=
-  ip.mkTranscript (fun i => P.respond st i (challenge_subset r i)) r
+  ip.mkTranscript (fun i => P.respond st i (challengeSubset r i)) r

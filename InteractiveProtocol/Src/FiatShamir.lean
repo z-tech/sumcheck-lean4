@@ -49,4 +49,4 @@ def fiatShamirVerify {S C : Type*} {n : ℕ}
     (proof : FiatShamirProof ip) : Prop :=
   let chs := fiatShamirChallenges ip H enc st proof.messages
   let tr := ip.mkTranscript proof.messages chs
-  ip.verifier_accepts st tr
+  ip.verifierAccepts st tr
