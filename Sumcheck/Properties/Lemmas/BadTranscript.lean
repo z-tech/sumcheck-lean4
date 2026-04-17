@@ -16,7 +16,7 @@ lemma badTranscript_implies_lastBadRound
 
   -- the set of "bad" rounds (where the prover deviates from the honest round poly)
   let bad : Finset (Fin n) :=
-    Finset.univ.filter (fun i => t.round_polys i ≠ honest_round_poly st.domain st.polynomial r i)
+    Finset.univ.filter (fun i => t.roundPolys i ≠ honestRoundPoly st.domain st.polynomial r i)
 
   have bad_nonempty : bad.Nonempty := by
     rcases hBad with ⟨i0, hi0⟩
@@ -27,7 +27,7 @@ lemma badTranscript_implies_lastBadRound
   let i : Fin n := Finset.max' bad bad_nonempty
 
   have hi_neq :
-      t.round_polys i ≠ honest_round_poly st.domain st.polynomial r i := by
+      t.roundPolys i ≠ honestRoundPoly st.domain st.polynomial r i := by
     have hi_mem : i ∈ bad := Finset.max'_mem bad bad_nonempty
     simpa [bad] using hi_mem
 
@@ -37,7 +37,7 @@ lemma badTranscript_implies_lastBadRound
   · intro j hij
     -- show every round after i is good, else contradict maximality of i
     by_contra hneq
-    have hneq' : t.round_polys j ≠ honest_round_poly st.domain st.polynomial r j := by
+    have hneq' : t.roundPolys j ≠ honestRoundPoly st.domain st.polynomial r j := by
       simpa [t] using hneq
     have hj_mem : j ∈ bad := by
       simp [bad, hneq']

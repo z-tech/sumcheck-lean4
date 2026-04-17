@@ -22,12 +22,12 @@ lemma Fin_cases_eq_cons {α : Type _} {n : ℕ} (a : α) (f : Fin n → α) :
 lemma residual_sum_eq_with_openVars_def
   {𝔽 : Type} [CommRing 𝔽] [DecidableEq 𝔽]
   {k n : ℕ} (domain : List 𝔽) (ch : Fin k → 𝔽) (p : CPoly.CMvPolynomial n 𝔽) (hk : k ≤ n) :
-  residual_sum (𝔽 := 𝔽) domain (k := k) (num_vars := n) ch p hk
+  residualSum (𝔽 := 𝔽) domain (k := k) (numVars := n) ch p hk
     =
-  residual_sum_with_openVars (𝔽 := 𝔽) domain (k := k) (n := n)
+  residualSumWithOpenVars (𝔽 := 𝔽) domain (k := k) (n := n)
     (openVars := n - k) (hn := by simpa using Nat.add_sub_of_le hk) ch p := by
   classical
-  unfold residual_sum residual_sum_with_openVars
+  unfold residualSum residualSumWithOpenVars
   simp (config := { zeta := true })
 
 
@@ -46,7 +46,7 @@ lemma sumcheck_evalMonomial_zero
   simp [CPoly.MonoR.evalMonomial, sumcheck_CMvMonomial_zero_get]
 
 -- ============================================================================
--- sum_over_hypercube_recursive lemmas (kept for backwards compat in proofs)
+-- sumOverHypercubeRecursive lemmas (kept for backwards compat in proofs)
 -- ============================================================================
 
 @[simp] lemma sum_over_hypercube_recursive_succ
@@ -55,14 +55,14 @@ lemma sumcheck_evalMonomial_zero
   (add : β → β → β)
   {m : ℕ}
   (F : (Fin (Nat.succ m) → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := Nat.succ m) F
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := Nat.succ m) F
     =
     add
-      (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+      (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
         (fun x => F (Fin.cons b0 x)))
-      (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+      (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
         (fun x => F (Fin.cons b1 x))) := by
-  rw [sum_over_hypercube_recursive.eq_succ]
+  rw [sumOverHypercubeRecursive.eq_succ]
   simp only [Fin_cases_eq_cons]
 
 lemma sum_over_hypercube_recursive_deg_le
@@ -74,30 +74,30 @@ lemma sum_over_hypercube_recursive_deg_le
   (F : (Fin m → 𝔽) → β)
   (hadd : ∀ a b, deg a ≤ d → deg b ≤ d → deg (add a b) ≤ d)
   (hF : ∀ x, deg (F x) ≤ d) :
-  deg (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F) ≤ d := by
+  deg (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F) ≤ d := by
   classical
   induction m with
   | zero =>
-      simpa [sum_over_hypercube_recursive.eq_zero] using hF Fin.elim0
+      simpa [sumOverHypercubeRecursive.eq_zero] using hF Fin.elim0
   | succ m ih =>
       -- split on the last coordinate (0 vs 1)
       have h0 :
           deg
-            (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+            (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
               (fun x => F (Fin.cons b0 x))) ≤ d :=
         ih (F := fun x => F (Fin.cons b0 x))
            (hF := fun x => hF (Fin.cons b0 x))
       have h1 :
           deg
-            (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+            (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
               (fun x => F (Fin.cons b1 x))) ≤ d :=
         ih (F := fun x => F (Fin.cons b1 x))
            (hF := fun x => hF (Fin.cons b1 x))
       -- now combine the two branches using hadd
       simpa [sum_over_hypercube_recursive_succ (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (F := F)]
         using hadd
-          (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b0 x)))
-          (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b1 x)))
+          (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b0 x)))
+          (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) (fun x => F (Fin.cons b1 x)))
           h0 h1
 
 lemma sum_over_hypercube_recursive_map
@@ -109,28 +109,28 @@ lemma sum_over_hypercube_recursive_map
   (hg : ∀ a b, g (addβ a b) = addγ (g a) (g b))
   {m : ℕ}
   (F : (Fin m → 𝔽) → β) :
-  g (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 addβ (m := m) F)
+  g (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 addβ (m := m) F)
     =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := γ) b0 b1 addγ (m := m) (fun x => g (F x)) := by
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := γ) b0 b1 addγ (m := m) (fun x => g (F x)) := by
   classical
   induction m with
   | zero =>
-      simp [sum_over_hypercube_recursive.eq_zero]
+      simp [sumOverHypercubeRecursive.eq_zero]
   | succ m ih =>
       -- Apply IH to the two branch functions explicitly
       have ih0 :
-          g (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 addβ (m := m)
+          g (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 addβ (m := m)
                 (fun x => F (Fin.cons b0 x)))
             =
-          sum_over_hypercube_recursive (𝔽 := 𝔽) (β := γ) b0 b1 addγ (m := m)
+          sumOverHypercubeRecursive (𝔽 := 𝔽) (β := γ) b0 b1 addγ (m := m)
                 (fun x => g (F (Fin.cons b0 x))) :=
         ih (F := fun x => F (Fin.cons b0 x))
 
       have ih1 :
-          g (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 addβ (m := m)
+          g (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 addβ (m := m)
                 (fun x => F (Fin.cons b1 x)))
             =
-          sum_over_hypercube_recursive (𝔽 := 𝔽) (β := γ) b0 b1 addγ (m := m)
+          sumOverHypercubeRecursive (𝔽 := 𝔽) (β := γ) b0 b1 addγ (m := m)
                 (fun x => g (F (Fin.cons b1 x))) :=
         ih (F := fun x => F (Fin.cons b1 x))
 
@@ -140,25 +140,25 @@ lemma sum_over_hypercube_recursive_map
   {𝔽 β : Type _}
   (b0 b1 : 𝔽) (add : β → β → β)
   (F : (Fin 0 → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β)
     (b0 := b0) (b1 := b1) (add := add) (m := 0) F
     =
   F Fin.elim0 := by
-  simp [sum_over_hypercube_recursive.eq_zero]
+  simp [sumOverHypercubeRecursive.eq_zero]
 
 lemma sum_over_hypercube_recursive_eq_of_m_eq_zero
   {𝔽 β : Type _}
   (b0 b1 : 𝔽) (add : β → β → β)
   {m : ℕ} (hm : m = 0)
   (F : (Fin m → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β)
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β)
     (b0 := b0) (b1 := b1) (add := add) (m := m) F
     =
   F (by
     refine Eq.ndrec (motive := fun k => Fin k → 𝔽)
       Fin.elim0 hm.symm) := by
   subst hm
-  simp [sum_over_hypercube_recursive.eq_zero]
+  simp [sumOverHypercubeRecursive.eq_zero]
 
 theorem sum_over_hypercube_recursive_cast {𝔽 β : Type _}
   (b0 b1 : 𝔽)
@@ -166,9 +166,9 @@ theorem sum_over_hypercube_recursive_cast {𝔽 β : Type _}
   {m m' : ℕ}
   (hm : m = m')
   (F : (Fin m → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F
     =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m')
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m')
     (fun x => F (x ∘ Fin.cast hm)) := by
   cases hm
   simp
@@ -179,13 +179,13 @@ theorem sum_over_hypercube_recursive_congr {𝔽 β : Type _}
   {m : ℕ}
   {F G : (Fin m → 𝔽) → β}
   (hFG : ∀ x, F x = G x) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) F
     =
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) G := by
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m) G := by
   classical
   induction m with
   | zero =>
-      simp [sum_over_hypercube_recursive.eq_zero, hFG]
+      simp [sumOverHypercubeRecursive.eq_zero, hFG]
   | succ m ih =>
       simp only [sum_over_hypercube_recursive_succ]
       congr 1 <;> exact ih (hFG := fun x => hFG _)
@@ -196,28 +196,28 @@ theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
   {m m' : ℕ}
   (hm : m' = m + 1)
   (F : (Fin m' → 𝔽) → β) :
-  sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m') F
+  sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m') F
     =
   add
-    (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+    (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
       (fun x => F ((Fin.cons b0 x) ∘ Fin.cast hm)))
-    (sum_over_hypercube_recursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
+    (sumOverHypercubeRecursive (𝔽 := 𝔽) (β := β) b0 b1 add (m := m)
       (fun x => F ((Fin.cons b1 x) ∘ Fin.cast hm))) := by
   cases hm
   simp [Fin_cases_eq_cons]
 
 -- ============================================================================
--- sum_over_domain_recursive lemmas
+-- sumOverDomainRecursive lemmas
 -- ============================================================================
 
 @[simp] lemma sum_over_domain_recursive_zero
   {𝔽 β : Type _}
   (domain : List 𝔽) (add : β → β → β) (zero : β)
   (F : (Fin 0 → 𝔽) → β) :
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := 0) F
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := 0) F
     =
   F Fin.elim0 := by
-  simp [sum_over_domain_recursive.eq_zero]
+  simp [sumOverDomainRecursive.eq_zero]
 
 @[simp] lemma sum_over_domain_recursive_succ
   {𝔽 β : Type _}
@@ -225,12 +225,12 @@ theorem sum_over_hypercube_recursive_succ_of_hopen {𝔽 β : Type _}
   (add : β → β → β) (zero : β)
   {m : ℕ}
   (F : (Fin (Nat.succ m) → 𝔽) → β) :
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := Nat.succ m) F
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := Nat.succ m) F
     =
   domain.foldl (fun acc a =>
-    add acc (sum_over_domain_recursive domain add zero (m := m)
+    add acc (sumOverDomainRecursive domain add zero (m := m)
       (fun x => F (Fin.cons a x)))) zero := by
-  rw [sum_over_domain_recursive.eq_succ]
+  rw [sumOverDomainRecursive.eq_succ]
   simp only [Fin_cases_eq_cons]
 
 lemma sum_over_domain_recursive_eq_of_m_eq_zero
@@ -238,26 +238,26 @@ lemma sum_over_domain_recursive_eq_of_m_eq_zero
   (domain : List 𝔽) (add : β → β → β) (zero : β)
   {m : ℕ} (hm : m = 0)
   (F : (Fin m → 𝔽) → β) :
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F
     =
   F (by
     refine Eq.ndrec (motive := fun k => Fin k → 𝔽)
       Fin.elim0 hm.symm) := by
   subst hm
-  simp [sum_over_domain_recursive.eq_zero]
+  simp [sumOverDomainRecursive.eq_zero]
 
 theorem sum_over_domain_recursive_congr {𝔽 β : Type _}
   (domain : List 𝔽) (add : β → β → β) (zero : β)
   {m : ℕ}
   {F G : (Fin m → 𝔽) → β}
   (hFG : ∀ x, F x = G x) :
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F
     =
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) G := by
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) G := by
   classical
   induction m with
   | zero =>
-      simp [sum_over_domain_recursive.eq_zero, hFG]
+      simp [sumOverDomainRecursive.eq_zero, hFG]
   | succ m ih =>
       simp only [sum_over_domain_recursive_succ]
       congr 1
@@ -270,9 +270,9 @@ theorem sum_over_domain_recursive_cast {𝔽 β : Type _}
   {m m' : ℕ}
   (hm : m = m')
   (F : (Fin m → 𝔽) → β) :
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F
     =
-      sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m')
+      sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m')
     (fun x => F (x ∘ Fin.cast hm)) := by
   cases hm
   simp
@@ -298,16 +298,16 @@ lemma sum_over_domain_recursive_deg_le
   (hadd : ∀ a b, deg a ≤ d → deg b ≤ d → deg (add a b) ≤ d)
   (hzero : deg zero ≤ d)
   (hF : ∀ x, deg (F x) ≤ d) :
-  deg (sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F) ≤ d := by
+  deg (sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m) F) ≤ d := by
   classical
   induction m with
   | zero =>
-      simpa [sum_over_domain_recursive.eq_zero] using hF Fin.elim0
+      simpa [sumOverDomainRecursive.eq_zero] using hF Fin.elim0
   | succ m ih =>
       rw [sum_over_domain_recursive_succ]
       exact foldl_invariant
         (P := fun acc => deg acc ≤ d)
-        (f := fun acc a => add acc (sum_over_domain_recursive domain add zero (m := m)
+        (f := fun acc a => add acc (sumOverDomainRecursive domain add zero (m := m)
           (fun x => F (Fin.cons a x))))
         (init := zero) (l := domain)
         hzero
@@ -338,21 +338,21 @@ lemma sum_over_domain_recursive_map
   (hgz : g zeroβ = zeroγ)
   {m : ℕ}
   (F : (Fin m → 𝔽) → β) :
-  g (sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain addβ zeroβ (m := m) F)
+  g (sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain addβ zeroβ (m := m) F)
     =
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := γ) domain addγ zeroγ (m := m) (fun x => g (F x)) := by
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := γ) domain addγ zeroγ (m := m) (fun x => g (F x)) := by
   classical
   induction m with
   | zero =>
-      simp [sum_over_domain_recursive.eq_zero]
+      simp [sumOverDomainRecursive.eq_zero]
   | succ m ih =>
       rw [sum_over_domain_recursive_succ, sum_over_domain_recursive_succ]
       -- We prove a generalized version: for any list ds, the foldl commutes with g
       -- when the inner recursive calls use the fixed `domain` (not `ds`)
       suffices hfold : ∀ (ds : List 𝔽) (accβ : β) (accγ : γ), g accβ = accγ →
-        g (ds.foldl (fun acc a => addβ acc (sum_over_domain_recursive domain addβ zeroβ (m := m)
+        g (ds.foldl (fun acc a => addβ acc (sumOverDomainRecursive domain addβ zeroβ (m := m)
             (fun x => F (Fin.cons a x)))) accβ)
-        = ds.foldl (fun acc a => addγ acc (sum_over_domain_recursive domain addγ zeroγ (m := m)
+        = ds.foldl (fun acc a => addγ acc (sumOverDomainRecursive domain addγ zeroγ (m := m)
             (fun x => g (F (Fin.cons a x))))) accγ by
         exact hfold domain zeroβ zeroγ hgz
       intro ds
@@ -372,10 +372,10 @@ theorem sum_over_domain_recursive_succ_of_hopen {𝔽 β : Type _}
   {m m' : ℕ}
   (hm : m' = m + 1)
   (F : (Fin m' → 𝔽) → β) :
-  sum_over_domain_recursive (𝔽 := 𝔽) (β := β) domain add zero (m := m') F
+  sumOverDomainRecursive (𝔽 := 𝔽) (β := β) domain add zero (m := m') F
     =
   domain.foldl (fun acc a =>
-    add acc (sum_over_domain_recursive domain add zero (m := m)
+    add acc (sumOverDomainRecursive domain add zero (m := m)
       (fun x => F ((Fin.cons a x) ∘ Fin.cast hm)))) zero := by
   cases hm
   simp [Fin_cases_eq_cons]

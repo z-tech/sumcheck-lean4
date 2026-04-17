@@ -14,19 +14,19 @@ namespace __ProverTests__
         |>.insert test_p_mon_00  (1 : ZMod 19)
 
   -- Boolean hypercube domain
-  def bool_domain : List (ZMod 19) := [0, 1]
+  def boolDomain : List (ZMod 19) := [0, 1]
 
   namespace __generate_sums_variablewise_tests__
 
     def expected_sum_0 : (ZMod 19) := (2 : ZMod 19)
-    lemma it_should_generate_sum_0_correctly : round_sum bool_domain ![] 0 test_p (by decide) = expected_sum_0 := by
-      unfold round_sum test_p expected_sum_0
+    lemma it_should_generate_sum_0_correctly : roundSum boolDomain ![] 0 test_p (by decide) = expected_sum_0 := by
+      unfold roundSum test_p expected_sum_0
       simp
       native_decide
 
     noncomputable def expected_sum_1 : (ZMod 19) := (15 : ZMod 19)
-    lemma it_should_generate_sum_1_correctly : round_sum bool_domain ![] 1 test_p (by decide) = expected_sum_1 := by
-      unfold round_sum test_p expected_sum_1
+    lemma it_should_generate_sum_1_correctly : roundSum boolDomain ![] 1 test_p (by decide) = expected_sum_1 := by
+      unfold roundSum test_p expected_sum_1
       simp
       native_decide
 

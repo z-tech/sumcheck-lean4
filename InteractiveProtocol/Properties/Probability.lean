@@ -20,4 +20,4 @@ noncomputable def probAccept {S C : Type*} {n : ℕ} [Fintype C]
     (ip : PublicCoinProtocol S C n)
     (st : S) (P : Prover ip) : ℚ :=
   probEvent (C := C) (n := n)
-    (fun r => ip.verifier_accepts st (generateTranscript ip st P r))
+    (fun r => ip.verifierAccepts st (generateTranscript ip st P r))

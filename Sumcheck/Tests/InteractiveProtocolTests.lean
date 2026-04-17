@@ -46,9 +46,9 @@ def challenges : Fin 2 → ZMod 19 := ![(2 : ZMod 19), (3 : ZMod 19)]
 /-! ## Honest claim: sum = 17
 
 The `SumcheckStatement` bundles the domain, polynomial, and claimed sum.
-The `sumcheckHonestProver` wraps `honest_prover_message_at` as a generic `Prover`.
+The `sumcheckHonestProver` wraps `honestProverMessageAt` as a generic `Prover`.
 `generateTranscript` feeds challenges to the prover round by round and
-assembles the result — this is the generic analogue of `generate_honest_transcript`.
+assembles the result — this is the generic analogue of `generateHonestTranscript`.
 -/
 
 def honestStatement : SumcheckStatement (ZMod 19) 2 where
@@ -58,13 +58,14 @@ def honestStatement : SumcheckStatement (ZMod 19) 2 where
 
 -- The generic verifier accepts the honest transcript.
 lemma honest_claim_accepted :
-    sumcheckProtocol.verifier_accepts honestStatement
+    sumcheckProtocol.verifierAccepts honestStatement
       (generateTranscript sumcheckProtocol honestStatement
         sumcheckHonestProver challenges) := by
   -- Rewrite through the bridge lemma to reach the computable verifier,
   -- then unfold the generic prover to its concrete implementation.
-  rw [sumcheck_verifier_accepts_eq]
-  simp only [sumcheckHonestProver]
+  show AcceptsOnChallenges _ _ _
+  simp only [AcceptsOnChallenges_unfold, AcceptsEvent, isVerifierAccepts,
+             Transcript.claims, proverTranscript, sumcheckHonestProver]
   native_decide
 
 /-! ## Wrong claim: sum = 18
@@ -82,11 +83,12 @@ def dishonestStatement : SumcheckStatement (ZMod 19) 2 where
 
 -- The generic verifier rejects the dishonest claim.
 lemma wrong_claim_rejected :
-    ¬ sumcheckProtocol.verifier_accepts dishonestStatement
+    ¬ sumcheckProtocol.verifierAccepts dishonestStatement
       (generateTranscript sumcheckProtocol dishonestStatement
         sumcheckHonestProver challenges) := by
-  rw [sumcheck_verifier_accepts_eq]
-  simp only [sumcheckHonestProver]
+  show ¬ AcceptsOnChallenges _ _ _
+  simp only [AcceptsOnChallenges_unfold, AcceptsEvent, isVerifierAccepts,
+             Transcript.claims, proverTranscript, sumcheckHonestProver]
   native_decide
 
 end __InteractiveProtocolTests__

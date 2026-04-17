@@ -56,31 +56,31 @@ import CompPoly.Multivariate.MvPolyEquiv
   exact one_ne_zero (this.symm)
 
 @[simp]
-def max_ind_degree
+def maxIndDegree
   {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) : ℕ :=
   (Finset.univ : Finset (Fin n)).sup (fun i => CPoly.CMvPolynomial.degreeOf i p)
 
 @[simp]
-def ind_degree_k
+def indDegreeK
   {𝔽 n} [CommSemiring 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽)
   (k : Fin n) : ℕ :=
   CPoly.CMvPolynomial.degreeOf k p
 
-def extract_exp_var_i {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
+def extractExpVarI {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) : ℕ :=
   m.get i
 
-def pow_univariate {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+def powUnivariate {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (p : CPoly.CMvPolynomial 1 𝔽) : ℕ → CPoly.CMvPolynomial 1 𝔽
 | 0     => c1 1
-| (e+1) => Mul.mul p (pow_univariate p e)
+| (e+1) => p * (powUnivariate p e)
 
-def subst_monomial {n : ℕ} {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
+def substMonomial {n : ℕ} {𝔽} [CommRing 𝔽] [BEq 𝔽] [LawfulBEq 𝔽]
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽) (m : CPoly.CMvMonomial n) :
   CPoly.CMvPolynomial 1 𝔽 :=
 (List.finRange n).foldl
-  (fun acc i => Mul.mul acc (pow_univariate (vs i) (extract_exp_var_i m i)))
+  (fun acc i => acc * (powUnivariate (vs i) (extractExpVarI m i)))
   (c1 1)
 
 namespace CPoly
@@ -91,9 +91,6 @@ def eval₂Poly
   (vs : Fin n → CPoly.CMvPolynomial 1 𝔽)
   (p : CPoly.CMvPolynomial n 𝔽) : CPoly.CMvPolynomial 1 𝔽 :=
 Std.ExtTreeMap.foldl
-  (fun acc m c =>
-    @HAdd.hAdd _ _ _ instHAdd
-      (@HMul.hMul _ _ _ instHMul (f c) (subst_monomial vs m))
-      acc)
+  (fun acc m c => (f c) * (substMonomial vs m) + acc)
   (c1 (𝔽 := 𝔽) 0)
   p.1

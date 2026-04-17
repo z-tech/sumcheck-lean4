@@ -157,9 +157,9 @@ lemma fromCMvPolynomial_x0_eq_X {𝔽 : Type _} [Field 𝔽] [DecidableEq 𝔽] 
 lemma ind_degree_k_le_max_ind_degree
   {𝔽 : Type _} {n : ℕ} [CommSemiring 𝔽]
   (p : CPoly.CMvPolynomial n 𝔽) (k : Fin n) :
-  ind_degree_k (𝔽 := 𝔽) (n := n) p k ≤ max_ind_degree (𝔽 := 𝔽) (n := n) p := by
+  indDegreeK (𝔽 := 𝔽) (n := n) p k ≤ maxIndDegree (𝔽 := 𝔽) (n := n) p := by
   classical
-  simp [ind_degree_k, max_ind_degree]
+  simp [indDegreeK, maxIndDegree]
   exact
     Finset.le_sup
       (s := (Finset.univ : Finset (Fin n)))

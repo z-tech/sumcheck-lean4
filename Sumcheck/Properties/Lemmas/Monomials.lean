@@ -7,29 +7,29 @@ import Sumcheck.Src.CMvPolynomial
 open CPoly
 
 @[simp] lemma extract_exp_var_i_eq_get {n : ℕ} (m : CPoly.CMvMonomial n) (x : Fin n) :
-    extract_exp_var_i m x = Vector.get m x := by
-  simp [extract_exp_var_i]
+    extractExpVarI m x = Vector.get m x := by
+  simp [extractExpVarI]
 
 @[simp] lemma extract_exp_var_i_def {n : ℕ} (m : CPoly.CMvMonomial n) (i : Fin n) :
-  extract_exp_var_i (n := n) m i = m.get i := by
+  extractExpVarI (n := n) m i = m.get i := by
   -- This is definitional: toFinsupp = ⟨support, m.get, ...⟩
   rfl
 
 @[simp] lemma extract_exp_var_i_zero {n : ℕ} (i : Fin n) :
-  extract_exp_var_i (n := n) (CPoly.CMvMonomial.zero) i = 0 := by
+  extractExpVarI (n := n) (CPoly.CMvMonomial.zero) i = 0 := by
   -- reduce to Vector.get on a replicated vector
-  simp [extract_exp_var_i, CPoly.CMvMonomial.zero]
+  simp [extractExpVarI, CPoly.CMvMonomial.zero]
   -- goal is now: (Vector.replicate n 0).get i = 0
   -- DON'T `simpa` (it will turn the lemma into `True`); just use it directly:
 
 @[simp] lemma extract_exp_var_i_add {n : ℕ} (m₁ m₂ : CPoly.CMvMonomial n) (i : Fin n) :
-  extract_exp_var_i (n := n) (m₁ + m₂) i
-    = extract_exp_var_i (n := n) m₁ i + extract_exp_var_i (n := n) m₂ i := by
+  extractExpVarI (n := n) (m₁ + m₂) i
+    = extractExpVarI (n := n) m₁ i + extractExpVarI (n := n) m₂ i := by
   -- unfold toFinsupp application (definitional) into `.get`
   -- so we can use the zipWith-get lemma
   cases' i with idx hidx
-  -- Expand extract_exp_var_i
-  dsimp [extract_exp_var_i]
+  -- Expand extractExpVarI
+  dsimp [extractExpVarI]
   -- Expand toFinsupp for each term (it stores `get` as the function)
   -- This `change` is definitional: (toFinsupp m) ⟨idx,hidx⟩ = m.get ⟨idx,hidx⟩
   -- change (m₁ + m₂).get ⟨idx, hidx⟩ = m₁.get ⟨idx, hidx⟩ + m₂.get ⟨idx, hidx⟩
@@ -48,7 +48,7 @@ open CPoly
 def mon_x1 : CPoly.CMvMonomial 1 := ⟨#[1], by decide⟩
 
 @[simp] lemma extract_exp_var_i_mon_x1 :
-  extract_exp_var_i (n := 1) mon_x1 (⟨0, by decide⟩ : Fin 1) = 1 := by
+  extractExpVarI (n := 1) mon_x1 (⟨0, by decide⟩ : Fin 1) = 1 := by
   change mon_x1.get (⟨0, by decide⟩ : Fin 1) = 1
   dsimp [mon_x1]
 
