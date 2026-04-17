@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(awk '-F[: ]' '{print $NF \" \" $1}')"
-    ]
-  }
-}
