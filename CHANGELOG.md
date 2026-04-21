@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-04-21 — Oracle reference for effsc differential fuzzing + TQBF cleanup
+
+- Added `Sumcheck/Oracle/Multilinear.lean`: a reference Lean implementation
+  of the multilinear sumcheck prover matching the `efficient-sumcheck` Rust
+  crate's `src/provers/multilinear.rs` — MSB half-split layout, array-based,
+  emits `(s₀, s₁)` per round and `final_value`. Scoped to serve as the
+  verified oracle for the Rust crate's differential-correctness fuzzing.
+  Three hand-computed smoke tests in `Sumcheck/Tests/OracleMultilinearTests.lean`
+  validated via `decide`.
+- Removed TQBF scaffolding from the main tree (`Sumcheck/IP/TQBF/`,
+  `Sumcheck/IP/TQBF.lean`, `Sumcheck/Tests/TQBFTests.lean`). The work — in
+  particular the fully-proved multilinear-extension library in `Linearize.lean`
+  (specialize0, linearize0, linearize_i, linearizeAll, degree bounds,
+  specialize0_commute, eval_arithmetizeLeavingFirst) — remains in git
+  history at commit `f24f73a` for resurrection when starting GKR or when
+  closing the TQBF `sorry`.
+
 ## 2026-04-21 — Inner-product sumcheck
 
 - Added `Sumcheck/IP/InnerProduct.lean`: `InnerProductStatement` +

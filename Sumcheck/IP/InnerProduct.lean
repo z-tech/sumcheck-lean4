@@ -72,6 +72,31 @@ theorem valid_iff_toSumcheck_claim_correct {n : ℕ}
 
 end InnerProduct
 
+/-! ### Transcripts
+
+Thin wrappers around the existing sumcheck transcript generators, specialised
+to `InnerProductStatement` via `toSumcheck`. -/
+
+namespace InnerProduct
+
+variable {𝔽 : Type} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
+
+/-- Honest-prover transcript for an inner-product claim, given the verifier's
+random challenges. -/
+def honestTranscript {n : ℕ}
+    (I : InnerProductStatement 𝔽 n) (r : Fin n → 𝔽) : Transcript 𝔽 n :=
+  generateHonestTranscript I.domain (I.f * I.g) I.claim r
+
+/-- Transcript for an arbitrary (possibly adversarial) prover on an
+inner-product claim. -/
+def proverTranscript {n : ℕ}
+    (I : InnerProductStatement 𝔽 n)
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n)))
+    (r : Fin n → 𝔽) : Transcript 𝔽 n :=
+  _root_.proverTranscript I.toSumcheck P r
+
+end InnerProduct
+
 namespace InnerProduct
 
 variable {𝔽 : Type} [Field 𝔽] [Fintype 𝔽] [BEq 𝔽] [LawfulBEq 𝔽] [DecidableEq 𝔽]
