@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-04-21 — Inner-product sumcheck
+
+- Added `Sumcheck/IP/InnerProduct.lean`: `InnerProductStatement` +
+  `toSumcheck` reduction to a `SumcheckStatement` on `f * g`;
+  `innerProduct_completeness`, `innerProduct_soundness` as corollaries of
+  `sumcheck_hasPerfectCompleteness` / `sumcheck_hasSoundnessError`.
+- `innerProduct_soundnessError_le_multilinear`: when both factors are
+  multilinear, soundness error `≤ n · 2 / |𝔽|` (via
+  `maxIndDegree (f * g) ≤ 2`, itself from `degreeOf_mul_le_c`).
+- Thin-wrapper form — `f * g` is materialized. A native two-oracle
+  protocol (separate prover state for `f` and `g`) is deferred; the
+  current form is enough for downstream protocols that build on
+  inner-product claims.
+
 ## 2026-04-20 — IP Class + #SAT ∈ IP (unconditional) + TQBF scaffold
 
 - Added `InIP` predicate and `IPCertificate` structure

@@ -55,6 +55,32 @@ where $d = \max_i \deg_{X_i}(p)$ is the max individual degree of $p$. The proof 
 2. **Union bound**: the acceptance probability is bounded by the sum over rounds.
 3. **Schwartz–Zippel**: at each bad round, the probability of the verifier's random challenge hitting a root of the difference polynomial is at most $d / |\mathbb{F}|$ (via Mathlib's `MvPolynomial.schwartz_zippel_sum_degreeOf`).
 
+## Applications
+
+Results built on top of the core sumcheck protocol:
+
+- **`#SAT ∈ IP`** ([Sumcheck/IP/SharpSAT/](Sumcheck/IP/SharpSAT/)) — proved
+  unconditionally. 3-CNF arithmetization, `sharpSAT_completeness`,
+  `sharpSAT_soundness`, concrete `sharpSAT_soundnessError_le` bound, and
+  `sharpSAT_inIPFamily_concrete` packaging bounded-size instances into
+  the size-indexed `InIPFamily` complexity class (field scheme:
+  `ZMod p_k` for primes discharging the field hypotheses).
+- **Inner-product sumcheck** ([Sumcheck/IP/InnerProduct.lean](Sumcheck/IP/InnerProduct.lean)) —
+  `InnerProductStatement` claiming `c = Σ f(x)·g(x)` over a boolean
+  hypercube (or other domain), reduced to sumcheck on `f * g`.
+  Completeness, soundness, and a multilinear soundness-error bound of
+  `n · 2 / |𝔽|`.
+- **TQBF / Shamir's theorem** ([Sumcheck/IP/TQBF/](Sumcheck/IP/TQBF/)) —
+  scaffolding in progress. QBF arithmetization, multilinear-extension
+  library (`linearize0`, `linearizeAll` with degree bounds), Shamir
+  protocol definition, key algebraic identities (`specialize0_commute`,
+  `eval_arithmetizeLeavingFirst`). `tqbf_inIP` still open pending a
+  `tqbfHonestMessage` cast refactor.
+- **IP complexity class** ([InteractiveProtocol/Properties/IPClass.lean](InteractiveProtocol/Properties/IPClass.lean)) —
+  `InIP` and size-indexed `InIPFamily` with smart constructors
+  (`of_hasProperties`) for packaging any protocol that has been proved
+  complete + sound into the corresponding language-membership claim.
+
 ## Honest Prover
 
 The honest prover message at round $i$ is defined as the **univariate polynomial** in $X_i$ computed by summing out the remaining variables over the Boolean hypercube:
