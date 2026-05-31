@@ -17,35 +17,7 @@ theorem soundness_per_round {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽
       ≤ (maxIndDegree st.polynomial) / fieldSize (𝔽 := 𝔽) :=
   prob_single_round_accepts_and_disagree_le_k (𝔽 := 𝔽) (n := n) k st P i
 
--- Prob verifier accepts transcript when at least one round poly differs from honest one
-theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
-  (st : SumcheckProtocolStatement 𝔽 n)
-  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) :
-     probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
-      ≤ soundnessError st.polynomial := by
-  classical
-  let E : Fin n → (Fin n → 𝔽) → Prop := fun i r =>
-    AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r ∧
-      RoundDisagreeButAgreeAtChallenge ⟨n, Nat.lt_succ_self n⟩ st P r i
-  have hImp :
-      ∀ r,
-        AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r →
-          ∃ i, E i r := by
-    intro r hAB
-    rcases accepts_and_bad_implies_exists_round_disagree_but_agree
-        (st := st) (P := P) (r := r) hAB with ⟨i, hi⟩
-    exact ⟨i, hAB, hi⟩
-  have hmono :=
-    prob_over_challenges_mono
-      (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
-      (F := fun r => ∃ i, E i r)
-      hImp
-  have hunion :=
-    prob_over_challenges_exists_le_sum (𝔽 := 𝔽) (n := n) E
-  have hround := by
-    simpa only [E, soundnessError] using
-      sum_accepts_and_round_disagree_but_agree_bound (st := st) (P := P)
-  exact le_trans (le_trans hmono hunion) hround
+-- `soundness` (full-run) is defined below as an alias of `soundness_k`.
 
 theorem addCasesFun_prefix_current_rest_eq_snoc {α : Type _} {n : ℕ}
 (i : Fin n)
@@ -405,6 +377,16 @@ theorem soundness_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [Decid
   have hround := sum_accepts_and_round_disagree_but_agree_bound_k (k := k) (st := st) (P := P)
   simpa only [E, soundnessErrorK] using le_trans (le_trans hmono hunion) hround
 
+/-- Full-run specialisation of `soundness_k` at `k = ⟨n, _⟩`. Retained as a
+convenience for existing downstream consumers. -/
+theorem soundness {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
+  (st : SumcheckProtocolStatement 𝔽 n)
+  (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) :
+     probOverChallenges (E := AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
+      ≤ soundnessError st.polynomial := by
+  simpa [soundnessError, soundnessErrorK] using
+    soundness_k (k := ⟨n, Nat.lt_succ_self n⟩) st P
+
 
 
 theorem all_rounds_honest_of_not_bad_k_aux {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
@@ -571,43 +553,13 @@ theorem soundness_dishonest_k {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype �
   exact le_trans hMono (soundness_k k st P)
 
 
--- Prob verifier accepts transcript when claim is not honest claim
+/-- Full-run specialisation of `soundness_dishonest_k` at `k = ⟨n, _⟩`. Retained
+as a convenience for existing downstream consumers. -/
 theorem soundness_dishonest {𝔽 : Type _} {n : ℕ} [Field 𝔽] [Fintype 𝔽] [DecidableEq 𝔽]
   (st : SumcheckProtocolStatement 𝔽 n)
   (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩))
   (h : st.claim ≠ honestClaim st.domain (p := st.polynomial)) :
   probOverChallenges (E := AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P)
     ≤ soundnessError st.polynomial := by
-  classical
-
-  -- Key reduction: dishonest claim ⇒ (accept → bad), hence accept ⊆ (accept ∧ bad).
-  have hImp :
-      ∀ r : (Fin n → 𝔽),
-        AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r →
-          AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r := by
-    intro r hAcc
-    refine ⟨?hAccEvent, ?hBad⟩
-    · -- acceptance part
-      simpa [AcceptsOnChallenges, AcceptsAndBadTranscriptOnChallenges]
-        using hAcc
-    · -- badness part
-      exact
-        accepts_on_challenges_dishonest_implies_bad
-          (st := st) (P := P) (r := r) h hAcc
-
-  have hmono :
-      probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r)
-        ≤
-      probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r) :=
-    prob_over_challenges_mono (𝔽 := 𝔽) (n := n) hImp
-
-  -- Now just reuse your existing soundness_accept_bad_transcript theorem.
-  have hsound :
-      probOverChallenges (𝔽 := 𝔽) (n := n)
-          (fun r => AcceptsAndBadTranscriptOnChallenges ⟨n, Nat.lt_succ_self n⟩ st P r)
-        ≤ soundnessError st.polynomial :=
-    soundness (𝔽 := 𝔽) (n := n) (st := st) (P := P)
-
-  exact le_trans hmono hsound
+  simpa [soundnessError, soundnessErrorK] using
+    soundness_dishonest_k (k := ⟨n, Nat.lt_succ_self n⟩) st P h
