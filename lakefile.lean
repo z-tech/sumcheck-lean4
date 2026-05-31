@@ -29,7 +29,15 @@ lean_lib «LinearCodes.Research» where
 lean_lib «LinearCodes.Examples» where
   roots := #[`LinearCodes.Examples.RSSmokeTest]
 
-require "leanprover-community" / mathlib @ git "v4.29.1"
+lean_lib «VectorCommitment» where
+
+lean_lib «PCP» where
+
+lean_lib «Kilian» where
+
+require "leanprover-community" / mathlib @ git "v4.30.0-rc2"
 -- Pinned to a specific rev (not `master`) so upstream churn doesn't break CI.
 -- Bump deliberately when picking up new CompPoly features.
-require CompPoly from git "https://github.com/Verified-zkEVM/CompPoly" @ "01609714fa06e8f83485fe663f953d59c229477f"
+-- Temporarily on the z-tech fork until cmvpoly-univariate-evalext-and-lawfulbeq
+-- merges to Verified-zkEVM/CompPoly master; switch back to upstream then.
+require CompPoly from git "https://github.com/z-tech/CompPoly" @ "84e478d57f34effce0f46246068b96548975af08"

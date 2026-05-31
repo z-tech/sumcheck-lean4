@@ -9,6 +9,7 @@ import InteractiveProtocol.Properties.IPClass
 import Mathlib.Algebra.BigOperators.Fin
 import Mathlib.Logic.Equiv.Fin.Basic
 import Mathlib.Data.ZMod.Basic
+import Mathlib.Algebra.Field.ZMod
 import Mathlib.Data.Nat.Prime.Infinite
 
 namespace SharpSAT
@@ -136,9 +137,9 @@ prover convinces the verifier with probability 1. -/
 theorem sharpSAT_completeness {n : ℕ}
     (I : SharpSATInstance n) (h : I.Valid) :
     probAccept
-      (sumcheckProtocol (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)
       (I.toSumcheckProtocol (𝔽 := 𝔽))
-      sumcheckHonestProver = 1 :=
+      (sumcheckHonestProver ⟨n, Nat.lt_succ_self n⟩) = 1 :=
   sumcheck_hasPerfectCompleteness
     (I.toSumcheckProtocol (𝔽 := 𝔽))
     (toSumcheckProtocol_valid_claim_correct (𝔽 := 𝔽) h)
@@ -150,9 +151,9 @@ See `sharpSAT_soundnessError_le` in `Degree.lean` for a concrete bound. -/
 theorem sharpSAT_soundness {n : ℕ}
     (I : SharpSATInstance n)
     (h : (I.count : 𝔽) ≠ (numSatisfying I.formula : 𝔽))
-    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n))) :
+    (P : Prover (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)) :
     probAccept
-      (sumcheckProtocol (𝔽 := 𝔽) (n := n))
+      (sumcheckProtocol (𝔽 := 𝔽) (n := n) ⟨n, Nat.lt_succ_self n⟩)
       (I.toSumcheckProtocol (𝔽 := 𝔽))
       P
       ≤ soundnessError (arithmetize (𝔽 := 𝔽) I.formula) := by
@@ -202,9 +203,9 @@ theorem sharpSAT_inIPFamily
   refine InIPFamily.of_hasProperties
     (S := fun k => SumcheckProtocolStatement (F k) k)
     (C := F) (n := fun k => k)
-    (ip := fun k => sumcheckProtocol (𝔽 := F k) (n := k))
+    (ip := fun k => sumcheckProtocol (𝔽 := F k) (n := k) ⟨k, Nat.lt_succ_self k⟩)
     (encode := fun _ I => I.instance_.toSumcheckProtocol (𝔽 := F _))
-    (honest := fun _ => sumcheckHonestProver)
+    (honest := fun _ => sumcheckHonestProver ⟨_, Nat.lt_succ_self _⟩)
     (isTrue := fun _ => sumcheckClaimIsCorrect)
     (ε_S := fun _ st => soundnessError st.polynomial)
     ?hcorrespond ?hcomplete ?hsound ?hεbound

@@ -49,16 +49,22 @@ def boolFromFin_msb [Zero 𝔽] [One 𝔽]
   fun j => if k.val.testBit (n - 1 - j.val) then (1 : 𝔽) else (0 : 𝔽)
 
 /-- The MSB Boolean point we just defined matches the existing `boolPoint_msb`
-    from `SumcheckProtocol/Src/MultilinearProver.lean`. -/
+    from `SumcheckProtocol/Src/MultilinearProver.lean`. The contents of the
+    `if`s line up via two named bridge facts: `BitVec.toNat_ofFin` collapses
+    `(BitVec.ofFin k).toNat` to `k.val`, and `reverseFin_val` collapses
+    `(reverseFin j).val` to `n - 1 - j.val`. -/
 lemma boolFromFin_msb_eq_boolPoint_msb [Zero 𝔽] [One 𝔽]
     {n : ℕ} (k : Fin (2^n)) :
     boolFromFin_msb (𝔽 := 𝔽) k = boolPoint_msb (𝔽 := 𝔽) k := by
   funext j
   show (if k.val.testBit (n - 1 - j.val) then (1 : 𝔽) else 0)
       = if (BitVec.ofFin k).getLsb (reverseFin j) then (1 : 𝔽) else 0
-  -- (BitVec.ofFin k).getLsb i = k.val.testBit i.val (definitional)
-  -- and (reverseFin j).val = n - 1 - j.val (by `reverseFin_val`).
-  rfl
+  have h : (BitVec.ofFin k).getLsb (reverseFin j)
+      = k.val.testBit (n - 1 - j.val) := by
+    show (BitVec.ofFin k).toNat.testBit (reverseFin j).val
+        = k.val.testBit (n - 1 - j.val)
+    rw [BitVec.toNat_ofFin, reverseFin_val]
+  rw [h]
 
 /-! ### Task 1: `sumOverDomainRecursive [0,1]` as a finite sum over `Fin (2^n)`
 
@@ -762,13 +768,11 @@ The `fold_correctness` theorem ties the table-side `fold_msb_succ` operation
 to the symbolic-side `substRound0` substitution; from there
 `multi_round_correctness` follows by induction on `n`.
 
-Both theorems consume `EvalSubstRound0MultilinearHyp` as a hypothesis: the
-pointwise-evaluation property of `substRound0` for polynomials that are
-multilinear at variable 0, which is the unproven CompPoly upstream piece
-([`SumcheckProtocol/Src/SubstRound0.lean`](../Src/SubstRound0.lean)).
-When that upstream lemma lands, callers supply the proof and these
-theorems become unconditional. -/
+Both theorems are now unconditional: the pointwise-evaluation property of
+`substRound0` for polynomials that are multilinear at variable 0 is proved in
+[`SumcheckProtocol/Src/SubstRound0.lean`](../Src/SubstRound0.lean). -/
 
+omit [DecidableEq 𝔽] in
 /-- **`fold_correctness`** (conditional, multilinear at variable 0).
 
 For `p` multilinear in its high-order variable, the table representation
@@ -799,6 +803,7 @@ theorem fold_correctness {n : ℕ}
   rw [Fin_cons_one_boolFromFin_msb_eq (𝔽 := 𝔽) kFin]
   ring
 
+omit [DecidableEq 𝔽] in
 /-- **Multi-round recurrence (operational).**
 
 The recursive unfolding of `multilinearProverEvalForm` on `toEvalTable p`:
@@ -806,12 +811,9 @@ the head is `computeS0S1_msb` of the input table, and the tail recurses
 on the eval-table of the round-0 substituted polynomial.
 
 This is the operational equation underlying `multi_round_correctness`:
-combined with `compute_correctness` (round 0) and a symbolic-side
-recursion lemma (`HonestProverSubstRound0Hyp` — bridging round-`i` of
-`substRound0 r₀ p` to round-`(i+1)` of `p`), it inducts to the full
-multi-round correctness statement. The latter is the natural next step
-after CompPoly upstreams `eval_substRound0` and the symbolic-recursion
-lemma is added.
+combined with `compute_correctness` (round 0) and the symbolic-side recursion
+lemma `honestProver_substRound0_bridge`, it inducts to the full multi-round
+correctness statement.
 
 Conditional only on `degreeOf 0 p ≤ 1`. -/
 theorem multilinearProverEvalForm_recurse {n : ℕ}
@@ -882,6 +884,7 @@ theorem honestProver_substRound0_bridge :
     · rw [Fin.append_cast_right (xs := Fin.snoc ch c) (ys := x) (m' := a) hab]
       simp [Function.comp_def]
 
+omit [DecidableEq 𝔽] in
 private theorem fromCMvPolynomial_substRound0_symm {m : ℕ}
     (w : 𝔽) (p : MvPolynomial (Fin (m + 1)) 𝔽) :
     CPoly.fromCMvPolynomial
@@ -940,6 +943,7 @@ private theorem fromCMvPolynomial_substRound0_symm {m : ℕ}
         change CPoly.fromCMvPolynomial (CPoly.CMvPolynomial.X (R := 𝔽) k) = MvPolynomial.X k
         exact CPoly.CMvPolynomial.fromCMvPolynomial_X (R := 𝔽) k
 
+omit [DecidableEq 𝔽] in
 private theorem fromCMvPolynomial_substRound0 {m : ℕ}
     (w : 𝔽) (q : CPoly.CMvPolynomial (m + 1) 𝔽) :
     CPoly.fromCMvPolynomial (CPoly.substRound0 w q)
