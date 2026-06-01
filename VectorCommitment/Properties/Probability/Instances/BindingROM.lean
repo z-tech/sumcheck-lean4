@@ -61,9 +61,19 @@ namespace VectorCommitment.Probability.Instances
 open VectorCommitment.Security
 
 variable (κ : Nat) (S : Type) [MerkleShape S]
-  [Nonempty (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
+  [Inhabited (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
 
-/-- Position binding for the RO-derived Merkle commitment. -/
+/-- Position binding for the RO-derived Merkle commitment.
+
+    Student-territory `sorry`s:
+    * `bindingAdvantage`, `binding_bound` — discharge as in the file
+      header.
+    * `bindingError_lifts` — the lifted bound. Given a joint
+      distribution `μ` exposing a verifier key and a candidate break,
+      package the break into a concrete `BindingAdversary` (an
+      `OracleComp` returning the lifted break), bound its
+      `bindingAdvantage` by the lifted probability, and invoke
+      `binding_bound`. -/
 noncomputable instance :
     HasPositionBinding (MerkleCommitment (ROHasher.ROHasherValue κ) S) where
   BindingAdversary := fun _ _ =>
@@ -72,5 +82,6 @@ noncomputable instance :
   bindingAdvantage := sorry
   bindingError := fun _ q => Probability.collisionBound κ q
   binding_bound := sorry
+  bindingError_lifts := sorry
 
 end VectorCommitment.Probability.Instances

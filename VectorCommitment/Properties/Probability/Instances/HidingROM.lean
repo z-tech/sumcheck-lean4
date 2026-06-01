@@ -60,7 +60,7 @@ documented in `VectorCommitment/HIDING.md`).
 namespace VectorCommitment.Probability.Instances
 
 variable (κ : Nat) (S : Type) [MerkleShape S]
-  [Nonempty (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
+  [Inhabited (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
 
 /-- Hiding for the RO-derived Merkle commitment. -/
 noncomputable instance :

@@ -44,12 +44,10 @@ The reduction:
   `i` is forced to claim `value = msg[i]`.
 * `mt_multi_extractability` (Lemma 12.5.2, Option B) — multi-leaf
   generalisation, via per-index reduction to the singleton case.
-* `mt_multi_configuration_multi_extractability` (Lemma 12.5.3) — the
-  multi-configuration form is left as `sorry` with an informative type
-  signature; its statement involves multiple distinct openings of the
-  same root and reduces to `mt_colliding_paths` once the
-  multi-configuration data plumbing lands (currently parked behind
-  `Capped.lean`).
+* The multi-configuration form (Lemma 12.5.3) is **deferred**: its
+  statement requires a multi-configuration opening-family type that
+  lives behind `Capped.lean` (currently parked). See the comment block
+  at the bottom of this file for the intended reduction sketch.
 
 The Option-A RO-aware existential extractor remains future work; it
 requires threading a query trace through `commit`/`open`/`check`.
@@ -236,33 +234,27 @@ theorem mt_multi_extractability
 -- §12.5.3 — Multi-configuration multi-leaf extractability (deferred)
 -- ---------------------------------------------------------------------------
 
-/-- §12.5 mt-multi-configuration-multi-extractability.
+/-
+The "multi-configuration" form (book Lemma 12.5.3) considers a *family* of
+accepted openings `(opⱼ, pfⱼ)` against the same root, possibly at distinct
+index sets, and asserts a single extracted message consistent with every
+opening. The honest statement requires a "multi-configuration opening
+family" type that lives behind `Src/Merkle/Capped.lean` (path-pruning +
+cap variants); that infrastructure is currently parked.
 
-    The "multi-configuration" form considers a *family* of accepted
-    openings `(opⱼ, pfⱼ)` against the same root, possibly at distinct
-    index sets, and asserts a single extracted message that is consistent
-    with every opening. Under Option B this reduces to applying
-    `mt_multi_extractability` to each `(opⱼ, pfⱼ)` individually and
-    invoking `mt_colliding_paths` to argue cross-opening consistency.
+A placeholder `theorem … : True := trivial` used to live here. It has been
+removed — shipping vacuous-`True` content to a public spec is a credibility
+hit. The intended reduction is:
 
-    The full statement requires a notion of "multi-configuration opening
-    family" that lives in `Capped.lean` (path-pruning + cap variants);
-    that infrastructure is parked at L1. The statement is left as `sorry`
-    until the family-of-openings type is added.
+  · for each (opⱼ, pfⱼ) in the family, apply `mt_multi_extractability`
+    above to obtain `valuesⱼ[k] = msg[indicesⱼ[k]]` for every `k`;
+  · cross-family consistency follows from `mt_colliding_paths`
+    (`Properties/Lemmas/CollisionLemma.lean`) at the indices any two
+    families share.
 
-    What *is* tractable today: any *single* opening in a multi-config
-    family is already covered by `mt_multi_extractability` above. A
-    family-aware wrapper is mechanical. -/
-theorem mt_multi_configuration_multi_extractability
-    {S : Type} [MerkleShape S]
-    (mc : MerkleCommitment H S) :
-    True := by
-  -- Pending: multi-configuration opening type (see Capped.lean roadmap).
-  -- Reduction sketch (not yet executable):
-  --   · For each (opⱼ, pfⱼ) in the family, apply mt_multi_extractability
-  --     to obtain values_j[k] = msg[indices_j[k]] for every k.
-  --   · Cross-family consistency follows from mt_colliding_paths
-  --     (CollisionLemma.lean) at the indices that two families share.
-  trivial
+The statement will be reintroduced once the family-of-openings type lands
+upstream. Any *single* opening in a multi-config family is already covered
+by `mt_multi_extractability` above.
+-/
 
 end MerkleCommitment

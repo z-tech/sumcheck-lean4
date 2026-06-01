@@ -57,7 +57,7 @@ Same shape as binding:
 namespace VectorCommitment.Probability.Instances
 
 variable (κ : Nat) (S : Type) [MerkleShape S]
-  [Nonempty (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
+  [Inhabited (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
 
 /-- Straightline extractability for the RO-derived Merkle commitment. -/
 noncomputable instance :

@@ -81,7 +81,7 @@ structure ROHasherValue (κ : Nat) where
 
     The salt sampler is a placeholder (returns `[]`); the hiding and
     equivocation instances will provide real per-leaf salts. -/
-noncomputable instance instMerkleHasherROHasher (κ : Nat) :
+instance instMerkleHasherROHasher (κ : Nat) :
     MerkleHasher (ROHasherValue κ) where
   Symbol := List ByteArray
   Digest := List.Vector Bool κ
