@@ -5,6 +5,7 @@ import VectorCommitment.Properties.Probability.Instances.BindingROM
 import VectorCommitment.Properties.Probability.Instances.Parameters
 import VectorCommitment.Properties.Probability.Instances.HidingParams
 import VectorCommitment.Properties.Probability.HidingSaltPath
+import VectorCommitment.Properties.Probability.HiddenQuery
 import VectorCommitment.Properties.Probability.Instances.ExtractabilityROM
 import VectorCommitment.Properties.Probability.Instances.HidingROM
 import VectorCommitment.Properties.Probability.Instances.EquivocationROM
