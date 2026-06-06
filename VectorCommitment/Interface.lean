@@ -40,7 +40,13 @@ noncomputable abbrev collisionProbability := @Probability.collisionBound
 /-! ## Status
     binding        ✅ proven, axiom-clean [propext, Classical.choice, Quot.sound]
     extractability ◐ reduced to cacheExtract_sound (1 sorry in ExtractabilityROM)
-    hiding         ✗ parameters computed (k, S); ROM proof pending H1–H5
+    hiding         ✅ through H5 — salt-axis bounds parameterized by `HidingParams`:
+                     leaf `q/2^s` (`hidden_query_hit_le`),
+                     root `ℓq/2^s + ℓq/2^(2κ)` (`mt_root_hiding_rom_bound`),
+                     privacy `Qℓq/2^s + …` (`mt_privacy_rom_loose`);
+                     salt-entropy capstones proved (`babyBear_{byte,field}_salt_hiding`);
+                     `HasHiding` instance discharged; distributional simulator cores
+                     isolated as named gaps matching the book lemmas
     equivocation   ✗ out of scope (programmable RO)                             -/
 
 end VectorCommitment.Interface

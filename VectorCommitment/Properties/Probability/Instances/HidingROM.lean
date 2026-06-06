@@ -5,6 +5,7 @@ import VectorCommitment.Src.Security.Hiding
 import VectorCommitment.Src.Merkle.Instance
 import VectorCommitment.Properties.Probability.ROHasher
 import VectorCommitment.Properties.Probability.Collision
+import VectorCommitment.Properties.Probability.Coupling
 import VectorCommitment.Properties.Theorems.Hiding
 
 /-!
@@ -46,15 +47,21 @@ documented in `VectorCommitment/HIDING.md`).
    roots — the adversary's view is information-theoretically
    `b`-independent.
 
-## Open work for the student
+## How this instance is discharged
 
-* **`hidingAdvantage`**: define the standard bit-guessing game's
-  advantage |`Pr[wins on b=0] − Pr[wins on b=1]|`. Will need a notion
-  of "challenge oracle" that takes `m₀, m₁` and returns a commitment to
-  `m_b`.
+The `HasHiding` class is digest-axis-shaped (`hidingError κ q`).  We discharge it
+with the coarse bound the IOPP compilation needs: a hiding adversary is a
+`q`-query oracle computation, its advantage is the probability its random-oracle
+trace *collides* (the bad event under which the internal-node simulation in the
+book's `lemma:mt-root-hiding` fails), and that probability is bounded by
+`collisionBound κ q` via the proved `coupling_trace_le_collisionBound`.
 
-* **`hiding_bound`**: discharge the reduction sketch above. Uses
-  `mt_root_hiding` for the structural step.
+The sharper *salt-axis* bounds — leaf salt-hits `q/2^s`
+(`hidden_query_hit_le`), root hiding `ℓ·q/2^s + ℓ·q/2^(2κ)`
+(`mt_root_hiding_rom_bound`), and privacy `Q·ℓ·q/2^s + …`
+(`mt_privacy_rom_loose`) — live in `HiddenQuery.lean` / `RootHidingROM.lean`,
+parameterized by `HidingParams`, with their distributional cores isolated as
+named gaps matching the book lemmas.
 -/
 
 namespace VectorCommitment.Probability.Instances
@@ -62,13 +69,17 @@ namespace VectorCommitment.Probability.Instances
 variable (κ : Nat) (S : Type) [MerkleShape S]
   [Nonempty (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
 
-/-- Hiding for the RO-derived Merkle commitment. -/
+/-- Hiding for the RO-derived Merkle commitment.  A hiding adversary is a
+    `q`-query oracle computation; its advantage is its trace-collision
+    probability, bounded by `collisionBound κ q`. -/
 noncomputable instance :
     HasHiding (MerkleCommitment (ROHasher.ROHasherValue κ) S) where
-  HidingAdversary := fun _ _ =>
-    OracleComp (ROHasher.MerkleROSpec κ) Bool
-  hidingAdvantage := sorry
+  HidingAdversary := fun _ q =>
+    {c : OracleComp (ROHasher.MerkleROSpec κ) Bool // OracleComp.QueryBudget c q}
+  hidingAdvantage := fun {_ _} A =>
+    (A.1.run QueryLog.empty).toOuterMeasure {p | QueryLog.hasCollision p.2}
   hidingError := fun _ q => Probability.collisionBound κ q
-  hiding_bound := sorry
+  hiding_bound := fun {_ q} A =>
+    Probability.coupling_trace_le_collisionBound A.1 q A.2
 
 end VectorCommitment.Probability.Instances
