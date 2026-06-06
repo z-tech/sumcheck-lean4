@@ -78,8 +78,21 @@ def buildLabels (mc : MerkleCommitment H S)
   let total := if n = 0 then 0 else 2 * n - 1
   (List.range total).map (labelAt mc msg salts)
 
-/-- Commit. Returns a `Committed` (just the root) and a `Trapdoor` (message,
-    salts, full label vector). Salts default to `defaultSalt` (non-hiding). -/
+/-- Commit with an explicit per-leaf salt vector. This is the hiding-aware
+    commit: the caller supplies `salts`, one per leaf. The non-hiding `commit`
+    is the special case where every salt is `defaultSalt`. Returns a `Committed`
+    (just the root) and a `Trapdoor` (message, salts, full label vector). -/
+def commitWithSalts (mc : MerkleCommitment H S) (msg : List (MerkleHasher.Symbol H))
+    (salts : List (MerkleHasher.Salt H)) :
+    Committed H S × Trapdoor H S :=
+  let n := MerkleShape.numLeaves mc.shape
+  let labels := mc.buildLabels msg salts
+  let placeholder : MerkleHasher.Digest H :=
+    MerkleHasher.hashNodes mc.hasher []
+  let rootDigest : MerkleHasher.Digest H :=
+    if n = 0 then placeholder else listGetD labels 0 placeholder
+  ({ root := rootDigest }, { message := msg, salts := salts, labels := labels })
+
 def commit (mc : MerkleCommitment H S) (msg : List (MerkleHasher.Symbol H)) :
     Committed H S × Trapdoor H S :=
   let n := MerkleShape.numLeaves mc.shape
@@ -91,6 +104,15 @@ def commit (mc : MerkleCommitment H S) (msg : List (MerkleHasher.Symbol H)) :
   let rootDigest : MerkleHasher.Digest H :=
     if n = 0 then placeholder else listGetD labels 0 placeholder
   ({ root := rootDigest }, { message := msg, salts := salts, labels := labels })
+
+/-- `commit` is `commitWithSalts` at the default-salt vector. -/
+theorem commit_eq_commitWithSalts_default (mc : MerkleCommitment H S)
+    (msg : List (MerkleHasher.Symbol H)) :
+    mc.commit msg =
+      mc.commitWithSalts msg
+        (List.replicate (MerkleShape.numLeaves mc.shape)
+          (MerkleHasher.defaultSalt.default : MerkleHasher.Salt H)) :=
+  rfl
 
 /-- Open. For each requested index, return the leaf salt plus the bottom-up
     copath digests read off the trapdoor's label vector. -/
