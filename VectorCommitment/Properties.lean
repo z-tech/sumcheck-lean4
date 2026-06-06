@@ -3,6 +3,7 @@ import VectorCommitment.Properties.Probability.ROHasher
 import VectorCommitment.Properties.Probability.Collision
 import VectorCommitment.Properties.Probability.Instances.BindingROM
 import VectorCommitment.Properties.Probability.Instances.Parameters
+import VectorCommitment.Properties.Probability.Instances.HidingParams
 import VectorCommitment.Properties.Probability.Instances.ExtractabilityROM
 import VectorCommitment.Properties.Probability.Instances.HidingROM
 import VectorCommitment.Properties.Probability.Instances.EquivocationROM
