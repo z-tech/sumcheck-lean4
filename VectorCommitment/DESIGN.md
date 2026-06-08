@@ -1,12 +1,12 @@
 # `VectorCommitment` — Vector commitments + Merkle tree, in Lean
 
-**Status:** Draft — evolving alongside L0–L10 milestones (see [ROADMAP.md](ROADMAP.md)).
+**Status:** Implemented core with explicitly tracked ROM proof gaps (see [ROADMAP.md](ROADMAP.md)).
 **Spec reference:** *Building Cryptographic Proofs from Hash Functions* (Chiesa & Yogev), chapters "Basic commitment scheme" (§11), "Merkle commitment scheme" (§12), and "Merkle commitment scheme optimizations" (§20). [snargsbook.org](https://snargsbook.org/) · [book source](https://github.com/hash-based-snargs-book/hash-based-snargs-book).
 **Rust counterpart:** [`arkworks-rs/ark-vc`](https://github.com/arkworks-rs/ark-vc) — the trait crate `ark-vc` and the Merkle backend `ark-mt`. This Lean module mirrors that split inside one Lake library so cross-references stay easy.
 **Mandate:**
 1. Mirror the Rust trait surface so both implementations are anchored to the same book lemmas.
 2. Be runnable (`lemma … := by native_decide` over a concrete hasher instance) so `VectorCommitment` can serve as a correctness oracle for the Rust crate's outputs on small examples.
-3. Stake out every book theorem in §12 + §20 with `theorem … := sorry` skeletons, locking the surface area even when individual proofs are deferred.
+3. Give every book theorem in §12 + §20 a stable Lean home, with any deferred proof isolated and named.
 
 This document is the architectural source of truth. See [HIDING.md](HIDING.md) for the salt-type / `HidingVectorCommitment` two-class rationale, [ROADMAP.md](ROADMAP.md) for milestone-by-milestone deliverables, and [USAGE.md](USAGE.md) for a worked end-to-end example.
 
@@ -22,7 +22,7 @@ These are inherited verbatim from the Rust crate's [`ark-mt/DESIGN.md` §0](http
 4. **Parameters travel with the hasher.** The hasher is a *value* (`H : Type*` plus `[MerkleHasher H]` and `(h : H)`) the scheme owns, not a set of static methods.
 5. **Footguns become types.** Multi-opening index ordering, power-of-two restrictions, `Ok(false)` for bad proofs — fixed at the type level via subtype invariants, decidable equality, and the `Opening.new`-style validating constructor.
 6. **Hiding is a distinct capability, not a parameter of a single scheme.** `VectorCommitment` and `HidingVectorCommitment` are separate typeclasses; downstream code that requires hiding bounds on the second. See [HIDING.md](HIDING.md).
-7. **Every book feature must have a Lean home, even if unimplemented.** Skeleton files with `sorry` count.
+7. **Every book feature must have a Lean home, even if unimplemented.** Deferred proof obligations are isolated as named gaps.
 8. **Computability is non-negotiable for `Src/`.** Everything under `VectorCommitment/Src/` is `def` (not `noncomputable`) so `lake build` of `VectorCommitment.Tests` exercises real round-trips. Probability and information-theoretic statements live under `VectorCommitment/Properties/` and may be `noncomputable`.
 
 ---
@@ -77,7 +77,7 @@ LeanStuff/
 │   ├── Properties.lean
 │   ├── Properties/
 │   │   ├── Probability/
-│   │   │   └── RandomOracle.lean              -- ROFunction, RODistribution, ROQueryTrace   (no Rust analogue — pure spec)
+│   │   │   └── RandomOracle.lean              -- legacy function view + VCVio-compatible lazy OracleComp
 │   │   ├── Lemmas/
 │   │   │   ├── PathCopath.lean                -- combinatorial lemmas about path / copath / deriveVertexSet
 │   │   │   ├── CollisionLemma.lean            -- §12.3 lemma:simple-mt-colliding-paths, lemma:mt-colliding-paths
@@ -113,9 +113,6 @@ class MerkleHasher (H : Type*) where
   Salt   : Type*
   decEqDigest : DecidableEq Digest
   defaultSalt : Inhabited Salt
-  /-- Sample a fresh salt from a finite seed. Tests fix the seed for
-      reproducibility; a real implementation would consume entropy. -/
-  sampleSalt : H → ULift.{0} UInt64 → Salt
   /-- ρ(symbol, salt) at a leaf. -/
   hashLeaf   : H → Symbol → Salt → Digest
   /-- ρ(child₁, …, childₖ) at an internal vertex. `children.length` is the
@@ -128,7 +125,7 @@ class MerkleHasher (H : Type*) where
 
 *Why the hasher is a value `(h : H)` rather than only a typeclass `[MerkleHasher H]`*: parameters (Poseidon round constants, domain-separation tags, Blake3 init context) live inside the hasher value. One object, owned by the tree.
 
-*Why `Salt` as an associated type instead of a `(saltSize : ℕ)` parameter*: the salt type is a property of the hasher, not of the scheme. Non-hiding hashers set `Salt := Unit` — zero-size, computed away by the kernel; the `sampleSalt` no-op compiles to a unit return. Hiding hashers set `Salt := Vector (Fin 256) 16` (or whatever their analysis demands). The scheme signature `MerkleCommitment H S` carries no extra generic — the salt story rides along on the hasher.
+*Why `Salt` as an associated type instead of a `(saltSize : ℕ)` parameter*: the salt type is a property of the hasher, not of the scheme. Non-hiding hashers set `Salt := Unit` — zero-size, computed away by the kernel. Hiding hashers set `Salt := Vector (Fin 256) 16` (or whatever their analysis demands), and `commit_hiding` consumes a typed `Randomness ck` value (e.g. a per-leaf salt vector) drawn explicitly. The scheme signature `MerkleCommitment H S` carries no extra generic — the salt story rides along on the hasher.
 
 *How this interacts with the two-class hiding split.* The `Salt` associated type determines *which* of the `VectorCommitment.Trait` typeclasses `MerkleCommitment H S` implements. `H.Salt = Unit` ⇒ non-hiding only; `H.Salt ≠ Unit` ⇒ both. Full analysis in [HIDING.md](HIDING.md).
 
@@ -201,22 +198,47 @@ Tests use `lemma … := by native_decide` (matching [`Sumcheck/Tests/TranscriptT
 
 ### 3.5 Random-oracle infrastructure in `Properties/Probability/RandomOracle.lean`
 
-The book's binding / extractability / hiding / equivocation lemmas are stated relative to `ρ ← 𝓤(RO_κ)`. The repo currently uses ad-hoc `Fintype`-counting `ℚ` for probability ([`InteractiveProtocol/Properties/Probability.lean:12-23`](../InteractiveProtocol/Properties/Probability.lean#L12-L23)); for `mt-binding` and friends we need a proper RO model:
+The book's binding / extractability / hiding / equivocation lemmas are stated
+relative to `ρ ← 𝓤(RO_κ)`. `RandomOracle.lean` now separates two interfaces:
 
 ```lean
-/-- Idealized random oracle: a function from queries to fixed-size digests. -/
-def ROFunction (κ : ℕ) : Type := List ByteArray → Vector Bool κ
+-- Legacy function view, retained for compatibility only.
+noncomputable def RODistribution (κ : Nat) : PMF (ROFunction κ) :=
+  PMF.pure (ROFunction.zero κ)
 
-/-- The uniform distribution over random oracles. Noncomputable. -/
-noncomputable def RODistribution (κ : ℕ) : PMF (ROFunction κ) := sorry
-
-/-- A query-answer trace: the queries an algorithm has made to ρ and the
-    answers it received. Used for the collision lemma (§12.3). -/
-structure ROQueryTrace (κ : ℕ) where
-  queries : List (List ByteArray × Vector Bool κ)
+-- Real finite-query semantics.
+inductive OracleComp (spec : OracleSpec) (α : Type) : Type where
+  | ret  : α → OracleComp spec α
+  | call : spec.Domain → (spec.Range → OracleComp spec α) → OracleComp spec α
 ```
 
-L0 only requires that the *statements* of `mt-binding` etc. typecheck against this infrastructure — the `RODistribution` body is `sorry`, the lemmas are `sorry`. L4 builds it out properly.
+`OracleComp.run` interprets this free monad against a `QueryLog`: cache hits
+reuse their response, while cache misses sample uniformly and append to the
+log. This gives honest PMF semantics for every finite computation. The legacy
+`RODistribution` cannot honestly represent a uniform distribution over the
+full function space and is not used by the ROM security reductions.
+
+The structural framework deliberately mirrors
+[VCVio](https://github.com/Verified-zkEVM/VCV-io)'s
+`OracleComp/QueryTracking/CachingOracle` API: `OracleComp`, `run`, `query`,
+`simulateQ`, `simulateQFrom`, and `run_bind`. When VCVio supports this repo's
+Lean toolchain, replacing the local structural layer should be a mechanical
+import/name migration:
+
+```lean
+import VectorCommitment.Properties.Probability.RandomOracle
+-- becomes
+import VCVio.OracleComp.QueryTracking.CachingOracle
+```
+
+The collision proof intentionally differs from VCVio. VCVio samples a full
+query budget up front and pads unused entries; that padding can look like a
+collision even though no query caused it. z-Lean instead proves `run_coll_le`
+directly from the `OracleComp` computation and the queries it actually made.
+The resulting `coupling_trace_le_collisionBound` theorem is then reused by ROM
+binding and extractability. (Hiding is the separate `HasROMHiding` obligation,
+keyed to salt entropy and an internal-node simulation term rather than a digest
+trace collision; it is currently OPEN — see [ROADMAP.md](ROADMAP.md).)
 
 ---
 
@@ -244,6 +266,7 @@ L0 only requires that the *statements* of `mt-binding` etc. typecheck against th
 - [`InteractiveProtocol/Src/Protocol.lean :: PublicCoinProtocol`](../InteractiveProtocol/Src/Protocol.lean) — anchors the future channel-threaded VectorCommitment variant in L2; not used at L0.
 - [`InteractiveProtocol/Src/FiatShamir.lean :: RandomOracle`](../InteractiveProtocol/Src/FiatShamir.lean) — the existing `List ℕ → C` hash-to-field abstraction. Aligned with `MerkleHasher` once they need to interoperate.
 - [`InteractiveProtocol/Properties/Probability.lean :: probEvent`](../InteractiveProtocol/Properties/Probability.lean) — `Fintype`-counting probability, used as the seed for `Properties/Probability/RandomOracle.lean`.
+- [VCVio](https://github.com/Verified-zkEVM/VCV-io) — structural blueprint and API naming for the lazy-sampling `OracleComp`; z-Lean retains its direct-induction coupling proof.
 - Test style from [`Sumcheck/Tests/TranscriptTests.lean`](../Sumcheck/Tests/TranscriptTests.lean): `def` concrete witnesses + `lemma … := by native_decide`.
 
 ---
@@ -274,4 +297,4 @@ Reviewers: is the four-typeclass surface (`MerkleHasher`, `MerkleShape`, `Vector
 
 - Any book feature in §1 that doesn't have a Lean home above?
 - Any Rust pain point in [`ark-mt/DESIGN.md` §2](https://github.com/arkworks-rs/ark-vc/blob/main/crates/ark-mt/DESIGN.md) that we haven't addressed?
-- Anything in §6 open questions you have a strong opinion on (`Symbol` vs `ByteArray`, RO infrastructure shape, wire encoding)?
+- Anything in §6 open questions you have a strong opinion on (`Symbol` vs `ByteArray`, wire encoding)?

@@ -20,13 +20,13 @@
  L3      Abstract security classes      Src/Security/{PositionBinding,   classes
          HasPositionBinding             Extractability,Hiding,
          HasStraightlineExtractor       Equivocation}.lean
-         HasHiding
+         HasROMHiding
          HasEquivocation
 
  L4      ROM discharge for Merkle       Properties/Probability/          PROOFS
          BindingROM        ✅           Instances/*ROM.lean
          ExtractabilityROM ◐           + Collision/RandomOracle/
-         HidingROM         ✗           Coupling/ROHasher/
+         HidingROM         ◯ OPEN      Coupling/ROHasher/
          EquivocationROM   ✗           CheckOracle/TraceCollision.lean
 
  L5      Hasher instantiation           Instances/Parameters.lean        CAPSTONE
@@ -41,7 +41,7 @@
 |---------------|-------------------------------------------------|
 | Binding       | ✅ proven, axiom-clean                          |
 | Extractability | ◐ reduced to `cacheExtract_sound` (1 sorry)   |
-| Hiding        | ✗ params computed; ROM proof pending H1–H5     |
+| Hiding        | ◯ OPEN — `HasROMHiding` declared, no instance yet; floor proved |
 | Equivocation  | ✗ out of scope (programmable RO)               |
 
 ---
@@ -58,7 +58,8 @@ class VectorCommitment (V : Type) where
   check  : VerifierKey → Commitment → List Index → List Alphabet → Proof → Bool
 ```
 
-`HidingVectorCommitment V extends VectorCommitment V` adds the salted variants.
+`HidingVectorCommitment V extends VectorCommitment V` adds `commit_hiding`, which
+consumes explicit typed `Randomness ck` (e.g. a per-leaf salt vector).
 
 **The verification path is `check`.** All security proofs reason about when `check`
 returns `true` on a bad input.
@@ -131,7 +132,7 @@ Per-notion reduction pattern:
 |---|---|---|
 | `BindingROM.lean` | **✅ closed** | 0 |
 | `ExtractabilityROM.lean` | ◐ | 1 (`cacheExtract_sound` bridge) |
-| `HidingROM.lean` | ✗ | 2 (hiding experiment + hiding bound) |
+| `HidingROM.lean` | ◯ OPEN | 0 (no `HasROMHiding` instance yet; floor proved) |
 | `EquivocationROM.lean` | ✗ | 2 (equivocation experiment + bound) |
 
 ---
@@ -222,7 +223,7 @@ a large `κ` does not imply any hiding if `s = 0` (no salt). The hiding follow-o
 
 ## §8 Maintenance
 
-- Sync the status table in §0 after each PR; update `binding ✅`, `hiding ✗` etc.
+- Sync the status table in §0 after each PR; update `binding ✅`, `hiding ◯` etc.
 - Keep `Interface.lean` ≤ 250 lines; add aliases, not proofs.
 - One alias per concept; do not re-export the same theorem under two names.
 - When adding a new security notion, add: (a) a class in `Src/Security/`, (b) an

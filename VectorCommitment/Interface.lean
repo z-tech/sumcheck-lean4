@@ -16,8 +16,8 @@ abbrev MerkleVC (κ : Nat) (S : Type) [MerkleShape S] :=
   MerkleCommitment (ROHasher.ROHasherValue κ) S
 
 /-! ## L3: the four security notions -/
--- HasPositionBinding, HasStraightlineExtractor, HasHiding, HasEquivocation
--- (instances discharged at L4 for MerkleVC)
+-- HasPositionBinding, HasStraightlineExtractor, HasROMHiding, HasEquivocation
+-- (binding/extractability discharged at L4 for MerkleVC; hiding OPEN)
 
 /-! ## L4: machine-checked cores -/
 /-- The finite iid birthday bound: n samples from range R collide with prob ≤ n(n-1)/(2|R|). -/
@@ -40,13 +40,16 @@ noncomputable abbrev collisionProbability := @Probability.collisionBound
 /-! ## Status
     binding        ✅ proven, axiom-clean [propext, Classical.choice, Quot.sound]
     extractability ◐ reduced to cacheExtract_sound (1 sorry in ExtractabilityROM)
-    hiding         ✅ through H5 — salt-axis bounds parameterized by `HidingParams`:
-                     leaf `q/2^s` (`hidden_query_hit_le`),
-                     root `ℓq/2^s + ℓq/2^(2κ)` (`mt_root_hiding_rom_bound`),
-                     privacy `Qℓq/2^s + …` (`mt_privacy_rom_loose`);
-                     salt-entropy capstones proved (`babyBear_{byte,field}_salt_hiding`);
-                     `HasHiding` instance discharged; distributional simulator cores
-                     isolated as named gaps matching the book lemmas
+    hiding         ◯ OPEN (truth reset) — goal-shaped obligation `HasROMHiding`
+                     declared (fixed real/ideal games, fixed error
+                     `n·q/|Salt| + (n−1)·q/|Digest|²`); NO instance installed yet.
+                     The false fixed-oracle claims (`mt_root_hiding_rom_bound`,
+                     `mt_privacy_rom_loose`) and the collision-based `HasHiding`
+                     were removed. Honest floor proved: `PerfectHiding` +
+                     `not_perfectHiding_singleton`, `PMF.etvDist`, and the
+                     `2^s ≤ |Salt|` salt-entropy capstones
+                     (`babyBear_{byte,field}_salt_hiding`). Remaining: the
+                     oracle-native commitment game + root-hiding/privacy bounds.
     equivocation   ✗ out of scope (programmable RO)                             -/
 
 end VectorCommitment.Interface
