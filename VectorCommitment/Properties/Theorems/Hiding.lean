@@ -218,34 +218,13 @@ theorem mt_root_hiding_commit
   rw [h_get_def]
   exact h_leaf i h_i s₀ s₁ hs₀ hs₁
 
-/-- **Distributional hiding (book §12.5).** *Stated form / sorried.* The full
-    book statement requires probabilistic infrastructure: against a random
-    oracle, the distribution of `commit msg` is independent of `msg` when
-    each leaf is paired with a uniformly random salt.
-
-    Concretely the book argues:
-    1. Random salt `r` ⇒ `hashLeaf hasher m r` is a uniformly random digest
-       (random-oracle property), independent of `m`.
-    2. Therefore the leaf-hash distribution is `msg`-independent.
-    3. Propagating up the tree (by `labelAt_eq_of_leaf_hash_eq` at the
-       distributional level), the root distribution is `msg`-independent.
-
-    Step 3 is exactly the structural lemma above. Steps 1–2 require:
-    - a non-placeholder `RandomOracle.lean` (currently `PMF.pure`);
-    - a notion of distributional equality (`PMF.bind`-equality or
-      indistinguishability up to oracle queries).
-
-    Until that infrastructure lands we leave the distributional form as a
-    `True` placeholder with a structured comment.
-
-    See: `VectorCommitment/Properties/Probability/RandomOracle.lean`. -/
-theorem mt_privacy
-    {H S : Type} [MerkleHasher H] [MerkleShape S]
-    (_mc : MerkleCommitment H S) :
-    -- Placeholder. The honest statement is
-    --   `commitDistribution mc msg₀ = commitDistribution mc msg₁`
-    -- under uniform-salt sampling, against a random oracle. Requires
-    -- `RandomOracle.lean` to be promoted from `PMF.pure` to a real model.
-    True := trivial
+/-! **Distributional hiding (book §12.5).** The honest finite-query statement —
+the oracle-native commitment-root distribution is `error`-close to uniform — is
+the `HasROMHiding` obligation (`VectorCommitment/Src/Security/Hiding.lean`),
+whose real game requires the oracle-native commitment and whose bound is the
+remaining work. The structural backbone above (`labelAt_eq_of_leaf_hash_eq`,
+`mt_root_hiding`) is the propagation step that the distributional proof reuses.
+(This supersedes the former `mt_privacy : True` placeholder, which asserted
+nothing.) -/
 
 end MerkleCommitment

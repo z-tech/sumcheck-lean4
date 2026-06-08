@@ -1,6 +1,8 @@
 # `VectorCommitment` — Usage
 
-This doc shows the minimal end-to-end flow for using `VectorCommitment` to commit, open, and check. After L1, the example below works for real; at L0, only the typecheck and the size-0 smoke test pass.
+This doc shows the minimal end-to-end flow for using `VectorCommitment` to
+commit, open, and check. The operations below are executable definitions and
+the round-trip is checked by `native_decide`.
 
 ---
 
@@ -21,7 +23,6 @@ instance : MerkleHasher MyHasher where
   Salt        := Unit
   decEqDigest := inferInstance
   defaultSalt := ⟨()⟩
-  sampleSalt  := fun _ _ => ()
   hashLeaf    := fun _ x _ => x * 31 + 17
   hashNodes   := fun _ cs => (cs.map id).foldl (fun acc d => acc * 31 + d) 1
 ```
@@ -86,11 +87,25 @@ If both match exactly, the Rust implementation agrees with the Lean spec on this
 
 ---
 
-## 6. What doesn't work yet at L0
+## 6. Current limitations and security proofs
 
-- `commit` / `open` / `check` bodies are `sorry`; the round-trip lemma above only typechecks.
-- The real demo arrives at L1. See [ROADMAP.md](ROADMAP.md).
-- `HidingVectorCommitment` is a separate typeclass — see [HIDING.md](HIDING.md) to understand why this hasher (`Salt = Unit`) doesn't satisfy it.
+- `commit` / `open` / `check` are real and are exercised by the tests; the demo
+  hasher remains intentionally non-cryptographic.
+- `HidingVectorCommitment` is a separate typeclass — its hiding commit takes
+  explicit typed `Randomness ck` (e.g. a per-leaf salt vector), and `Salt = Unit`
+  carries no entropy. See [HIDING.md](HIDING.md).
+- ROM position binding is proved over the lazy-sampling oracle, and ROM
+  extractability is reduced to the named `cacheExtract_sound` bridge. Hiding is
+  the goal-shaped `HasROMHiding` obligation (fixed real/ideal games, fixed error
+  `n·q/|Salt| + (n−1)·q/|Digest|²`); it is currently **OPEN** — no instance is
+  installed yet, pending the oracle-native commitment game. The honest floor
+  (`PerfectHiding` + `not_perfectHiding_singleton`, `PMF.etvDist`, and the
+  `2^s ≤ |Salt|` salt-entropy capstones) is proved. See [ROADMAP.md](ROADMAP.md)
+  and [INTERFACE.md](INTERFACE.md).
+- The lazy-sampling `OracleComp` API mirrors
+  [VCVio](https://github.com/Verified-zkEVM/VCV-io), permitting a future
+  mechanical dependency swap. z-Lean's direct-induction collision proof remains
+  local because it avoids VCVio's eager-seed padding artifact.
 
 ---
 

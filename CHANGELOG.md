@@ -1,5 +1,57 @@
 # Changelog
 
+## 2026-06-08 — VectorCommitment ROM binding and hiding follow-through
+
+The VectorCommitment security series replaced the placeholder-only
+random-oracle story with a finite-query lazy-sampling model and connected it to
+the operational Merkle commitment.
+
+### Added
+
+- **VCVio-compatible lazy-oracle structure.** `OracleComp`, `run`, `query`,
+  `simulateQ`, `simulateQFrom`, and `run_bind` mirror VCVio's caching-oracle API
+  so a future dependency swap can be mechanical.
+- **Direct-induction collision bound.** `run_coll_le` and
+  `coupling_trace_le_collisionBound` prove the birthday bound directly over
+  actual query logs. This intentionally does not port VCVio's eager-seed
+  coupling machinery, avoiding its under-budget zero-padding collision
+  artifact.
+- **ROM security chain.** Shared-oracle verification, trace-collision
+  reductions, and the `HasPositionBinding` instance are proved. Straightline
+  extraction is implemented and reduced to the remaining `cacheExtract_sound`
+  bridge.
+- **Parameters and hiding floor.** `MerkleHasherParams` computes digest and salt
+  widths; binding targets, salt-entropy targets, BabyBear capstones, and
+  operational per-leaf salts are proved. The honest hiding floor —
+  `PerfectHiding` with the `not_perfectHiding_singleton` negative result,
+  `PMF.etvDist`, and the `2^s ≤ |Salt|` salt-entropy capstones — is proved.
+
+### Changed
+
+- `RODistribution := PMF.pure` remains only as a legacy function-view
+  compatibility layer. ROM security arguments use the lazy-sampling
+  `OracleComp` semantics.
+- **Hiding truth reset + API correction.** Hiding is now the goal-shaped
+  `HasROMHiding` obligation: fixed real/ideal games and a fixed error
+  `n·q/|Salt| + (n−1)·q/|Digest|²`, with no configurable advantage field. It
+  replaces the former generic `HasHiding`, whose ROM instance measured a
+  *collision* advantage that does not capture hiding. No `HasROMHiding` instance
+  is installed yet — the honest real game is the oracle-native commitment
+  distribution (sampling the oracle lazily), so hiding is reported **OPEN**
+  rather than discharged by a fixed-oracle (false) or `real = ideal` (vacuous)
+  instance. The remaining root-hiding and selective-opening privacy bounds are
+  named gaps; the structural `mt_root_hiding` backbone and the salt-entropy
+  capstones stay proved.
+- **Explicit hiding randomness.** `HidingVectorCommitment.commit_hiding` takes a
+  typed `Randomness ck` value (e.g. an exact-length per-leaf salt vector) instead
+  of a `UInt64` seed, representing the ideal independent salts directly;
+  `HidingMultiVectorCommitment` takes an exact-length vector of per-commit
+  randomness. The duplicate hiding setup/trim/open/check methods and the hasher
+  `sampleSalt` sampler are dropped — the base operations cover them and hiding
+  randomness is supplied explicitly.
+- `commit`, `open`, and `check` are executable implementations exercised by
+  `native_decide` round-trip tests.
+
 ## 2026-05-17 — LinearCodes review fallout
 
 The cumulative result of a council-style review of `LinearCodes/`
@@ -194,4 +246,3 @@ enforced by CI.
 
 - Complete sumcheck implementation over `CMvPolynomial` with computable transcripts
 - Prover, verifier, and test suite over concrete fields (ZMod 19)
-

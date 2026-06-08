@@ -18,18 +18,18 @@ class VectorCommitment (V : Type) where
   check  : VerifierKey → Commitment → List Index → List Alphabet → Proof → Bool
 
 -- Hiding extension. Mirrors ark-vc/src/vc.rs `HidingVectorCommitment` trait.
+--
+-- The hiding commit takes its randomness *explicitly*, as a typed value drawn
+-- from a per-key `Randomness` family (e.g. an exact-length vector of fresh
+-- per-leaf salts), so the ideal independent salts are represented directly.
+-- The base `VectorCommitment` operations already cover `setup`, `trim`, `open`,
+-- and `check`; only the commit step changes under hiding.
 class HidingVectorCommitment (V : Type) extends VectorCommitment V where
-  setup_hiding  : (maxLen maxQueries : Nat) → ULift.{0} UInt64 →
-                  VectorCommitment.UniversalParams V
-  trim_hiding   : VectorCommitment.UniversalParams V → (len queries : Nat) →
-                  VectorCommitment.CommitterKey V × VectorCommitment.VerifierKey V
-  commit_hiding : VectorCommitment.CommitterKey V → List (VectorCommitment.Alphabet V) →
-                  ULift.{0} UInt64 →
-                  VectorCommitment.Commitment V × VectorCommitment.CommitmentState V
-  open_hiding   : VectorCommitment.CommitterKey V → List (VectorCommitment.Alphabet V) →
-                  VectorCommitment.Commitment V → List (VectorCommitment.Index V) →
-                  List (VectorCommitment.Alphabet V) → VectorCommitment.CommitmentState V →
-                  VectorCommitment.Proof V
-  check_hiding  : VectorCommitment.VerifierKey V → VectorCommitment.Commitment V →
-                  List (VectorCommitment.Index V) → List (VectorCommitment.Alphabet V) →
-                  VectorCommitment.Proof V → Bool
+  /-- The space of hiding randomness for a given committer key (e.g. an
+      exact-length vector of fresh per-leaf salts). -/
+  Randomness : VectorCommitment.CommitterKey V → Type
+  /-- Commit while consuming explicit hiding randomness. -/
+  commit_hiding :
+    (ck : VectorCommitment.CommitterKey V) → List (VectorCommitment.Alphabet V) →
+      Randomness ck →
+      VectorCommitment.Commitment V × VectorCommitment.CommitmentState V

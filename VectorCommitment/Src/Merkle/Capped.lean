@@ -120,7 +120,6 @@ private instance : MerkleHasher CapDemoHasher where
   Salt := Unit
   decEqDigest := inferInstance
   defaultSalt := ⟨()⟩
-  sampleSalt _ _ := ()
   hashLeaf _ x _ := x * 31 + 17
   hashNodes _ cs := cs.foldl (fun acc d => acc * 31 + d) 1
 

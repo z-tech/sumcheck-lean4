@@ -1,4 +1,5 @@
 import VectorCommitment.Src.Trait
+import Mathlib.Data.Vector.Basic
 
 -- Multi-vector commitment trait. Mirrors ark-vc/src/mvc.rs.
 
@@ -25,22 +26,13 @@ class MultiVectorCommitment (V : Type) extends VectorCommitment V where
                     List (List (VectorCommitment.Alphabet V)) →
                     VectorCommitment.Proof V → Bool
 
+-- The hiding multi-commit takes an *exact-length* vector of per-commit hiding
+-- randomness, one independent draw per committed vector. The base
+-- `MultiVectorCommitment` already covers open/check.
 class HidingMultiVectorCommitment (V : Type) extends
     MultiVectorCommitment V, HidingVectorCommitment V where
-  commit_multiple_hiding : VectorCommitment.CommitterKey V →
-                           List (List (VectorCommitment.Alphabet V)) →
-                           ULift.{0} UInt64 →
-                           List (VectorCommitment.Commitment V) ×
-                             List (VectorCommitment.CommitmentState V)
-  open_multiple_hiding   : VectorCommitment.CommitterKey V →
-                           List (List (VectorCommitment.Alphabet V)) →
-                           List (VectorCommitment.Commitment V) →
-                           List (List (VectorCommitment.Index V)) →
-                           List (List (VectorCommitment.Alphabet V)) →
-                           List (VectorCommitment.CommitmentState V) →
-                           VectorCommitment.Proof V
-  check_multiple_hiding  : VectorCommitment.VerifierKey V →
-                           List (VectorCommitment.Commitment V) →
-                           List (List (VectorCommitment.Index V)) →
-                           List (List (VectorCommitment.Alphabet V)) →
-                           VectorCommitment.Proof V → Bool
+  commit_multiple_hiding :
+    (ck : VectorCommitment.CommitterKey V) →
+    (msgs : List (List (VectorCommitment.Alphabet V))) →
+    List.Vector (HidingVectorCommitment.Randomness ck) msgs.length →
+    List (VectorCommitment.Commitment V) × List (VectorCommitment.CommitmentState V)

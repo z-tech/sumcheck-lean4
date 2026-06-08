@@ -96,7 +96,7 @@ attribute [instance] OracleSpec.inhabitedRange
 /-- The query log: an ordered list of `(query, response)` pairs the
     oracle has produced so far. Newer entries near the head. Acts as the
     cache for lazy sampling. -/
-def QueryLog (spec : OracleSpec) : Type := List (spec.Domain × spec.Range)
+abbrev QueryLog (spec : OracleSpec) : Type := List (spec.Domain × spec.Range)
 
 namespace QueryLog
 variable {spec : OracleSpec}
@@ -131,46 +131,74 @@ def length (log : QueryLog spec) : Nat := List.length log
 
 end QueryLog
 
-/-- A computation with access to the random oracle. Concretely: a
-    function taking the starting cache and returning a `PMF` over
-    `(value, ending cache)` pairs. -/
-def OracleComp (spec : OracleSpec) (α : Type) : Type :=
-  QueryLog spec → PMF (α × QueryLog spec)
+/-- A computation with access to the random oracle, as an operational free
+    monad: either `ret` a value, or `call` the oracle on one input and
+    continue with the response. Keeping the node first-order (the
+    continuation ranges over `spec.Range`, a fixed type) keeps `OracleComp`
+    in `Type`, so it fits the `Type`-valued adversary fields of the security
+    classes, and the inductive shape exposes the structural recursion the
+    trace/i.i.d. analysis runs on. -/
+inductive OracleComp (spec : OracleSpec) (α : Type) : Type where
+  | ret  : α → OracleComp spec α
+  | call : spec.Domain → (spec.Range → OracleComp spec α) → OracleComp spec α
 
 namespace OracleComp
 variable {spec : OracleSpec}
 
-noncomputable instance : Monad (OracleComp spec) where
-  pure x := fun log => PMF.pure (x, log)
-  bind m f := fun log => (m log).bind fun p => f p.fst p.snd
+/-- Monadic bind, by recursion on the computation tree. -/
+def bind {α β} : OracleComp spec α → (α → OracleComp spec β) → OracleComp spec β
+  | ret a,    f => f a
+  | call d k, f => call d (fun r => (k r).bind f)
 
-/-- Query the oracle on `d`. On a novel query, sample a fresh response
-    uniformly from `spec.Range` and cache it; on a repeat, return the
-    cached response. -/
-noncomputable def query (d : spec.Domain) : OracleComp spec spec.Range :=
-  fun log =>
-    match log.lookup d with
-    | some r => PMF.pure (r, log)
-    | none =>
-        (PMF.uniformOfFintype spec.Range).bind fun r =>
-          PMF.pure (r, log.append d r)
+instance : Monad (OracleComp spec) where
+  pure := ret
+  bind := bind
 
-/-- Run a computation from the empty log; project the value distribution. -/
+/-- Query the oracle on `d`, returning its response. -/
+def query (d : spec.Domain) : OracleComp spec spec.Range := call d ret
+
+/-- Run a computation against a starting cache: on a novel query sample a
+    fresh response uniformly and cache it; on a repeat reuse the cached one. -/
+noncomputable def run {α} :
+    OracleComp spec α → QueryLog spec → PMF (α × QueryLog spec)
+  | ret a,    log => PMF.pure (a, log)
+  | call d k, log =>
+      match log.lookup d with
+      | some r => (k r).run log
+      | none =>
+          (PMF.uniformOfFintype spec.Range).bind fun r =>
+            (k r).run (log.append d r)
+
+/-- Run from the empty cache; project the value distribution. -/
 noncomputable def simulateQ (c : OracleComp spec α) : PMF α :=
-  (c QueryLog.empty).map Prod.fst
+  (c.run QueryLog.empty).map Prod.fst
 
-/-- Run a computation from a pre-populated log. Used by the equivocation
-    simulator: pre-populate the log to *program* the oracle at chosen
-    points, then sample freshly elsewhere. -/
+/-- Run from a pre-populated cache; project the value distribution. -/
 noncomputable def simulateQFrom (c : OracleComp spec α) (log : QueryLog spec) :
     PMF α :=
-  (c log).map Prod.fst
+  (c.run log).map Prod.fst
+
+@[simp] theorem run_ret {α} (a : α) (log : QueryLog spec) :
+    (ret a : OracleComp spec α).run log = PMF.pure (a, log) := rfl
+
+/-- `run` pushes through `bind`: the bridge from monadic experiments to their
+    `PMF` semantics. Proved by induction on the computation tree. -/
+@[simp] theorem run_bind {α β} (c : OracleComp spec α)
+    (f : α → OracleComp spec β) (log : QueryLog spec) :
+    (c.bind f).run log = (c.run log).bind (fun p => (f p.1).run p.2) := by
+  induction c generalizing log with
+  | ret a => simp [bind, run]
+  | call d k ih =>
+      simp only [bind, run]
+      cases h : log.lookup d with
+      | some r => simp [ih]
+      | none => simp [ih, PMF.bind_bind]
 
 end OracleComp
 
 /-- The lazy-sampled random oracle. An alias to make the API name match
     VCVio's `randomOracle`. -/
 @[inline, reducible]
-noncomputable def randomOracle {spec : OracleSpec} :
+def randomOracle {spec : OracleSpec} :
     spec.Domain → OracleComp spec spec.Range :=
   OracleComp.query
