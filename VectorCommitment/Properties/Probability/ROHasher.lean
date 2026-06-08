@@ -104,9 +104,10 @@ structure ROHasherValue (κ : Nat) where
     matching the typed leaf input of the real hashers and giving the injective
     leaf encoding `encodeLeaf_inj` that position binding needs.
 
-    The salt sampler is a placeholder (constant `0^κ`); a hiding instance must
-    replace it with a uniform draw of sufficient entropy (for small fields,
-    `Salt = F` is insufficient — out of scope here, binding only). -/
+    Hiding randomness is supplied explicitly through
+    `HidingVectorCommitment.Randomness` (an exact-length vector of uniform
+    salts), not sampled here; this instance carries the binding API only (for
+    small fields `Salt = F` would be insufficient entropy anyway). -/
 noncomputable instance instMerkleHasherROHasher (κ : Nat) :
     MerkleHasher (ROHasherValue κ) where
   Symbol := List.Vector Bool κ
@@ -114,7 +115,6 @@ noncomputable instance instMerkleHasherROHasher (κ : Nat) :
   Salt := List.Vector Bool κ
   decEqDigest := inferInstance
   defaultSalt := ⟨List.Vector.replicate κ false⟩
-  sampleSalt := fun _ _ => List.Vector.replicate κ false
   hashLeaf := fun h sym salt => h.oracle (encodeLeaf sym salt)
   hashNodes := fun h children => h.oracle (encodeNodes children)
 

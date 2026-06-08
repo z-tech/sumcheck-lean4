@@ -7,24 +7,27 @@ import VectorCommitment.Properties.Probability.ROHasher
 import VectorCommitment.Properties.Theorems.Hiding
 
 /-!
-# ROM Merkle root hiding
+# ROM Merkle root hiding — root-hiding theorem OPEN; salt arithmetic proved
 
-This file formalizes the book's finite-query Merkle root-hiding theorem
-(`lemma:mt-root-hiding`): the commit-root distribution, taken over fresh uniform
-per-leaf salts, is `rootHidingError`-close to a uniform digest.
+The book's finite-query Merkle root-hiding theorem (`lemma:mt-root-hiding`) — the
+oracle-native commit-root distribution is `rootHidingError`-close to a uniform
+digest — is the `HasROMHiding.rootError` obligation, with
 
 ```text
 rootHidingError p = ℓ·q / 2^s + ℓ·q / 2^(2κ)
 ```
 
-The first term is the leaf salt-hit error (one `hidden_query_hit_le` per leaf,
-union-bounded over `ℓ` leaves); the second is the internal-node simulation error
-(each internal node is a basic commitment with `2κ`-bit "salt"), and the
-structural backbone is the proved `mt_root_hiding` lemma — the message can reach
-the root only through the leaf hashes.
+the leaf salt-hit error plus the internal-node simulation error. Its structural
+backbone is the proved `mt_root_hiding` lemma (the message reaches the root only
+through the leaf hashes).
 
-The distributional hybrid that glues these together is the one named gap
-(`mt_root_hiding_rom_bound`), whose statement matches the book lemma exactly.
+The honest real game must sample the oracle: the root distribution is taken over
+both the fresh per-leaf salts **and** the lazily-sampled oracle. Stating the
+bound against a single *fixed* oracle would be false — for an arbitrary fixed
+`H(m, ·)` the root over uniform salt need not be close to uniform — so the
+oracle-sampling game and the bottom-up hybrid are the remaining work
+(see `ROADMAP.md`).
+
 The salt-entropy *target* lemmas below are fully proved and are the parameter
 layer the field/byte capstones consume.
 -/
@@ -50,32 +53,9 @@ noncomputable def realRootDist {S : Type} [MerkleShape S]
     inferInstanceAs (Nonempty (List.Vector Bool κ))
   (mc.commitWithUniformSalts msg).map (fun p => p.1.root)
 
-/-- **Merkle root hiding in the ROM (book `lemma:mt-root-hiding`).**  The real
-    root distribution and the simulated uniform root are `rootHidingError p`-close
-    in total-variation distance, for a `q`-query distinguisher.
-
-    *Isolated distributional core.*  Proof decomposition (book):
-    1. leaf layer — replace each `H(mᵢ, saltᵢ)` by a uniform digest; one
-       `hidden_query_hit_le` per leaf, union-bounded over `ℓ = messageLength`;
-    2. internal layers — replace each internal-node hash by a uniform digest,
-       charged `q / 2^(2κ)` per node via `cm-hiding` at `2κ`-bit salt;
-    3. structural propagation — `mt_root_hiding` shows the message reaches the
-       root only through leaf hashes.
-    The hybrid that sums these into a TV bound is the single named gap, matching
-    the book statement. -/
-theorem mt_root_hiding_rom_bound {S : Type} [MerkleShape S]
-    (mc : MerkleCommitment (ROHasher.ROHasherValue κ) S)
-    (msg : List (MerkleHasher.Symbol (ROHasher.ROHasherValue κ)))
-    (p : HidingParams) (q : Nat)
-    (hκ : p.kappa = κ) (hℓ : p.messageLength = msg.length) (hq : p.queryBound = q)
-    (E : Set (List.Vector Bool κ)) :
-    (realRootDist mc msg).toOuterMeasure E
-      ≤ (rootSimulator κ).toOuterMeasure E + p.rootHidingError := by
-  -- One-sided event indistinguishability: the real root is no more likely to land
-  -- in any event `E` than the uniform simulated root, up to `rootHidingError`.
-  -- (Taking the sup over `E` gives the TV-distance form.) Structural content via
-  -- `mt_root_hiding`; the distributional hybrid is the named gap.
-  sorry
+/-! `realRootDist` is the fixed-oracle real distribution and `rootSimulator` the
+uniform simulator; they are the honest scaffolding the oracle-sampling
+`HasROMHiding.rootRealGame` and its bound build on. -/
 
 /-! ## Salt-entropy target lemmas (fully proved)
 

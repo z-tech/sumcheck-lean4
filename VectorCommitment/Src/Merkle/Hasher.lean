@@ -6,8 +6,8 @@ class MerkleHasher (H : Type) where
   Salt   : Type
   decEqDigest : DecidableEq Digest
   defaultSalt : Inhabited Salt
-  /-- Sample a fresh salt from a finite seed. -/
-  sampleSalt : H → ULift.{0} UInt64 → Salt
+  -- No `sampleSalt`: hiding randomness is supplied explicitly through
+  -- `HidingVectorCommitment.Randomness`, never derived from a finite seed.
   /-- ρ(symbol, salt) at a leaf. -/
   hashLeaf   : H → Symbol → Salt → Digest
   /-- ρ(child₁, …, childₖ) at an internal vertex. -/
