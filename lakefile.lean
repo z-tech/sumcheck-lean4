@@ -29,6 +29,8 @@ lean_lib «LinearCodes.Research» where
 lean_lib «LinearCodes.Examples» where
   roots := #[`LinearCodes.Examples.RSSmokeTest]
 
+lean_lib «Hasher» where
+
 lean_lib «VectorCommitment» where
 
 lean_lib «PCP» where

@@ -3,6 +3,8 @@ Copyright (c) 2026 LeanStuff contributors. All rights reserved.
 -/
 import VectorCommitment.Src.Trait
 import Mathlib.Data.ENNReal.Basic
+import Mathlib.Probability.ProbabilityMassFunction.Basic
+import Mathlib.Probability.ProbabilityMassFunction.Constructions
 
 /-!
 # Position binding — abstract security obligation
@@ -97,3 +99,96 @@ class HasPositionBinding (V : Type) [VectorCommitment V] where
   binding_bound :
     ∀ {κ q} (A : BindingAdversary κ q),
       bindingAdvantage A ≤ bindingError κ q
+  /-- **Lifted binding bound — disagreement at a "covered" index of
+      a multi-position opening.**
+
+      ## Why this shape
+
+      Higher-level theorems (notably Kilian's Theorem 5.1 / Lemma 5.3
+      Case 1 — `bound_case1` in `Kilian/Properties/Lemma53.lean`) need
+      to bound the probability of a "binding break" inside a *joint*
+      experiment with many other moving pieces (auxiliary input
+      distributions, multi-round sampling, an adversary that produces
+      both openings indirectly). The classical `binding_bound` field
+      bounds the advantage of an *explicit* `BindingAdversary κ q`
+      against the binding game. Translating from a joint-experiment
+      event back to an explicit `BindingAdversary` is mechanical but
+      tedious: you must (i) construct the adversary's algorithm,
+      (ii) thread the experiment's randomness through it, (iii)
+      relate its advantage to the original event's probability.
+
+      `bindingError_lifts` performs that translation *once*, at the
+      typeclass level. It bounds the joint-experiment probability of
+      "the multi-position opening checks AND a designated in-list
+      value disagrees with the witness" directly by `bindingError κ q`.
+      Downstream theorems can then close their binding-side bounds
+      with a single typeclass invocation, supplying only the
+      extractors `mkVk … mkValWit` that pick out the relevant
+      sub-objects from each experiment outcome.
+
+      ## The seven extractors
+
+      Concretely: given a joint distribution `μ : PMF Ω` and per-
+      outcome extractors of
+        * a verifier key `mkVk ω`,
+        * a commitment `mkCm ω`,
+        * an opening `(mkIdxs ω, mkVals ω, mkPrf ω)`,
+        * an in-list position `mkLocalIdx ω : ℕ`,
+        * a witness value `mkValWit ω`,
+      the probability of the joint event
+        "the multi-position opening checks AND the in-list value at
+         `mkLocalIdx` differs from the witness value (both consulted
+         with `getD default`)"
+      is at most `bindingError κ q`.
+
+      Concretely: given a joint distribution `μ : PMF Ω` and per-
+      outcome extractors of
+        * a verifier key `mkVk ω`,
+        * a commitment `mkCm ω`,
+        * an opening `(mkIdxs ω, mkVals ω, mkPrf ω)`,
+        * an in-list position `mkLocalIdx ω : ℕ`,
+        * a witness value `mkValWit ω`,
+      the probability of the joint event
+        "the multi-position opening checks AND the in-list value at
+         `mkLocalIdx` differs from the witness value (both consulted
+         with `getD default`)"
+      is at most `bindingError κ q`.
+
+      The 'witness' value carries an implicit existential proof — the
+      validated sample that placed `mkValWit ω` at the position
+      `mkIdxs ω |>.getD (mkLocalIdx ω) _` during the experiment has,
+      by construction, a VC-check-passing opening proof for that
+      `(cm, position, mkValWit ω)`. The field abstracts that witness
+      proof away rather than requiring the protocol theorem to thread
+      it explicitly.
+
+      ## How to discharge for a concrete VC
+
+      A concrete `instance : HasPositionBinding V` constructs a
+      `BindingAdversary κ q` that:
+        1. Runs the joint experiment `μ` (using the simulator's RO if
+           in the ROM, or the supplied randomness otherwise).
+        2. Extracts the witness-side proof from the sampler transcript
+           of whichever earlier round placed `mkValWit ω` into the
+           candidate string at the relevant position.
+        3. Reduces the multi-position `check` predicate to the
+           single-position check expected by `BindingBreak`, via a
+           VC-specific structural lemma (for Merkle commitments: the
+           sibling-path uniqueness lemma).
+        4. Packages the two openings into a `BindingBreak V` and
+           invokes `binding_bound`. -/
+  bindingError_lifts :
+    ∀ {κ q : ℕ} {Ω : Type} [Inhabited (VectorCommitment.Alphabet V)]
+      (μ : PMF Ω)
+      (mkVk : Ω → VectorCommitment.VerifierKey V)
+      (mkCm : Ω → VectorCommitment.Commitment V)
+      (mkIdxs : Ω → List (VectorCommitment.Index V))
+      (mkVals : Ω → List (VectorCommitment.Alphabet V))
+      (mkPrf : Ω → VectorCommitment.Proof V)
+      (mkLocalIdx : Ω → ℕ)
+      (mkValWit : Ω → VectorCommitment.Alphabet V),
+      μ.toOuterMeasure
+        {ω | VectorCommitment.check (mkVk ω) (mkCm ω)
+               (mkIdxs ω) (mkVals ω) (mkPrf ω) = true ∧
+             ((mkVals ω)[mkLocalIdx ω]?).getD default ≠ mkValWit ω}
+        ≤ bindingError κ q

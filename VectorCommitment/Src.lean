@@ -9,4 +9,5 @@ import VectorCommitment.Src.Merkle.Capped
 import VectorCommitment.Src.Merkle.Capability
 import VectorCommitment.Src.Merkle.MultiVector
 import VectorCommitment.Src.Merkle.Instance
+import VectorCommitment.Src.Merkle.Refinement
 import VectorCommitment.Src.Security

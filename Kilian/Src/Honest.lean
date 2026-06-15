@@ -33,7 +33,7 @@ variable {P V : Type} [PCPSystem P] [VectorCommitment V] [KilianCompatible P V]
 
 /-- The honest Kilian prover. Given the statement, witness, committer
     key, and verifier's randomness, produce a transcript. -/
-noncomputable def honestProver
+def honestProver
     (x : PCPSystem.Statement P) (w : PCPSystem.Witness P)
     (ck : VectorCommitment.CommitterKey V) (ρ : PCPSystem.Randomness P) :
     Transcript P V :=
@@ -60,7 +60,7 @@ noncomputable def honestProver
 /-- The Kilian verifier. Accepts iff (a) every opening verifies under
     `VectorCommitment.check` and (b) the PCP verifier's decision
     function accepts on the opened values. -/
-noncomputable def verifyTranscript
+def verifyTranscript
     (x : PCPSystem.Statement P) (vk : VectorCommitment.VerifierKey V)
     (t : Transcript P V) : Bool :=
   let queries : List ℕ := PCPSystem.verifierQueries (P := P) x t.randomness

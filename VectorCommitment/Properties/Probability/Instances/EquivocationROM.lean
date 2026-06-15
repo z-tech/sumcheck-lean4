@@ -66,16 +66,17 @@ This is the hardest of the four ROM instances. It depends on:
 * **The simulator construction** itself, plus the coupling argument
   showing real ≈ ideal.
 
-* **Replacing the legacy `mt_equivocation := sorry`** in
-  `Properties/Theorems/Equivocation.lean` with a real distributional
-  statement — currently it returns `True`, which has no probabilistic
-  content.
+* No `mt_equivocation` standalone theorem to replace — the legacy
+  `True := sorry` placeholder in `Properties/Theorems/Equivocation.lean`
+  has been removed and the file is now documentation only. The
+  canonical equivocation statement lives in this `HasEquivocation`
+  instance.
 -/
 
 namespace VectorCommitment.Probability.Instances
 
 variable (κ : Nat) (S : Type) [MerkleShape S]
-  [Nonempty (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
+  [Inhabited (MerkleCommitment (ROHasher.ROHasherValue κ) S)]
 
 /-- Equivocation for the RO-derived Merkle commitment. -/
 noncomputable instance :
