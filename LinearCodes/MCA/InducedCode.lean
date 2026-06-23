@@ -183,4 +183,102 @@ theorem dotMap_injective_iff {F : Type*} [Field F] {S : Type*} {ℓ : ℕ}
       simpa only [Generator.dotMap_apply, Pi.zero_apply] using hx
     exact sub_eq_zero.mp huv0
 
+
+/-! ### Singleton bound
+
+The Singleton bound `dim c + d ≤ |α| + 1` for any linear code `c ⊆ α → F`,
+proved by puncturing: restricting codewords to `|α| − (d−1)` coordinates is
+injective on `c` (two codewords agreeing there would differ on at most
+`d − 1` coordinates, but a nonzero codeword has weight `≥ d`), so
+`dim c ≤ |α| − (d−1)`. When the bound is met with equality the code is MDS;
+`fn_exists_minWeight` extracts the attaining codeword. Both are stated over a
+generic finite index type `α`, so they specialise to `Fin n → F` (Reed-Solomon)
+and `S → F` (generator-induced codes) alike. -/
+
+namespace Generator
+
+/-- **Singleton bound.** Any linear code `c ⊆ α → F` with minimum distance at
+least `d` and positive dimension satisfies `dim c + d ≤ |α| + 1`. -/
+theorem fnSingleton_bound {F : Type*} [Field F] [DecidableEq F] {α : Type*}
+    [Fintype α] (c : Submodule F (α → F)) (d : ℕ)
+    (hc : 0 < Module.finrank F c) (hmd : fnMinDistAtLeast c d) :
+    Module.finrank F c + d ≤ Fintype.card α + 1 := by
+  classical
+  rcases Nat.eq_zero_or_pos d with hd0 | hd1
+  · subst hd0
+    have h := Submodule.finrank_le c
+    rw [Module.finrank_pi] at h
+    omega
+  · have hbot : c ≠ ⊥ := by
+      intro h; rw [h] at hc; simp at hc
+    obtain ⟨v, hv, hv0⟩ := (Submodule.ne_bot_iff c).mp hbot
+    have hdcard : d ≤ Fintype.card α :=
+      le_trans (hmd v hv hv0) (fnHammingWeight_le_card v)
+    -- choose `d − 1` coordinates to drop; keep `T = Dᶜ`
+    obtain ⟨D, _hDsub, hDcard⟩ :=
+      Finset.exists_subset_card_eq
+        (show d - 1 ≤ (Finset.univ : Finset α).card by rw [Finset.card_univ]; omega)
+    set T : Finset α := Dᶜ with hT
+    have hTcard : T.card = Fintype.card α - (d - 1) := by
+      rw [hT, Finset.card_compl, hDcard]
+    -- restriction to the kept coordinates is injective on `c`
+    let P : c →ₗ[F] (↥T → F) :=
+      (LinearMap.funLeft F F (fun x : ↥T => (x : α))).comp c.subtype
+    have hPinj : Function.Injective P := by
+      rw [injective_iff_map_eq_zero]
+      rintro ⟨w, hw⟩ hPw
+      have hwT : ∀ x : α, x ∈ T → w x = 0 := by
+        intro x hxT
+        have := congrFun hPw (⟨x, hxT⟩ : ↥T)
+        simpa [P, LinearMap.funLeft_apply] using this
+      have hwle : fnHammingWeight w ≤ d - 1 := by
+        unfold fnHammingWeight
+        have hsub : (Finset.univ.filter fun i => w i ≠ 0) ⊆ D := by
+          intro i hi
+          rw [Finset.mem_filter] at hi
+          by_contra hiD
+          exact hi.2 (hwT i (by rw [hT, Finset.mem_compl]; exact hiD))
+        calc (Finset.univ.filter fun i => w i ≠ 0).card
+            ≤ D.card := Finset.card_le_card hsub
+          _ = d - 1 := hDcard
+      have hw0 : w = 0 := by
+        by_contra hne
+        have := hmd w hw hne
+        omega
+      exact Subtype.ext hw0
+    have hfr : Module.finrank F c ≤ T.card := by
+      have h := LinearMap.finrank_le_finrank_of_injective hPinj
+      rwa [Module.finrank_pi, Fintype.card_coe] at h
+    rw [hTcard] at hfr
+    omega
+
+/-- **Singleton bound attained ⇒ exact MDS.** A `k`-dimensional code
+`c ⊆ α → F` whose minimum distance is at least the Singleton value
+`|α| − k + 1` contains a nonzero codeword of weight *exactly* `|α| − k + 1`.
+With the `fnMinDistAtLeast` hypothesis this pins the minimum distance to
+exactly `|α| − k + 1` (the code is MDS, Singleton met with equality). -/
+theorem fn_exists_minWeight {F : Type*} [Field F] [DecidableEq F] {α : Type*}
+    [Fintype α] (c : Submodule F (α → F)) (k : ℕ)
+    (hfin : Module.finrank F c = k) (hk : 0 < k)
+    (hmd : fnMinDistAtLeast c (Fintype.card α - k + 1)) :
+    ∃ w ∈ c, w ≠ 0 ∧ fnHammingWeight w = Fintype.card α - k + 1 := by
+  classical
+  have hkn : k ≤ Fintype.card α := by
+    have h := Submodule.finrank_le c
+    rw [Module.finrank_pi, hfin] at h; exact h
+  by_contra hcon
+  push_neg at hcon
+  -- if no codeword has weight exactly `|α| − k + 1`, the distance is `≥ |α| − k + 2`
+  have hmd2 : fnMinDistAtLeast c (Fintype.card α - k + 1 + 1) := by
+    intro w hw hw0
+    have hge := hmd w hw hw0
+    have hne := hcon w hw hw0
+    omega
+  have hpos : 0 < Module.finrank F c := by rw [hfin]; exact hk
+  have hb := fnSingleton_bound c (Fintype.card α - k + 1 + 1) hpos hmd2
+  rw [hfin] at hb
+  omega
+
+end Generator
+
 end LinearCodes

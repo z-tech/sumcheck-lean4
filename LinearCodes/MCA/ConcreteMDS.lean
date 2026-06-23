@@ -450,5 +450,40 @@ example : (Generator.univariatePowers (ZMod 7) 3).IsMDS :=
 
 end SanityChecks
 
+/-! ### Exact MDS: the generator codes attain their Singleton distance
+
+`univariatePowers_IsMDS` / `affineLine_IsMDS` give the *lower* half of the
+Singleton bound (`fnMinDistAtLeast` at the Singleton value). Feeding them into
+the generic `fn_exists_minWeight` produces a nonzero codeword of *exactly* that
+weight, so these codes meet the Singleton bound with equality. -/
+
+/-- The univariate-powers generator's induced code attains the Singleton bound:
+it contains a nonzero codeword of weight exactly `|F| − d` (its Singleton value
+for `ℓ = d + 1`). -/
+theorem univariatePowers_minWeight_attained {F : Type*} [Field F] [DecidableEq F]
+    [Fintype F] {d : ℕ} (h_card : d + 1 ≤ Fintype.card F) :
+    ∃ w ∈ (univariatePowers F d).inducedCode, w ≠ 0 ∧
+      fnHammingWeight w = Fintype.card F - d := by
+  have hmds := univariatePowers_IsMDS h_card
+  have h := fn_exists_minWeight (univariatePowers F d).inducedCode (d + 1)
+    hmds.inducedCode_finrank_eq (Nat.succ_pos d) hmds.inducedCode_minDist
+  obtain ⟨w, hw, hw0, hwt⟩ := h
+  refine ⟨w, hw, hw0, ?_⟩
+  rw [hwt]; omega
+
+/-- The affine-line generator's induced code attains the Singleton bound: it
+contains a nonzero codeword of weight exactly `|F| − 1` (its Singleton value for
+`ℓ = 2`). -/
+theorem affineLine_minWeight_attained {F : Type*} [Field F] [DecidableEq F]
+    [Fintype F] (h_card : 2 ≤ Fintype.card F) :
+    ∃ w ∈ (affineLine F).inducedCode, w ≠ 0 ∧
+      fnHammingWeight w = Fintype.card F - 1 := by
+  have hmds := affineLine_IsMDS h_card
+  have h := fn_exists_minWeight (affineLine F).inducedCode 2
+    hmds.inducedCode_finrank_eq (by norm_num) hmds.inducedCode_minDist
+  obtain ⟨w, hw, hw0, hwt⟩ := h
+  refine ⟨w, hw, hw0, ?_⟩
+  rw [hwt]; omega
+
 end Generator
 end LinearCodes
