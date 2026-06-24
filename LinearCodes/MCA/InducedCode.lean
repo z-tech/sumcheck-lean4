@@ -193,15 +193,15 @@ injective on `c` (two codewords agreeing there would differ on at most
 `dim c ≤ |α| − (d−1)`. When the bound is met with equality the code is MDS;
 `fn_exists_minWeight` extracts the attaining codeword. Both are stated over a
 generic finite index type `α`, so they specialise to `Fin n → F` (Reed-Solomon)
-and `S → F` (generator-induced codes) alike. -/
-
-namespace Generator
+and `S → F` (generator-induced codes) alike. They are deliberately placed in
+the neutral `LinearCodes` namespace (not `Generator`) since nothing here is
+generator-specific. -/
 
 /-- **Singleton bound.** Any linear code `c ⊆ α → F` with minimum distance at
 least `d` and positive dimension satisfies `dim c + d ≤ |α| + 1`. -/
 theorem fnSingleton_bound {F : Type*} [Field F] [DecidableEq F] {α : Type*}
     [Fintype α] (c : Submodule F (α → F)) (d : ℕ)
-    (hc : 0 < Module.finrank F c) (hmd : fnMinDistAtLeast c d) :
+    (hc : 0 < Module.finrank F c) (hmd : Generator.fnMinDistAtLeast c d) :
     Module.finrank F c + d ≤ Fintype.card α + 1 := by
   classical
   rcases Nat.eq_zero_or_pos d with hd0 | hd1
@@ -231,8 +231,8 @@ theorem fnSingleton_bound {F : Type*} [Field F] [DecidableEq F] {α : Type*}
         intro x hxT
         have := congrFun hPw (⟨x, hxT⟩ : ↥T)
         simpa [P, LinearMap.funLeft_apply] using this
-      have hwle : fnHammingWeight w ≤ d - 1 := by
-        unfold fnHammingWeight
+      have hwle : Generator.fnHammingWeight w ≤ d - 1 := by
+        unfold Generator.fnHammingWeight
         have hsub : (Finset.univ.filter fun i => w i ≠ 0) ⊆ D := by
           intro i hi
           rw [Finset.mem_filter] at hi
@@ -260,8 +260,8 @@ exactly `|α| − k + 1` (the code is MDS, Singleton met with equality). -/
 theorem fn_exists_minWeight {F : Type*} [Field F] [DecidableEq F] {α : Type*}
     [Fintype α] (c : Submodule F (α → F)) (k : ℕ)
     (hfin : Module.finrank F c = k) (hk : 0 < k)
-    (hmd : fnMinDistAtLeast c (Fintype.card α - k + 1)) :
-    ∃ w ∈ c, w ≠ 0 ∧ fnHammingWeight w = Fintype.card α - k + 1 := by
+    (hmd : Generator.fnMinDistAtLeast c (Fintype.card α - k + 1)) :
+    ∃ w ∈ c, w ≠ 0 ∧ Generator.fnHammingWeight w = Fintype.card α - k + 1 := by
   classical
   have hkn : k ≤ Fintype.card α := by
     have h := Submodule.finrank_le c
@@ -269,7 +269,7 @@ theorem fn_exists_minWeight {F : Type*} [Field F] [DecidableEq F] {α : Type*}
   by_contra hcon
   push_neg at hcon
   -- if no codeword has weight exactly `|α| − k + 1`, the distance is `≥ |α| − k + 2`
-  have hmd2 : fnMinDistAtLeast c (Fintype.card α - k + 1 + 1) := by
+  have hmd2 : Generator.fnMinDistAtLeast c (Fintype.card α - k + 1 + 1) := by
     intro w hw hw0
     have hge := hmd w hw hw0
     have hne := hcon w hw hw0
@@ -278,7 +278,5 @@ theorem fn_exists_minWeight {F : Type*} [Field F] [DecidableEq F] {α : Type*}
   have hb := fnSingleton_bound c (Fintype.card α - k + 1 + 1) hpos hmd2
   rw [hfin] at hb
   omega
-
-end Generator
 
 end LinearCodes
