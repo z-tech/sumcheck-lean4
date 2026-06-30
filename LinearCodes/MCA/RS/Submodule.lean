@@ -351,4 +351,35 @@ theorem reedSolomonSubmodule_isListDecodable_johnson
     h_johnson
 
 
+/-- Bridge between the two Hamming-weight definitions on `Fin n`: the general
+`Generator.fnHammingWeight` (over any finite index type) and the
+`Fin n`-specific `hammingWeight` agree definitionally. Recorded explicitly so
+that callers depend on a named lemma rather than on the two definitions
+happening to be defeq, which would break silently if either is refactored. -/
+theorem fnHammingWeight_eq_hammingWeight [DecidableEq F] {n : ℕ} (v : Fin n → F) :
+    Generator.fnHammingWeight v = hammingWeight v := rfl
+
+/-- **Reed-Solomon attains the Singleton bound (exact MDS).** The RS code
+contains a nonzero codeword of Hamming weight exactly `n − k + 1`. Together
+with `reedSolomonSubmodule_minDist` (every nonzero codeword has weight
+`≥ n − k + 1`) this pins the RS minimum distance to exactly `n − k + 1`:
+Reed-Solomon meets the Singleton bound with equality. Proved by feeding
+`reedSolomonSubmodule_isMDS` into the generic `fn_exists_minWeight`. -/
+theorem reedSolomonSubmodule_minWeight_attained [DecidableEq F]
+    (cfg : ReedSolomonConfig F)
+    (h_dom_size : cfg.domain.size = cfg.codeLength)
+    (h_distinct : ∀ i j : Fin cfg.domain.size, i ≠ j →
+      cfg.domain.getD i.val 0 ≠ cfg.domain.getD j.val 0)
+    (h_le : cfg.messageLength ≤ cfg.codeLength)
+    (h_pos : 0 < cfg.messageLength) :
+    ∃ w ∈ reedSolomonSubmodule cfg, w ≠ 0 ∧
+      hammingWeight w = cfg.codeLength - cfg.messageLength + 1 := by
+  obtain ⟨hfin, hmd⟩ := reedSolomonSubmodule_isMDS cfg h_dom_size h_distinct h_le
+  have h := fn_exists_minWeight (reedSolomonSubmodule cfg) cfg.messageLength
+    hfin h_pos (by rw [Fintype.card_fin]; exact hmd)
+  obtain ⟨w, hw, hw0, hwt⟩ := h
+  rw [Fintype.card_fin, fnHammingWeight_eq_hammingWeight] at hwt
+  exact ⟨w, hw, hw0, hwt⟩
+
+
 end LinearCodes
